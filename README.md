@@ -7,8 +7,14 @@ control, built from three parts:
 | Part | What it does |
 |---|---|
 | **Jobs** | Each memory-heavy job runs as its own systemd service in `stasis.slice`, with its own cgroup for memory, CPU and freezing. |
-| **stasisd** (`controller/stasisd.py`, Python stdlib only) | Listens for PSI triggers. On pressure it halves the active set. When things are calm it admits jobs by working-set estimate. It rotates parked jobs fairly and parks them with `cgroup.freeze`. |
+| **stasisd** (`controller/stasisd.py`, Python stdlib only) | Listens for PSI triggers. On real thrashing it halves the active set. When things are calm it admits jobs whose working sets fit. It rotates parked jobs fairly and parks them with `cgroup.freeze`. |
 | **scx_stasis** (`scx/`, sched_ext BPF) | A vtime scheduler based on `scx_simple`. It measures each process's **page-fault frequency** (major faults per ms of its own CPU time) and keeps protected interactive tasks on a priority queue. It never parks anything. |
+
+The **STASIS Control Room** (`dashboard/`) shows all of it live in a browser:
+memory stall, one lane per job (heat for page-fault rate, frost for parked),
+the controller's decisions, the scheduler's dispatch counters and memory. It
+also replays recorded runs, plots results against the pre-registered
+hypotheses, and includes a simulator of the control law.
 
 ## Repository
 
@@ -19,40 +25,61 @@ scripts/check_gate0.sh     Phase 0 exit criteria
 scripts/calibrate.sh       pick PASSES so one job runs ~60 s alone
 scripts/run_mix.sh         one run: N jobs + probe + sampler [+ config]
 scripts/sweep.sh           N-sweep for one config (Phase 1, Phase 3 gate)
-scripts/sample.py          1 Hz sampler -> samples.jsonl
+scripts/sample.py          1 Hz sampler -> samples.jsonl (also used by the dashboard)
 scripts/check_faults.sh    Phase 3 fault-count correctness check
 scripts/manifest.sh        per-run MANIFEST (kernel, commits, sysctls)
 controller/stasisd.py      Phase 2 controller (+ Phase 4 --signal=bpf)
 scx/scx_stasis.bpf.c       Phase 3 BPF scheduler
-scx/scx_stasis.c           loader: -p TGID, exports /run/stasis/pff every 100 ms
+scx/scx_stasis.c           loader: -p TGID, -w MS; exports /run/stasis/{pff,stats}
 scx/install_into_scx.sh    drops scx_stasis into a scx-c-examples checkout
 eval/campaign.sh           Phase 5 randomized run matrix (resumable)
 eval/analyze.py            metrics.csv, PFF calibration, figures F1-F5, score.md
-docs/00-prereg.md          thresholds and hypotheses, frozen at Gate 1
+dashboard/server.py        Control Room server (stdlib only, read-only, mlocked)
+dashboard/index.html       Control Room UI (Live, Replay, Results, Simulator)
+docs/00-prereg.md          thresholds, hypotheses and deviations, frozen at Gate 1
 docs/demo.md               Phase 6 demo script and defence questions
 MANIFEST                   one line per run
 ```
 
-## What has been verified so far
+## What has been verified
 
-Checked in a cloud container with no sched_ext kernel:
+Everything below ran on a rehearsal VM built from the official **Ubuntu 26.04
+cloud image, kernel 7.0.0-38-generic**, with 4 vCPUs and 4 GB of RAM (the
+same shape as the lab VM). It was emulated, so it was several times slower
+than real hardware.
 
-- `wss` builds and runs.
-- `scx_stasis.bpf.c` and the loader **compile** against scx-c-examples
-  `370b1ce` with clang 18 and libbpf 1.8.
-- stasisd's control law was exercised against a fake cgroup tree. Tested:
-  calm-period admission, rotation of a starved parked job, PFF early warning
-  followed by halving (worst fault rate parked first), and thaw-all on SIGTERM.
-- `analyze.py` runs end to end on a synthetic results tree: metrics,
-  calibration, all five figures and the score table.
+| Check | Result |
+|---|---|
+| `setup_vm.sh`, unmodified | ✅ ran end to end in 3 min 41 s: swap, zswap, toolchain, pinned scx clone, both schedulers built and installed |
+| Gate 0 (`check_gate0.sh`) | ✅ all checks pass; scx_simple attaches and Ctrl-C returns to EEVDF |
+| Phase 3 rung 1: verifier | ✅ the 7.0 verifier accepts scx_stasis: `sched_ext: BPF scheduler "stasis" enabled` |
+| Rung 2: fault counts | ✅ BPF and `/proc` agree exactly (17,645 = 17,645 major faults) |
+| Rung 3: priority path | ✅ 133 priority dispatches/s for the protected cyclictest under 8 CPU hogs |
+| Rung 4: survives load | ✅ 90 s of stress-ng, no ejection |
+| Dashboard live | ✅ followed a real EEVDF thrash run from the host browser, no console errors |
 
-**Not yet verified, and only possible on the VM:**
+The rehearsal also found problems that are now fixed. The control-law ones
+are listed in `docs/00-prereg.md` as deviations 2–5:
 
-- Whether the BPF verifier accepts the program.
-- Whether it attaches.
-- Every real measurement.
-
-These are Phase 0 and Phase 3 below.
+- **Admission blocked rotation.** In the guide's controller code, admission
+  and rotation are an `if/elif` chain, so rotation stopped for good after 5 s
+  of calm.
+- **Halvings cascaded.** Jobs refaulting after a halving keep PSI high for a
+  few seconds, so the guide's rule kept halving: 8 → 4 → 2 → 1.
+- **Admission deadlocked.** The guide's admission test counted frozen jobs'
+  memory as unavailable, so nothing was admitted once anything was parked.
+- **Warm-up looked like thrashing.** A thawed job refaulting its pages looked
+  like thrashing to the PFF early warning.
+- **No watchdog knob.** Kernel 7.0 has no `/sys/kernel/sched_ext/watchdog_timeout_ms`.
+  The loader takes `-w MS` instead.
+- **Priority path needs contention.** On an idle machine, protected tasks
+  dispatch straight to idle CPUs, so rung 3 must run under CPU load.
+- **Unfinished runs looked finished.** A run cut short by a wedged guest used
+  to look finished. Runs now say `RUNNING` until they end, and sweeps re-run
+  them.
+- **Kill counts leaked between runs.** Kills were attributed with a 25-minute
+  look-back, which counted the previous run's kills again. They're now taken
+  from the run's own start time.
 
 ## Runbook, phase by phase
 
@@ -64,17 +91,18 @@ Phases 1–2 alone already make a reportable result.
 1. Build the VM on the Windows host. Use Hyper-V (Gen 2, **Dynamic Memory
    off**, 4096 MB, 4 vCPU, 40 GB, "Microsoft UEFI Certificate Authority"
    template) or VirtualBox with fixed memory. Don't use WSL2. Install Ubuntu
-   26.04 LTS Server.
+   26.04 LTS Server, which ships kernel 7.0 with sched_ext built in.
 2. Inside the guest:
    ```bash
    git clone <this repo> ~/stasis && cd ~/stasis
-   sudo scripts/setup_vm.sh       # packages, 8 GB swap, zswap off, libbpf/bpftool, scx build
+   sudo scripts/setup_vm.sh       # packages, 8 GB swap, zswap off, toolchain, scx build
    sudo scripts/check_gate0.sh
    ```
-   `setup_vm.sh` builds libbpf and bpftool from source when the distro's
-   libbpf is older than 1.5. Ubuntu 24.04's 1.3 can't build current
-   scx-c-examples.
-3. Take a VM snapshot named **`clean`**.
+   On 26.04 the distro's libbpf (1.6) and bpftool (7.7) are new enough. On
+   older releases, `setup_vm.sh` builds both from source: scx-c-examples needs
+   libbpf ≥ 1.5 and bpftool ≥ 7.5.
+3. Take a VM snapshot named **`clean`**. It's only for recovering a broken
+   system (see Phase 5).
 
 **Gate 0:** `check_gate0.sh` passes, meaning scx_simple loads, state reads
 `enabled`, Ctrl-C returns to EEVDF, swap is 8 GB and zswap is off. If
@@ -90,7 +118,7 @@ python3 eval/analyze.py figures /srv/results        # F1 (EEVDF only so far)
 python3 eval/analyze.py calibrate /srv/results      # PFF distribution -> PFF_HI
 ```
 
-- Check `probe_policy.txt` in any run: it must say `SCHED_OTHER`.
+- Check `probe_policy.txt` in any run: every thread must say `SCHED_OTHER`.
   Real-time tasks bypass sched_ext.
 - Expected: throughput stays flat up to N≈4 (2.8 GB fits), then collapses.
   If N=8 is still above 50% of peak, raise SIZE.
@@ -120,20 +148,23 @@ sudo scripts/run_mix.sh 8 700 $PASSES /srv/results/ctrl/N8/run1 ctrl
 
 Climb the verification ladder one rung at a time:
 
-1. **Loads:** run `sudo /opt/stasis/scx_stasis`, then
+1. **Loads:** run `sudo /opt/stasis/scx_stasis -w 5000`, then
    `cat /sys/kernel/sched_ext/root/ops` should print `stasis`. If the
-   verifier rejects the program, the error names the line.
-2. **Counts are correct:** with pressure running, run
-   `sudo scripts/check_faults.sh`. BPF `maj_flt` and `/proc` majflt should
-   agree to within a few faults. Put this in the report.
-3. **Priority path:** run `sudo /opt/stasis/scx_stasis -p $(pgrep cyclictest)`.
-   The `prio=` counter in its output should rise. Also check
+   verifier rejects the program, the error names the line. `-w 5000` lowers
+   the watchdog to 5 s while developing; kernels since 6.12 have no sysfs
+   knob for it.
+2. **Counts are correct:** with memory pressure running (for example five
+   `/opt/stasis/wss 700 100000 &`), run `sudo scripts/check_faults.sh`. It
+   prints PASS when BPF and `/proc` agree within 1%. Put this in the report.
+3. **Priority path:** under CPU contention (`stress-ng --cpu 8`), run
+   `sudo /opt/stasis/scx_stasis -p $(pgrep cyclictest)`. The `prio=` counter
+   should rise at about cyclictest's wake-up rate. On an idle machine it stays
+   at 0, because protected tasks go straight to idle CPUs. Also check
    `sudo bpftool map dump name prio_tgid`.
 4. **Survives load:** run `stress-ng --cpu 8 --vm 4 --timeout 600`, then
-   `sudo dmesg | grep -i sched_ext` should show no ejection. While
-   developing, lower `/sys/kernel/sched_ext/watchdog_timeout_ms` to 5000.
-   Debug output goes to `/sys/kernel/tracing/trace_pipe`, and SysRq-S falls
-   back to EEVDF.
+   `sudo journalctl -k | grep -i sched_ext` should show no ejection. Debug
+   output goes to `/sys/kernel/tracing/trace_pipe`, and SysRq-S falls back to
+   EEVDF.
 
 **Gate 3:** all four rungs pass. Repeat the N=1…8 sweep under scx_stasis
 alone, with no controller:
@@ -158,12 +189,21 @@ never fires first, report that honestly; it's evidence for H5 either way.
 ```bash
 git clone https://github.com/<pinned>/thrash-protect && export THRASH_PROTECT=...
 eval/campaign.sh plan /srv/results --sensitivity
-# per batch: roll back to 'clean', then
+# per batch: reboot the VM (fresh kernel state), then
 sudo -E STASISD_EXTRA=--pff-hi=<frozen> eval/campaign.sh run /srv/results 700 $PASSES 70
+# after each batch, copy the results to the host (PowerShell):
+#   scp -r <user>@<vm-ip>:/srv/results .\results
 python3 eval/analyze.py metrics /srv/results
 python3 eval/analyze.py figures /srv/results
 python3 eval/analyze.py score /srv/results docs/00-prereg.md   # pass/fail table
 ```
+
+- **Reboot between batches, don't restore the snapshot.** Restoring `clean`
+  also wipes `/srv/results`. Restore only to recover a broken system, and copy
+  the results off first.
+- A run reads `RUNNING` until it ends. If the guest wedges mid-run, power-cycle
+  it and start the batch again: unfinished runs are deleted and re-run, and
+  finished ones are skipped.
 
 Decision rule: a hypothesis passes only if **every** STASIS run beats
 **every** baseline run. Report the median and range for everything,
@@ -174,17 +214,43 @@ including the metrics STASIS loses on (N ≤ 4).
 The figures are F1–F5 in `results/figures/`. The demo script and rehearsal
 questions are in `docs/demo.md`.
 
+## The Control Room
+
+```bash
+cd ~/stasis && sudo python3 dashboard/server.py --results /srv/results
+```
+
+It prints the address to open from the host's browser (port 8686). Its four
+views are:
+
+- **Live** follows the run `run_mix.sh` is writing, through
+  `/run/stasis/current`. With no run it shows the whole machine.
+- **Replay** plays back any finished run at 1×, 4× or 16×, with its metrics.
+- **Results** shows the throughput-vs-N curve, the pre-registered hypotheses
+  with pass/fail verdicts, and every run's metrics. Each chart has a table view.
+- **Simulator** runs stasisd's control law on a model of the 4 GB VM. Switch
+  the policy to watch EEVDF thrash and STASIS recover. It is a model, and the
+  page says so.
+
+The server is read-only and has no authentication; run it only on the lab
+VM's private network. It locks itself into RAM so it keeps answering while
+the machine thrashes. It's light, but leave it off during campaign batches so
+it can't perturb measurements; use Replay afterwards.
+
 ## Troubleshooting
 
 | Symptom | Fix |
 |---|---|
 | EEVDF still above 50% of peak at N=8 | Raise SIZE. Confirm zswap is off and Dynamic Memory is off. |
-| Guest wedges during EEVDF runs | Expected at high N. Keep the 1200 s timeout, run baselines last in a batch, and roll back to the snapshot. |
-| Scheduler ejected (`status` = `SCHED_EJECTED`) | Check PRIO_DSQ membership, and that nothing is held runnable. Read the dmesg dump in `sched_ext_dmesg.txt`. |
+| Guest wedges during EEVDF runs | Expected at high N. Keep the 1200 s timeout, run baselines last in a batch, power-cycle and re-run the batch. |
+| Scheduler ejected (`status` = `SCHED_EJECTED`) | Check PRIO_DSQ membership, and that nothing is held runnable. Read the dmesg lines in `sched_ext_dmesg.txt`. |
+| Controller died (`status` = `CTRL_DIED`) | Read `stasisd.log` in the run directory; the run harness thawed the jobs. |
 | Verifier rejects | NULL-check every lookup, initialize every variable, and don't use unbounded loops. |
 | Jobs stay frozen after a crash | `for f in /sys/fs/cgroup/stasis.slice/*/cgroup.freeze; do echo 0 > $f; done` |
 | Controller slow under thrash | Confirm mlockall succeeded. Run it outside stasis.slice with `nice -n -10`. |
-| Probe latency perfect even under EEVDF thrashing | Check it isn't real-time (`chrt -p`) and isn't mlocked. |
+| Probe latency perfect even under EEVDF thrashing | Check it isn't real-time (`chrt -a -p`) and isn't mlocked. |
 | stasisd: `OSError: [Errno 22]` on the PSI trigger | Not running as real root. 1 s windows need privilege. |
+| `watchdog_timeout_ms: Permission denied` | That file doesn't exist on kernel 7.0. Use `scx_stasis -w 5000`. |
+| Dashboard shows "Live needs the STASIS server" | Open it through the server's address, not as a file. |
 
 Deviations from the build guide are listed in `docs/00-prereg.md`.

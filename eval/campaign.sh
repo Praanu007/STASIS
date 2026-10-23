@@ -49,16 +49,23 @@ run)
   done_now=0
   while read -r label config n k args; do
     out="$ROOT/$label/N$n/run$k"
-    [[ -f $out/status ]] && continue
+    if [[ -f $out/status ]]; then
+      [[ $(cat "$out/status") != RUNNING ]] && continue
+      echo "rerun unfinished $out"; rm -rf "$out"
+    fi
     (( done_now >= MAX )) && break
     [[ $args == - ]] && args=
     echo "== $(date +%T) $label N=$n run$k $args"
     sync; echo 3 > /proc/sys/vm/drop_caches
-    "$HERE/../scripts/manifest.sh" "$out" "$label $args"
-    STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" || true
+    # </dev/null: nothing inside a run may read (and swallow) lines of plan.txt
+    "$HERE/../scripts/manifest.sh" "$out" "$label $args" < /dev/null
+    STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
     done_now=$((done_now + 1))
   done < "$ROOT/plan.txt"
-  left=$(while read -r label _ n k _; do [[ -f $ROOT/$label/N$n/run$k/status ]] || echo x; done < "$ROOT/plan.txt" | wc -l)
+  left=$(while read -r label _ n k _; do
+           f=$ROOT/$label/N$n/run$k/status
+           [[ -f $f && $(cat "$f") != RUNNING ]] || echo x
+         done < "$ROOT/plan.txt" | wc -l)
   echo "batch done: $done_now runs this batch, $left left" ;;
 *) echo "usage: $0 plan|run ..." >&2; exit 2 ;;
 esac

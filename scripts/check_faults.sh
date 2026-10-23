@@ -18,5 +18,10 @@ done
 wait $pid || true
 sleep 0.3                             # one more 100 ms export
 bpf=$(awk -v p=$pid '$1 == p {print $2}' /run/stasis/pff)
-echo "pid $pid: /proc majflt=$last  bpf maj_flt=${bpf:-missing}  diff=$(( ${bpf:-0} - last ))"
-echo "(expect agreement within a handful of faults; the /proc read can miss the last 50 ms)"
+[[ -n $bpf ]] || { echo "pid $pid missing from /run/stasis/pff" >&2; exit 1; }
+# The last /proc read can be up to 50 ms before exit, so allow 1% (or 20 faults).
+awk -v b="$bpf" -v p="$last" -v pid="$pid" 'BEGIN {
+  d = b - p; tol = (p * 0.01 > 20) ? p * 0.01 : 20
+  printf "pid %s: /proc majflt=%d  bpf maj_flt=%d  diff=%+d (%.2f%%)\n", pid, p, b, d, p ? 100 * d / p : 0
+  if (d >= -tol && d <= tol) print "PASS: counts agree"; else { print "CHECK: counts differ by more than 1%"; exit 1 }
+}'

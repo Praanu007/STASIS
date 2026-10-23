@@ -4,26 +4,48 @@ Record a video of the whole thing first, in case the VM misbehaves on the day.
 
 ## Layout
 
-Split screen (tmux: `tmux new -s demo \; split-window -h`).
+Split screen on the Windows host:
 
-- Left pane: a shell where you type `ls`. Note its PID with `echo $$`.
-- Right pane: `watch -n1 cat /proc/pressure/memory`.
-- A third window follows decisions: `tail -f /tmp/demo2/decisions.jsonl`.
+- **Left:** a terminal with SSH into the VM. This shell is the "interactive
+  user". Note its PID with `echo $$`.
+- **Right:** the STASIS Control Room in the host's browser. Start it in a
+  second SSH session:
+  ```bash
+  cd ~/stasis && sudo python3 dashboard/server.py --results /srv/results
+  ```
+  Then open `http://<vm-ip>:8686`. Use the **2 min** window.
+
+The dashboard follows whatever run `run_mix.sh` is writing (it reads
+`/run/stasis/current`). It shows memory stall, one lane per job (heat for
+fault rate, frost for parked), the controller's decisions and the scheduler's
+dispatch counters.
 
 ## Script
 
 1. **EEVDF, the problem (60 s).**
-   `sudo /path/to/stasis/scripts/run_mix.sh 8 700 $PASSES /tmp/demo1 eevdf`
-   Type `ls` in the left pane: it lags, and PSI `full` climbs. Ctrl-C the run.
-   The cleanup trap stops the jobs.
+   `sudo scripts/run_mix.sh 8 700 $PASSES /tmp/demo1 eevdf`
+   The hero number climbs past the trigger line and the status turns
+   **Thrashing**. Every lane glows, throughput drops to almost nothing, and
+   `ls` in the left pane lags. Press Ctrl-C; the cleanup trap stops the jobs.
 2. **STASIS (90 s).**
-   `sudo DEMO_SHELL=<pid of left shell> STASISD_EXTRA=... /path/to/stasis/scripts/run_mix.sh 8 700 $PASSES /tmp/demo2 stasis`
-   The shell stays responsive. Freeze and thaw lines scroll in the decision log,
-   and `journalctl -k | grep -i killed` prints nothing.
-3. **Show F1 and F3 (30 s).** The thrashing curve with STASIS's plateau, and
-   the fairness bars.
+   `sudo DEMO_SHELL=<pid of left shell> STASISD_EXTRA=--pff-hi=<frozen> scripts/run_mix.sh 8 700 $PASSES /tmp/demo2 stasis`
+   Point at three things on the dashboard:
+   - the first **Halve** decision parks half the jobs (their lanes frost over),
+   - the stall falls back under the trigger line and the status returns to
+     **Calm**,
+   - **Rotate** decisions every 15 s, so every job keeps making progress.
 
-Note: `DEMO_SHELL` adds the shell to the scheduler's protected set (`-p`).
+   `ls` stays responsive, and **Processes killed** stays at 0.
+3. **Results (30 s).** Switch to the **Results** tab: the throughput curve
+   with STASIS's plateau, and the pre-registered hypotheses with their
+   pass/fail verdicts.
+
+`DEMO_SHELL` adds the shell to the scheduler's protected set (`-p`), so it
+sits on the priority queue with the latency probe.
+
+If the VM won't cooperate, use **Replay** to play back a recorded run at 4×.
+The **Simulator** tab explains the mechanism without a VM at all: it runs
+the same control law on a model of the 4 GiB VM.
 
 ## Questions to rehearse
 
@@ -41,3 +63,9 @@ Note: `DEMO_SHELL` adds the shell to the scheduler's protected set (`-p`).
 - **"What if your BPF code is buggy?"** sched_ext's watchdog and SysRq-S
   return the system to EEVDF. Show the dmesg line from a deliberate fault
   test.
+- **"Why doesn't one halving turn into a cascade?"** The jobs that survive a
+  halving have to fault their pages back in, which looks like pressure for a
+  few seconds. stasisd only halves when the active set's resident memory has
+  stopped growing: faulting that grows the resident set is warm-up, faulting
+  that doesn't is thrashing. The simulator showed the guide's original rule
+  cascading 8 → 4 → 2 → 1.

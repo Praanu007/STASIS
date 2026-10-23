@@ -103,12 +103,19 @@ def jain(xs):
     return sum(xs) ** 2 / (len(xs) * sum(x * x for x in xs))
 
 def runs(root):
+    """Finished runs as (label, N, run, dir). A run whose status still says
+    RUNNING never finished (the guest wedged or was reset) and is skipped."""
     for d in sorted(glob.glob(f"{root}/*/N*/run*")):
-        if os.path.isfile(f"{d}/status"):
-            label = d.split(os.sep)[-3]
-            n = int(d.split(os.sep)[-2][1:])
-            k = int(d.split(os.sep)[-1][3:])
-            yield label, n, k, d
+        try:
+            with open(f"{d}/status") as f:
+                if f.read().strip() == "RUNNING":
+                    continue
+        except FileNotFoundError:
+            continue
+        label = d.split(os.sep)[-3]
+        n = int(d.split(os.sep)[-2][1:])
+        k = int(d.split(os.sep)[-1][3:])
+        yield label, n, k, d
 
 # ---- metrics ----------------------------------------------------------------
 
@@ -200,16 +207,19 @@ def cmd_calibrate(root, config="eevdf"):
         prev = {}
         for s in jsonl(f"{d}/samples.jsonl"):
             for j, v in s["jobs"].items():
-                if "majflt" not in v:
+                if "pgmajfault" in v:              # cgroup counters, CPU in µs
+                    cur = (v["pgmajfault"], v["cpu_us"] / 1000)
+                elif "majflt" in v:                # older samples: /proc, CPU in ticks
+                    cur = (v["majflt"], v["ticks"] * 1000 / hz)
+                else:
                     continue
                 if j in prev:
-                    df = v["majflt"] - prev[j][0]
-                    dms = (v["ticks"] - prev[j][1]) * 1000 / hz
+                    df, dms = cur[0] - prev[j][0], cur[1] - prev[j][1]
                     if dms > 0:
                         by_n.setdefault(n, []).append(df / dms)
-                prev[j] = (v["majflt"], v["ticks"])
+                prev[j] = cur
     if not by_n:
-        print("no samples with majflt; run the Phase 1 sweep first")
+        print("no per-job fault samples; run the Phase 1 sweep first")
         return
     print(f"{'N':>3} {'samples':>8} {'p50':>9} {'p90':>9} {'p99':>9}   faults per CPU-ms")
     q = lambda xs, p: sorted(xs)[min(len(xs) - 1, int(p * len(xs)))]
@@ -341,44 +351,66 @@ def cmd_figures(root):
 
 # ---- scoring against the frozen pre-registration ----------------------------
 
-def cmd_score(root, prereg):
+def load_hypotheses(prereg):
+    """The ```json hypotheses block of the frozen pre-registration."""
     text = open(prereg).read()
     m = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)
     if not m:
-        sys.exit("no ```json hypotheses block in prereg")
-    hyps = json.loads(m.group(1))["hypotheses"]
-    rows = load_metrics(root)
-    lines = ["| H | claim | N | STASIS (median, range) | best baseline | result |",
-             "|---|---|---|---|---|---|"]
+        raise ValueError(f"no ```json hypotheses block in {prereg}")
+    return json.loads(m.group(1))["hypotheses"]
+
+def score_table(rows, hyps):
+    """One row per (hypothesis, N): the STASIS values, the deciding baseline's
+    values and the verdict. Strict rule: every STASIS run beats every baseline
+    run; 'equals' hypotheses need every STASIS run to match exactly."""
+    out = []
     for h in hyps:
         for n in h["N"]:
             vals = lambda l: [r[h["metric"]] for r in rows
                               if r["label"] == l and r["N"] == n and r[h["metric"]] is not None]
-            s = vals(h["stasis"])
+            row = {"id": h["id"], "claim": h["claim"], "N": n, "metric": h["metric"],
+                   "better": h.get("better"), "equals": h.get("equals"),
+                   "stasis": vals(h["stasis"]), "baseline": None, "baseline_label": None}
+            s = row["stasis"]
             if not s:
-                lines.append(f"| {h['id']} | {h['claim']} | {n} | no data | | MISSING |")
-                continue
-            fmt = lambda v: f"{statistics.median(v):.3g} [{min(v):.3g}, {max(v):.3g}]"
-            if "equals" in h:
-                ok = all(v == h["equals"] for v in s)
-                lines.append(f"| {h['id']} | {h['claim']} | {n} | {fmt(s)} | (= {h['equals']}) | "
-                             f"{'PASS' if ok else 'FAIL'} |")
-                continue
-            # Strict rule: every STASIS run beats every baseline run.
-            ok, best = True, None
-            for b in h["baselines"]:
-                bv = vals(b)
-                if not bv:
-                    continue
-                if h["better"] == "higher":
-                    ok &= min(s) > max(bv)
-                    best = bv if best is None or max(bv) > max(best) else best
-                else:
-                    ok &= max(s) < min(bv)
-                    best = bv if best is None or min(bv) < min(best) else best
-            res = "PASS" if ok and best else ("FAIL" if best else "NO BASELINE")
-            lines.append(f"| {h['id']} | {h['claim']} | {n} | {fmt(s)} | "
-                         f"{fmt(best) if best else '-'} | {res} |")
+                row["result"] = "MISSING"
+            elif "equals" in h:
+                row["result"] = "PASS" if all(v == h["equals"] for v in s) else "FAIL"
+            else:
+                ok, best = True, None
+                for b in h["baselines"]:
+                    bv = vals(b)
+                    if not bv:
+                        continue
+                    if h["better"] == "higher":
+                        ok &= min(s) > max(bv)
+                        if best is None or max(bv) > max(best[1]):
+                            best = (b, bv)
+                    else:
+                        ok &= max(s) < min(bv)
+                        if best is None or min(bv) < min(best[1]):
+                            best = (b, bv)
+                if best:
+                    row["baseline_label"], row["baseline"] = best
+                row["result"] = "PASS" if ok and best else ("FAIL" if best else "NO BASELINE")
+            out.append(row)
+    return out
+
+def cmd_score(root, prereg):
+    try:
+        hyps = load_hypotheses(prereg)
+    except ValueError as e:
+        sys.exit(str(e))
+    fmt = lambda v: f"{statistics.median(v):.3g} [{min(v):.3g}, {max(v):.3g}]"
+    lines = ["| H | claim | N | STASIS (median, range) | best baseline | result |",
+             "|---|---|---|---|---|---|"]
+    for r in score_table(load_metrics(root), hyps):
+        stasis = fmt(r["stasis"]) if r["stasis"] else "no data"
+        if r["equals"] is not None:
+            base = f"(= {r['equals']})"
+        else:
+            base = f"{r['baseline_label']} {fmt(r['baseline'])}" if r["baseline"] else "-"
+        lines.append(f"| {r['id']} | {r['claim']} | {r['N']} | {stasis} | {base} | {r['result']} |")
     out = "\n".join(lines) + "\n"
     open(f"{root}/score.md", "w").write(out)
     print(out)

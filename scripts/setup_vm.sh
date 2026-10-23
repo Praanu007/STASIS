@@ -35,9 +35,14 @@ if [[ $(cat /sys/module/zswap/parameters/enabled 2>/dev/null) == Y ]]; then
 fi
 
 echo "== libbpf + bpftool new enough for scx-c-examples"
-# Ubuntu 24.04 ships libbpf 1.3 / bpftool 7.4, whose skeletons lack the
-# struct_ops fields scx needs. Build both from source unless libbpf >= 1.5.
-if ! pkg-config --atleast-version=1.5 libbpf 2>/dev/null; then
+# scx-c-examples needs libbpf >= 1.5 and bpftool >= 7.5 (skeletons with
+# struct_ops members). Ubuntu 26.04 ships both, with bpftool as its own
+# package. Ubuntu 24.04 ships libbpf 1.3 / bpftool 7.4: build both from source.
+apt-get install -y bpftool 2>/dev/null || true
+export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}
+bpftool_version() { bpftool version 2>/dev/null | awk 'NR == 1 { sub(/^v/, "", $2); print $2 }'; }
+if ! pkg-config --atleast-version=1.5 libbpf 2>/dev/null ||
+   ! dpkg --compare-versions "$(bpftool_version)" ge 7.5 2>/dev/null; then
   mkdir -p "$SRC"
   [[ -d $SRC/bpftool ]] || git clone --depth 1 --recurse-submodules --shallow-submodules \
     https://github.com/libbpf/bpftool "$SRC/bpftool"
@@ -46,8 +51,9 @@ if ! pkg-config --atleast-version=1.5 libbpf 2>/dev/null; then
   make -C "$SRC/bpftool/src" -j"$(nproc)"
   install -m 755 "$SRC/bpftool/src/bpftool" /usr/local/bin/bpftool
   ldconfig
+  hash -r
 fi
-export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig:${PKG_CONFIG_PATH:-}
+echo "libbpf $(pkg-config --modversion libbpf), bpftool $(bpftool_version) at $(command -v bpftool)"
 
 echo "== scx-c-examples at $SCX_COMMIT + scx_stasis"
 [[ -d $SCX_DIR ]] || git clone https://github.com/sched-ext/scx-c-examples "$SCX_DIR"

@@ -1,12 +1,21 @@
 #!/usr/bin/env python3
-"""sample.py OUT - one JSON line per second: PSI, swap, per-job state.
+"""sample.py OUT - one JSON line per second: PSI, memory, swap, scheduler and
+per-job state. Locks itself into RAM so its samples keep arriving during
+thrashing.
 
-Per job it also records major faults and CPU ticks summed over the job's
-processes (from /proc/PID/stat), which Phase 1 uses to calibrate PFF_HI.
+Also importable: record() returns one sample. The dashboard server builds its
+live view from the same function, so live and replayed runs look identical.
+
+Per job (stasis.slice/stasis-job-N.service) it records resident memory, peak
+memory, CPU time, anonymous refaults, major faults and the freezer state.
+Major faults per CPU-ms over time is the job's page-fault frequency, which
+Phase 1 uses to calibrate PFF_HI.
 """
 import ctypes, json, os, sys, time
 
 CG = os.environ.get("STASIS_CG", "/sys/fs/cgroup/stasis.slice")
+RUN = os.environ.get("STASIS_RUN", "/run/stasis")
+SCX = "/sys/kernel/sched_ext"
 ctypes.CDLL("libc.so.6").mlockall(3)          # MCL_CURRENT | MCL_FUTURE
 
 def kv(path):
@@ -30,40 +39,64 @@ def read(path):
     with open(path) as f:
         return f.read().strip()
 
-def proc_faults(cgdir):
-    """(majflt, utime+stime ticks) summed over the cgroup's processes."""
-    flt = ticks = 0
-    for pid in read(f"{cgdir}/cgroup.procs").split():
+def meminfo():
+    want = {"MemTotal": "total", "MemAvailable": "avail",
+            "SwapTotal": "swap_total", "SwapFree": "swap_free"}
+    out = {}
+    with open("/proc/meminfo") as f:
+        for line in f:
+            key, _, rest = line.partition(":")
+            if key in want:
+                out[want[key]] = int(rest.split()[0]) * 1024
+    return out
+
+def sched():
+    """sched_ext state, and scx_stasis's dispatch counters when it's loaded."""
+    try:
+        state = read(f"{SCX}/state")
+    except FileNotFoundError:
+        return {"state": "absent", "ops": ""}
+    ops = ""
+    if state == "enabled":
         try:
-            stat = read(f"/proc/{pid}/stat")
-        except (FileNotFoundError, ProcessLookupError):
-            continue
-        f = stat[stat.rindex(")") + 2:].split()   # fields from 3 onwards
-        flt += int(f[9])                          # field 12: majflt
-        ticks += int(f[11]) + int(f[12])          # fields 14, 15
-    return flt, ticks
+            ops = read(f"{SCX}/root/ops")
+        except FileNotFoundError:
+            pass
+    out = {"state": state, "ops": ops}
+    if ops == "stasis":
+        try:
+            out.update(kv(f"{RUN}/stats"))       # local / shared / prio
+        except FileNotFoundError:
+            pass
+    return out
+
+def job(d):
+    ms = kv(f"{d}/memory.stat")
+    return {"cur": int(read(f"{d}/memory.current")),
+            "peak": int(read(f"{d}/memory.peak")),
+            "cpu_us": kv(f"{d}/cpu.stat")["usage_usec"],
+            "refault_anon": ms.get("workingset_refault_anon", 0),
+            "pgmajfault": ms.get("pgmajfault", 0),
+            "frozen": read(f"{d}/cgroup.freeze") == "1"}
+
+def record():
+    vm = kv("/proc/vmstat")
+    rec = {"t": time.time(), "psi": psi(), "pswpin": vm["pswpin"],
+           "pswpout": vm["pswpout"], "pgmajfault": vm["pgmajfault"],
+           "oom_kill": vm.get("oom_kill", 0), "mem": meminfo(),
+           "sched": sched(), "jobs": {}}
+    names = os.listdir(CG) if os.path.isdir(CG) else []
+    for j in sorted(n for n in names if n.startswith("stasis-job-")):
+        try:
+            rec["jobs"][j] = job(f"{CG}/{j}")
+        except (FileNotFoundError, KeyError, ValueError):
+            pass                                  # job exited mid-read
+    return rec
 
 def main():
     with open(sys.argv[1], "a", buffering=1) as out:
         while True:
-            vm = kv("/proc/vmstat")
-            rec = {"t": time.time(), "psi": psi(), "pswpin": vm["pswpin"],
-                   "pswpout": vm["pswpout"], "pgmajfault": vm["pgmajfault"],
-                   "jobs": {}}
-            names = os.listdir(CG) if os.path.isdir(CG) else []
-            for j in (n for n in names if n.startswith("stasis-job-")):
-                d = f"{CG}/{j}"
-                try:
-                    flt, ticks = proc_faults(d)
-                    rec["jobs"][j] = {
-                        "cur": int(read(f"{d}/memory.current")),
-                        "cpu_us": kv(f"{d}/cpu.stat")["usage_usec"],
-                        "refault_anon": kv(f"{d}/memory.stat").get("workingset_refault_anon", 0),
-                        "frozen": read(f"{d}/cgroup.freeze") == "1",
-                        "majflt": flt, "ticks": ticks}
-                except (FileNotFoundError, KeyError):
-                    pass                              # job exited mid-read
-            out.write(json.dumps(rec) + "\n")
+            out.write(json.dumps(record()) + "\n")
             time.sleep(1)
 
 if __name__ == "__main__":

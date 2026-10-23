@@ -1,0 +1,2059 @@
+<title>STASIS Control Room</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<meta name="description" content="Live view of STASIS, a sched_ext scheduler and load controller that pauses memory-heavy jobs instead of letting the machine thrash.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400;500&family=Michroma&display=swap">
+<style>
+/* Layout: one shared time axis. Memory stall on top, one lane per job beneath it,
+   the controller's decisions in a rail on the right. Heat means thrashing; frost
+   (a hatched ice fill) means a job STASIS has paused. */
+:root {
+  color-scheme: dark;
+  --bg: #0a0d12;
+  --panel: #11161d;
+  --panel-2: #161c25;
+  --raise: #1b222d;
+  --line: #232b36;
+  --grid: #1c232d;
+  --ink: #e7ecf2;
+  --ink-2: #a8b2bf;
+  --ink-3: #7b8696;
+  --accent: #8fcfff;
+  --accent-ink: #04121f;
+  --accent-wash: rgba(143, 207, 255, .13);
+  --psi-full: #f4632d;
+  --psi-some: #a8b2bf;
+  --heat-0: #8f8574;
+  --heat-1: #c09f6f;
+  --heat-2: #de9653;
+  --heat-3: #ee7c3c;
+  --heat-4: #f45f2b;
+  --heat-5: #ff4326;
+  --heat-wash: rgba(244, 99, 45, .14);
+  --frost: #173246;
+  --frost-ink: #7fc6f2;
+  --frost-wash: rgba(127, 198, 242, .14);
+  --done: #29313c;
+  --track: #1d242e;
+  --good: #0ca30c;
+  --warning: #fab219;
+  --serious: #ec835a;
+  --critical: #d03b3b;
+  --s1: #3987e5; --s2: #d95926; --s3: #199e70; --s4: #c98500;
+  --s5: #d55181; --s6: #008300; --s7: #9085e9;
+  --glow: rgba(143, 207, 255, .07);
+  --shadow: 0 1px 0 rgba(255, 255, 255, .025) inset, 0 18px 40px -28px rgba(0, 0, 0, .9);
+  --f-display: "Michroma", "Eurostile", "Bank Gothic", system-ui, sans-serif;
+  --f-ui: "Geist", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  --f-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  --label-w: 176px;
+  --stats-w: 236px;
+  --r: 12px;
+  --r-s: 7px;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    color-scheme: light;
+    --bg: #edf0f4; --panel: #fbfcfd; --panel-2: #f3f5f8; --raise: #ffffff;
+    --line: #dce1e8; --grid: #e7ebf0;
+    --ink: #0e1621; --ink-2: #485364; --ink-3: #687384;
+    --accent: #0b6bcb; --accent-ink: #ffffff; --accent-wash: rgba(11, 107, 203, .10);
+    --psi-full: #cf5322; --psi-some: #5b6574;
+    --heat-0: #c4b8a3; --heat-1: #d9ae78; --heat-2: #e2924c; --heat-3: #dc7232;
+    --heat-4: #cc5221; --heat-5: #b43816; --heat-wash: rgba(207, 83, 34, .11);
+    --frost: #d9eaf8; --frost-ink: #3a8ccd; --frost-wash: rgba(58, 140, 205, .12);
+    --done: #d7dce3; --track: #e6eaef;
+    --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+    --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+    --glow: rgba(11, 107, 203, .06);
+    --shadow: 0 1px 2px rgba(15, 25, 40, .05), 0 12px 30px -24px rgba(15, 25, 40, .35);
+  }
+}
+:root[data-theme="light"] {
+  color-scheme: light;
+  --bg: #edf0f4; --panel: #fbfcfd; --panel-2: #f3f5f8; --raise: #ffffff;
+  --line: #dce1e8; --grid: #e7ebf0;
+  --ink: #0e1621; --ink-2: #485364; --ink-3: #687384;
+  --accent: #0b6bcb; --accent-ink: #ffffff; --accent-wash: rgba(11, 107, 203, .10);
+  --psi-full: #cf5322; --psi-some: #5b6574;
+  --heat-0: #c4b8a3; --heat-1: #d9ae78; --heat-2: #e2924c; --heat-3: #dc7232;
+  --heat-4: #cc5221; --heat-5: #b43816; --heat-wash: rgba(207, 83, 34, .11);
+  --frost: #d9eaf8; --frost-ink: #3a8ccd; --frost-wash: rgba(58, 140, 205, .12);
+  --done: #d7dce3; --track: #e6eaef;
+  --s1: #2a78d6; --s2: #eb6834; --s3: #1baf7a; --s4: #eda100;
+  --s5: #e87ba4; --s6: #008300; --s7: #6250d6;
+  --glow: rgba(11, 107, 203, .06);
+  --shadow: 0 1px 2px rgba(15, 25, 40, .05), 0 12px 30px -24px rgba(15, 25, 40, .35);
+}
+
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  background-image: radial-gradient(1200px 420px at 12% -120px, var(--glow), transparent 70%);
+  background-repeat: no-repeat;
+  color: var(--ink);
+  font: 14px/1.45 var(--f-ui);
+  -webkit-font-smoothing: antialiased;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+body::before {
+  content: ""; position: fixed; inset: 0 0 auto; z-index: 10;
+  height: env(safe-area-inset-top, 0px); background: var(--bg);
+}
+.wrap { max-width: 1680px; margin: 0 auto; }
+button, select, input { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+code, .mono { font-family: var(--f-mono); font-size: .92em; }
+h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
+
+/* ---------- top bar ---------- */
+.top {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(140%) blur(14px);
+  -webkit-backdrop-filter: saturate(140%) blur(14px);
+  border-bottom: 1px solid var(--line);
+}
+.top-in { max-width: 1680px; margin: 0 auto; display: flex; align-items: center; gap: 20px; min-height: 60px; flex-wrap: wrap; padding-block: 8px; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); }
+.brand svg { width: 30px; height: 30px; flex: none; }
+.brand .word { font-family: var(--f-display); font-size: 17px; letter-spacing: .16em; }
+.brand .sub { font-size: 12px; color: var(--ink-3); letter-spacing: .02em; border-left: 1px solid var(--line); padding-left: 12px; }
+.tabs { display: flex; gap: 2px; padding: 3px; background: var(--panel); border: 1px solid var(--line); border-radius: 10px; }
+.tabs button {
+  border: 0; background: transparent; color: var(--ink-2); padding: 6px 13px; border-radius: 7px;
+  font-weight: 500; font-size: 13px; cursor: pointer; transition: background .15s, color .15s;
+}
+.tabs button:hover { color: var(--ink); background: var(--panel-2); }
+.tabs button[aria-selected="true"] { background: var(--raise); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.pills { display: flex; align-items: center; gap: 8px; margin-left: auto; flex-wrap: wrap; }
+.pill {
+  display: inline-flex; align-items: center; gap: 7px; height: 28px; padding: 0 11px;
+  border: 1px solid var(--line); border-radius: 999px; background: var(--panel);
+  font-size: 12px; color: var(--ink-2); white-space: nowrap;
+}
+.pill b { color: var(--ink); font-weight: 600; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--ink-3); flex: none; }
+.dot.good { background: var(--good); box-shadow: 0 0 0 3px color-mix(in srgb, var(--good) 22%, transparent); }
+.dot.warning { background: var(--warning); }
+.dot.critical { background: var(--critical); }
+.dot.frost { background: var(--frost-ink); }
+.dot.heat { background: var(--psi-full); }
+.icon-btn {
+  width: 30px; height: 30px; display: grid; place-items: center; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--panel); cursor: pointer; color: var(--ink-2);
+}
+.icon-btn:hover { color: var(--ink); }
+
+/* ---------- control bar ---------- */
+main { padding-block: 18px 40px; }
+.bar { display: flex; align-items: center; gap: 12px 16px; flex-wrap: wrap; margin-bottom: 14px; min-height: 36px; }
+.bar-group { display: flex; align-items: center; gap: 10px 14px; flex-wrap: wrap; min-width: 0; }
+.bar .spacer { flex: 1; }
+.bar-label { font-size: 12px; color: var(--ink-3); }
+.bar-text { color: var(--ink-2); font-size: 13px; min-width: 0; overflow-wrap: anywhere; }
+.bar-text b { color: var(--ink); font-weight: 600; }
+.seg { display: inline-flex; padding: 3px; gap: 2px; border-radius: 9px; background: var(--panel); border: 1px solid var(--line); }
+.seg button {
+  border: 0; background: transparent; padding: 4px 10px; border-radius: 6px; cursor: pointer;
+  color: var(--ink-2); font-size: 12.5px; font-weight: 500; white-space: nowrap;
+}
+.seg button:hover { color: var(--ink); }
+.seg button[aria-checked="true"] { background: var(--raise); color: var(--ink); box-shadow: 0 0 0 1px var(--line); }
+.btn {
+  display: inline-flex; align-items: center; gap: 7px; height: 32px; padding: 0 13px;
+  border-radius: 8px; border: 1px solid var(--line); background: var(--panel); cursor: pointer;
+  font-size: 13px; font-weight: 500; color: var(--ink);
+}
+.btn:hover { background: var(--panel-2); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: transparent; }
+.btn.primary:hover { filter: brightness(1.06); background: var(--accent); }
+.btn svg { width: 14px; height: 14px; }
+.stepper { display: inline-flex; align-items: center; border: 1px solid var(--line); border-radius: 8px; background: var(--panel); }
+.stepper button { width: 30px; height: 30px; border: 0; background: transparent; cursor: pointer; color: var(--ink-2); font-size: 16px; }
+.stepper button:hover { color: var(--ink); }
+.stepper output { min-width: 26px; text-align: center; font-weight: 600; font-variant-numeric: tabular-nums; }
+select.sel {
+  height: 32px; border-radius: 8px; border: 1px solid var(--line); background: var(--panel);
+  padding: 0 10px; max-width: 100%; min-width: 0;
+}
+input[type="range"].scrub { width: min(360px, 100%); accent-color: var(--accent); }
+.notice {
+  display: flex; gap: 10px; align-items: flex-start; padding: 10px 14px; margin-bottom: 14px;
+  border: 1px solid var(--line); border-radius: 10px; background: var(--panel);
+  color: var(--ink-2); font-size: 13px;
+}
+.notice svg { flex: none; margin-top: 2px; color: var(--accent); }
+.notice b { color: var(--ink); font-weight: 600; }
+
+/* ---------- KPIs ---------- */
+.kpis { display: grid; grid-template-columns: minmax(0, 1.45fr) repeat(4, minmax(0, 1fr)); gap: 12px; margin-bottom: 12px; }
+.tile, .hero, .card {
+  background: var(--panel); border: 1px solid var(--line); border-radius: var(--r); box-shadow: var(--shadow);
+}
+.tile, .hero { padding: 14px 16px; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.k-label { font-size: 12px; color: var(--ink-3); letter-spacing: .02em; display: flex; align-items: center; gap: 8px; justify-content: space-between; }
+.k-value { font-size: 26px; font-weight: 600; letter-spacing: -.02em; line-height: 1.1; }
+.k-value small { font-size: 13px; font-weight: 500; color: var(--ink-2); letter-spacing: 0; margin-left: 4px; }
+.k-sub { font-size: 12px; color: var(--ink-2); min-height: 17px; }
+.k-sub .mono { color: var(--ink-2); }
+.spark { height: 28px; width: 100%; display: block; margin-top: auto; }
+.hero { flex-direction: row; align-items: stretch; gap: 18px; position: relative; overflow: hidden; }
+.hero::after {
+  content: ""; position: absolute; inset: auto -20% -60% 30%; height: 120%;
+  background: radial-gradient(closest-side, var(--hero-glow, transparent), transparent);
+  pointer-events: none; transition: background .6s;
+}
+.hero .hv { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1; z-index: 1; }
+.hero .k-value { font-size: 56px; letter-spacing: -.035em; font-weight: 600; line-height: 1; margin-top: 4px; }
+.hero .k-value small { font-size: 22px; letter-spacing: -.01em; color: var(--ink-2); margin-left: 2px; }
+.hero .meter { width: 10px; border-radius: 6px; background: var(--track); position: relative; overflow: hidden; flex: none; z-index: 1; }
+.hero .meter i { position: absolute; left: 0; right: 0; bottom: 0; border-radius: 6px; background: var(--psi-full); transition: height .4s; }
+.status {
+  display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px 0 7px;
+  border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--ink);
+  background: var(--panel-2); border: 1px solid var(--line); white-space: nowrap;
+}
+.status svg { width: 12px; height: 12px; flex: none; }
+.status.good { background: color-mix(in srgb, var(--good) 16%, var(--panel)); border-color: color-mix(in srgb, var(--good) 40%, var(--line)); }
+.status.good svg { color: var(--good); }
+.status.warning { background: color-mix(in srgb, var(--warning) 16%, var(--panel)); border-color: color-mix(in srgb, var(--warning) 45%, var(--line)); }
+.status.warning svg { color: var(--warning); }
+.status.critical { background: color-mix(in srgb, var(--critical) 18%, var(--panel)); border-color: color-mix(in srgb, var(--critical) 50%, var(--line)); }
+.status.critical svg { color: var(--critical); }
+.status.frost { background: var(--frost-wash); border-color: color-mix(in srgb, var(--frost-ink) 40%, var(--line)); }
+.status.frost svg { color: var(--frost-ink); }
+.status.neutral svg { color: var(--ink-3); }
+@media (prefers-reduced-motion: no-preference) {
+  .status.critical.pulse svg { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+}
+.minibar { display: flex; gap: 2px; height: 6px; border-radius: 4px; overflow: hidden; background: var(--track); margin-top: auto; }
+.minibar i { display: block; height: 100%; }
+.minibar .run { background: var(--heat-1); }
+.minibar .park { background: var(--frost-ink); }
+.minibar .done { background: var(--ink-3); }
+
+/* ---------- deck ---------- */
+.deck { display: grid; grid-template-columns: minmax(0, 1fr) 344px; gap: 12px; align-items: start; }
+.card { min-width: 0; }
+.card-h {
+  display: flex; align-items: center; gap: 10px 16px; flex-wrap: wrap;
+  padding: 13px 16px; border-bottom: 1px solid var(--line);
+}
+.card-h h2 { font-size: 13.5px; letter-spacing: .01em; }
+.card-h .meta { font-size: 12px; color: var(--ink-3); }
+.card-h .right { margin-left: auto; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.legend { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--ink-2); }
+.legend span { display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.key-line { width: 14px; height: 2px; border-radius: 2px; display: inline-block; }
+.key-dash { width: 14px; height: 0; border-top: 1px dashed var(--ink-3); display: inline-block; }
+.key-box { width: 12px; height: 10px; border-radius: 2px; display: inline-block; }
+.key-frost { background: repeating-linear-gradient(135deg, var(--frost-ink) 0 1.5px, var(--frost) 1.5px 4px); }
+.key-heat { width: 44px; height: 8px; border-radius: 2px; background: linear-gradient(90deg, var(--heat-0), var(--heat-1), var(--heat-2), var(--heat-3), var(--heat-4), var(--heat-5)); display: inline-block; }
+.tbl-toggle { border: 0; background: transparent; color: var(--accent); font-size: 12px; cursor: pointer; padding: 2px 0; font-weight: 500; }
+
+/* instrument: rows share one time axis */
+.irow { display: grid; grid-template-columns: var(--label-w) minmax(0, 1fr) var(--stats-w); }
+.irow > * { min-width: 0; }
+.psi-row { height: 188px; border-bottom: 1px solid var(--line); }
+.ylab { position: relative; border-right: 1px solid var(--line); padding: 14px 12px 0 16px; }
+.ylab .t { font-size: 12px; color: var(--ink-2); font-weight: 600; }
+.ylab .d { font-size: 11.5px; color: var(--ink-3); margin-top: 2px; max-width: 120px; }
+.ylab .tick { position: absolute; right: 8px; font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; transform: translateY(-50%); }
+.plot { position: relative; }
+.plot canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: crosshair; }
+.readout { border-left: 1px solid var(--line); padding: 14px 16px; display: flex; flex-direction: column; gap: 9px; }
+.ro { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.ro .l { font-size: 12px; color: var(--ink-3); display: inline-flex; align-items: center; gap: 7px; }
+.ro .v { font-size: 15px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.ro .v small { font-size: 11.5px; color: var(--ink-3); font-weight: 500; margin-left: 3px; }
+.lanes-h { height: 34px; align-items: center; font-size: 11.5px; color: var(--ink-3); border-bottom: 1px solid var(--line); background: var(--panel-2); }
+.lanes-h > div { padding: 0 16px; display: flex; align-items: center; gap: 12px; white-space: nowrap; overflow: hidden; }
+.lanes-h > div:nth-child(2) { padding: 0 12px; }
+.lane { height: 40px; }
+.lane + .lane .lab, .lane + .lane .stats { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+.lane .lab { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 0 12px 0 16px; border-right: 1px solid var(--line); }
+.lane .lab .name { font-family: var(--f-mono); font-size: 12.5px; color: var(--ink); white-space: nowrap; }
+.lane .stats { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 2px 10px; padding: 0 16px; border-left: 1px solid var(--line); font-size: 11.5px; }
+.lane .prog { height: 5px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.lane .prog i { display: block; height: 100%; background: var(--ink-2); border-radius: 3px; transition: width .4s; }
+.lane .pnum { font-variant-numeric: tabular-nums; color: var(--ink); font-weight: 500; text-align: right; white-space: nowrap; }
+.lane .mstat { grid-column: 1 / -1; color: var(--ink-3); font-family: var(--f-mono); font-size: 11px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lane .mstat b { color: var(--ink-2); font-weight: 500; }
+.chipst {
+  display: inline-flex; align-items: center; gap: 5px; height: 20px; padding: 0 7px 0 6px; border-radius: 999px;
+  font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid var(--line); color: var(--ink);
+}
+.chipst svg { width: 10px; height: 10px; }
+.chipst.run { background: var(--heat-wash); border-color: color-mix(in srgb, var(--psi-full) 35%, var(--line)); }
+.chipst.run svg { color: var(--psi-full); }
+.chipst.park { background: var(--frost-wash); border-color: color-mix(in srgb, var(--frost-ink) 40%, var(--line)); }
+.chipst.park svg { color: var(--frost-ink); }
+.chipst.done { background: var(--panel-2); }
+.chipst.done svg { color: var(--good); }
+.xaxis-row { height: 30px; border-top: 1px solid var(--line); }
+.xaxis { position: relative; }
+.xaxis span { position: absolute; top: 7px; transform: translateX(-50%); font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.empty-lanes { padding: 26px 16px; color: var(--ink-3); font-size: 13px; text-align: center; }
+
+/* rail */
+.rail { display: grid; gap: 12px; min-width: 0; }
+.ev-list { list-style: none; margin: 0; padding: 4px 0; max-height: 360px; overflow: auto; }
+.ev { display: grid; grid-template-columns: 46px auto minmax(0, 1fr); gap: 4px 10px; padding: 9px 16px; align-items: start; }
+.ev + .ev { border-top: 1px solid color-mix(in srgb, var(--line) 60%, transparent); }
+.ev time { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; padding-top: 2px; }
+.ev .b { min-width: 0; }
+.ev .b b { font-weight: 600; font-size: 12.5px; display: block; overflow-wrap: anywhere; }
+.ev .b span { font-size: 12px; color: var(--ink-2); display: block; }
+.tag { display: inline-flex; align-items: center; height: 20px; padding: 0 7px; border-radius: 5px; font-size: 11px; font-weight: 600; white-space: nowrap; border: 1px solid var(--line); }
+.tag.halve { background: var(--heat-wash); border-color: color-mix(in srgb, var(--psi-full) 35%, var(--line)); }
+.tag.park, .tag.rotate { background: var(--frost-wash); border-color: color-mix(in srgb, var(--frost-ink) 35%, var(--line)); }
+.tag.wake { background: var(--accent-wash); border-color: color-mix(in srgb, var(--accent) 35%, var(--line)); }
+.tag.start, .tag.stop { background: var(--panel-2); }
+.ev-empty { padding: 22px 16px; color: var(--ink-3); font-size: 12.5px; }
+.ev-sum { padding: 10px 16px; border-top: 1px solid var(--line); font-size: 12px; color: var(--ink-3); }
+.ev-sum b { color: var(--ink-2); font-weight: 600; }
+.kv { padding: 12px 16px; display: grid; gap: 10px; }
+.kv-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 12px; align-items: center; font-size: 12.5px; }
+.kv-row .l { color: var(--ink-2); }
+.kv-row .v { font-weight: 600; font-variant-numeric: tabular-nums; text-align: right; }
+.kv-row .bar2 { grid-column: 1 / -1; height: 4px; border-radius: 3px; background: var(--track); overflow: hidden; }
+.kv-row .bar2 i { display: block; height: 100%; background: var(--ink-3); border-radius: 3px; }
+.sched-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.sched-name { font-family: var(--f-mono); font-size: 13.5px; font-weight: 500; }
+.small { font-size: 12px; color: var(--ink-3); }
+.stack { display: flex; height: 10px; border-radius: 5px; overflow: hidden; background: var(--track); gap: 2px; }
+.stack i { display: block; height: 100%; }
+.stack .jobs { background: var(--heat-1); }
+.stack .other { background: var(--ink-3); }
+.stack .swap { background: var(--frost-ink); }
+.mem-legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12px; color: var(--ink-2); }
+.mem-legend span { display: inline-flex; align-items: center; gap: 6px; }
+.mem-legend b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+.summary { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); }
+.summary > div { background: var(--panel); padding: 11px 16px; }
+.summary .l { font-size: 11.5px; color: var(--ink-3); }
+.summary .v { font-size: 16px; font-weight: 600; margin-top: 2px; }
+
+/* tooltip */
+.tip {
+  position: fixed; z-index: 50; pointer-events: none; min-width: 180px; max-width: 280px;
+  background: var(--raise); border: 1px solid var(--line); border-radius: 10px; padding: 10px 12px;
+  box-shadow: 0 16px 40px -14px rgba(0, 0, 0, .55); font-size: 12px;
+}
+.tip .th { color: var(--ink-3); font-size: 11.5px; margin-bottom: 6px; display: flex; gap: 8px; justify-content: space-between; }
+.tip .tr { display: grid; grid-template-columns: 14px auto minmax(0, 1fr); align-items: center; gap: 8px; padding: 2px 0; }
+.tip .tr b { font-weight: 600; font-variant-numeric: tabular-nums; color: var(--ink); white-space: nowrap; }
+.tip .tr span { color: var(--ink-2); }
+.tip .k { width: 12px; height: 2px; border-radius: 2px; }
+.tip .k.box { height: 8px; border-radius: 2px; }
+
+/* results */
+.res-grid { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 12px; align-items: start; }
+.res-grid .wide { grid-column: 1 / -1; }
+.chart-box { padding: 10px 12px 6px; position: relative; }
+.chart-box svg { display: block; width: 100%; height: auto; overflow: visible; }
+.chart-box svg text { font-family: var(--f-ui); }
+.tbl-wrap { overflow-x: auto; }
+#runs-tbl { max-height: 560px; overflow: auto; }
+#runs-tbl thead th { position: sticky; top: 0; z-index: 1; }
+table.data { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+table.data th { text-align: left; font-weight: 500; color: var(--ink-3); font-size: 11.5px; padding: 9px 12px; border-bottom: 1px solid var(--line); white-space: nowrap; background: var(--panel-2); }
+table.data td { padding: 9px 12px; border-bottom: 1px solid color-mix(in srgb, var(--line) 60%, transparent); vertical-align: top; }
+table.data td.num, table.data th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.data tr:last-child td { border-bottom: 0; }
+table.data td .claim { color: var(--ink-2); font-size: 12px; display: block; margin-top: 2px; max-width: 46ch; }
+.verdict { display: inline-flex; align-items: center; gap: 5px; font-weight: 600; font-size: 12px; white-space: nowrap; }
+.verdict svg { width: 13px; height: 13px; }
+.verdict.pass svg { color: var(--good); }
+.verdict.fail svg { color: var(--critical); }
+.verdict.missing svg { color: var(--ink-3); }
+.swatch { display: inline-block; width: 10px; height: 10px; border-radius: 3px; margin-right: 6px; vertical-align: -1px; }
+.empty {
+  padding: 34px 20px; text-align: center; color: var(--ink-2); display: grid; gap: 10px; justify-items: center;
+}
+.empty h3 { font-size: 15px; color: var(--ink); }
+.empty p { margin: 0; max-width: 58ch; }
+pre.cmd {
+  margin: 0; text-align: left; background: var(--panel-2); border: 1px solid var(--line); border-radius: 8px;
+  padding: 10px 14px; font-family: var(--f-mono); font-size: 12.5px; color: var(--ink); overflow-x: auto; max-width: 100%;
+}
+.offline-card { max-width: 760px; margin: 40px auto; }
+.foot { margin-top: 18px; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 11.5px; color: var(--ink-3); }
+.foot b { color: var(--ink-2); font-weight: 500; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1240px) {
+  .deck { grid-template-columns: minmax(0, 1fr); }
+  .rail { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); align-items: start; }
+  .kpis { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .kpis .hero { grid-column: 1 / -1; }
+}
+@media (max-width: 900px) {
+  :root { --label-w: 128px; --stats-w: 176px; }
+  .res-grid { grid-template-columns: minmax(0, 1fr); }
+  .kpis { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .brand .sub { display: none; }
+}
+@media (max-width: 640px) {
+  .top-in { gap: 10px; }
+  .pills { margin-left: 0; width: 100%; }
+  .tabs { width: 100%; }
+  .tabs button { flex: 1; padding: 6px 4px; }
+  .hero .k-value { font-size: 46px; }
+  /* job rows: label + stats on one line, the lane full width below */
+  .irow { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  .psi-row { grid-template-areas: "plot plot" "ylab ro"; grid-template-rows: 150px auto; height: auto; }
+  .psi-row .ylab { grid-area: ylab; border-right: 0; border-top: 1px solid var(--line); padding: 10px 16px; }
+  .psi-row .ylab .tick { display: none; }
+  .psi-row .plot { grid-area: plot; }
+  .psi-row .readout { grid-area: ro; border-left: 1px solid var(--line); border-top: 1px solid var(--line); padding: 10px 16px; }
+  .lanes-h { grid-template-areas: "a c"; }
+  .lanes-h > div:nth-child(2) { display: none; }
+  .lane { height: auto; grid-template-areas: "lab stats" "plot plot"; grid-template-rows: 38px 26px; }
+  .lane .lab { grid-area: lab; border-right: 0; }
+  .lane .stats { grid-area: stats; border-left: 0; }
+  .lane .plot { grid-area: plot; margin: 0 16px 8px; }
+  .lane + .lane .lab, .lane + .lane .stats { border-top: 0; }
+  .lane + .lane { border-top: 1px solid color-mix(in srgb, var(--line) 55%, transparent); }
+  .xaxis-row { grid-template-areas: "x x"; }
+  .xaxis-row > div:first-child, .xaxis-row > div:last-child { display: none; }
+  .xaxis-row .xaxis { grid-column: 1 / -1; margin: 0 16px; }
+  .ev { grid-template-columns: 40px minmax(0, 1fr); }
+  .ev .tag { grid-column: 2; justify-self: start; }
+  .ev .b { grid-column: 2; }
+}
+@media (max-width: 420px) {
+  .kpis { grid-template-columns: minmax(0, 1fr); }
+}
+</style>
+
+<div class="wrap">
+<header class="top">
+  <div class="top-in">
+    <a class="brand" href="#" id="brand" title="Scheduling To Avert Swap-Induced Stalls">
+      <svg viewBox="0 0 32 32" fill="none" aria-hidden="true">
+        <path d="M16 2.5 27.7 9.25v13.5L16 29.5 4.3 22.75V9.25Z" stroke="var(--accent)" stroke-width="1.6" fill="var(--accent-wash)"/>
+        <rect x="11.2" y="10.5" width="3" height="11" rx="1" fill="var(--accent)"/>
+        <rect x="17.8" y="10.5" width="3" height="11" rx="1" fill="var(--accent)"/>
+      </svg>
+      <span class="word">STASIS</span>
+      <span class="sub">Control Room</span>
+    </a>
+    <nav class="tabs" role="tablist" aria-label="Views">
+      <button role="tab" id="tab-live" data-view="live" aria-selected="false">Live</button>
+      <button role="tab" id="tab-replay" data-view="replay" aria-selected="false">Replay</button>
+      <button role="tab" id="tab-results" data-view="results" aria-selected="false">Results</button>
+      <button role="tab" id="tab-sim" data-view="sim" aria-selected="false">Simulator</button>
+    </nav>
+    <div class="pills">
+      <span class="pill" id="pill-src"><i class="dot"></i><span>Starting</span></span>
+      <span class="pill" id="pill-sched"><i class="dot"></i><span>Scheduler</span></span>
+      <span class="pill" id="pill-ctrl"><i class="dot"></i><span>Controller</span></span>
+      <button class="icon-btn" id="theme-btn" type="button" hidden aria-label="Switch between light and dark">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13Zm0 1.6v9.8a4.9 4.9 0 0 1 0-9.8Z" fill="currentColor"/></svg>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main>
+  <!-- live / replay / simulator share this view -->
+  <section id="monitor" hidden>
+    <div class="bar">
+      <div class="bar-group" id="bar-live" hidden>
+        <span class="bar-text" id="live-run">Waiting for the first sample</span>
+      </div>
+      <div class="bar-group" id="bar-replay" hidden>
+        <label class="bar-label" for="run-sel">Run</label>
+        <select class="sel" id="run-sel"></select>
+        <button class="btn primary" id="play" type="button" aria-label="Play">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path id="play-ico" d="M4 2.5v11l9-5.5Z" fill="currentColor"/></svg><span id="play-txt">Play</span>
+        </button>
+        <div class="seg" id="rp-speed" role="radiogroup" aria-label="Playback speed">
+          <button role="radio" data-v="1" aria-checked="false">1×</button>
+          <button role="radio" data-v="4" aria-checked="true">4×</button>
+          <button role="radio" data-v="16" aria-checked="false">16×</button>
+        </div>
+        <input class="scrub" type="range" id="scrub" min="0" max="0" value="0" aria-label="Position in run">
+        <span class="bar-text mono" id="scrub-t">0:00</span>
+      </div>
+      <div class="bar-group" id="bar-sim" hidden>
+        <span class="bar-label" id="jobs-l">Jobs</span>
+        <div class="stepper" role="group" aria-labelledby="jobs-l">
+          <button type="button" id="n-dec" aria-label="Fewer jobs">−</button>
+          <output id="n-out" aria-live="polite">8</output>
+          <button type="button" id="n-inc" aria-label="More jobs">+</button>
+        </div>
+        <span class="bar-label">Policy</span>
+        <div class="seg" id="sim-policy" role="radiogroup" aria-label="Policy">
+          <button role="radio" data-v="eevdf" aria-checked="false">EEVDF only</button>
+          <button role="radio" data-v="ctrl" aria-checked="false">Controller only</button>
+          <button role="radio" data-v="full" aria-checked="true">Full STASIS</button>
+        </div>
+        <div class="seg" id="sim-speed" role="radiogroup" aria-label="Simulation speed">
+          <button role="radio" data-v="1" aria-checked="false">1×</button>
+          <button role="radio" data-v="4" aria-checked="true">4×</button>
+          <button role="radio" data-v="16" aria-checked="false">16×</button>
+        </div>
+        <button class="btn" type="button" id="restart">
+          <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 2.5a5.5 5.5 0 1 1-5.3 4H1l2.6-3 2.6 3H4.3A4 4 0 1 0 8 4Z" fill="currentColor"/></svg>Restart
+        </button>
+      </div>
+      <span class="spacer"></span>
+      <div class="bar-group">
+        <span class="bar-label" id="win-l">Window</span>
+        <div class="seg" id="win" role="radiogroup" aria-labelledby="win-l">
+          <button role="radio" data-v="120" aria-checked="false">2 min</button>
+          <button role="radio" data-v="300" aria-checked="true">5 min</button>
+          <button role="radio" data-v="900" aria-checked="false">15 min</button>
+          <button role="radio" data-v="0" aria-checked="false">All</button>
+        </div>
+      </div>
+    </div>
+    <div class="notice" id="notice" hidden></div>
+
+    <div class="kpis">
+      <div class="hero" id="k-hero">
+        <div class="meter" aria-hidden="true"><i id="hero-meter" style="height:0%"></i></div>
+        <div class="hv">
+          <div class="k-label"><span>Memory stall · all tasks waiting</span><span class="status neutral" id="hero-status"><svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="currentColor"/></svg>Idle</span></div>
+          <div class="k-value" id="hero-v">–</div>
+          <div class="k-sub" id="hero-sub">PSI full, last second</div>
+        </div>
+      </div>
+      <div class="tile">
+        <div class="k-label">Jobs</div>
+        <div class="k-value" id="k-jobs">–</div>
+        <div class="k-sub" id="k-jobs-sub"></div>
+        <div class="minibar" id="k-jobs-bar"></div>
+      </div>
+      <div class="tile">
+        <div class="k-label">Throughput</div>
+        <div class="k-value" id="k-thru">–</div>
+        <div class="k-sub" id="k-thru-sub"></div>
+        <svg class="spark" id="sp-thru" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="tile">
+        <div class="k-label">Swap traffic</div>
+        <div class="k-value" id="k-swap">–</div>
+        <div class="k-sub" id="k-swap-sub"></div>
+        <svg class="spark" id="sp-swap" preserveAspectRatio="none" aria-hidden="true"></svg>
+      </div>
+      <div class="tile">
+        <div class="k-label">Processes killed</div>
+        <div class="k-value" id="k-kill">–</div>
+        <div class="k-sub" id="k-kill-sub"></div>
+      </div>
+    </div>
+
+    <div class="deck">
+      <article class="card" id="inst">
+        <div class="card-h">
+          <h2>System timeline</h2>
+          <div class="legend" id="psi-legend">
+            <span><i class="key-line" style="background:var(--psi-full)"></i>Full stall</span>
+            <span><i class="key-line" style="background:var(--psi-some)"></i>Some stall</span>
+            <span><i class="key-dash"></i>stasisd trigger</span>
+          </div>
+          <div class="right"><button class="tbl-toggle" id="psi-tbl-btn" type="button" aria-expanded="false">Table</button></div>
+        </div>
+        <div class="irow psi-row">
+          <div class="ylab" id="ylab">
+            <div class="t">Memory stall</div>
+            <div class="d">% of each second spent waiting on memory</div>
+          </div>
+          <div class="plot"><canvas id="cv-psi" tabindex="0" role="img" aria-label="Memory stall over time"></canvas></div>
+          <div class="readout" id="readout"></div>
+        </div>
+        <div class="tbl-wrap" id="psi-tbl" hidden></div>
+        <div class="irow lanes-h">
+          <div>Job</div>
+          <div><span>Running, shaded by page-fault rate</span><span class="key-heat"></span><span class="key-box key-frost"></span><span>Parked</span><span class="key-box" style="background:var(--done)"></span><span>Done</span></div>
+          <div>Progress · memory · faults</div>
+        </div>
+        <div id="lanes"></div>
+        <div class="irow xaxis-row"><div></div><div class="xaxis" id="xaxis"></div><div></div></div>
+      </article>
+
+      <aside class="rail">
+        <article class="card" id="card-run" hidden>
+          <div class="card-h"><h2>Run summary</h2><span class="meta" id="run-status"></span></div>
+          <div class="summary" id="run-summary"></div>
+        </article>
+        <article class="card">
+          <div class="card-h"><h2>Controller decisions</h2><span class="meta" id="ev-meta"></span></div>
+          <ol class="ev-list" id="ev-list" aria-live="polite"></ol>
+          <div class="ev-sum" id="ev-sum" hidden></div>
+        </article>
+        <article class="card">
+          <div class="card-h"><h2>Scheduler</h2><span class="meta">sched_ext</span></div>
+          <div class="kv" id="sched"></div>
+        </article>
+        <article class="card">
+          <div class="card-h"><h2>Memory</h2><span class="meta" id="mem-meta"></span></div>
+          <div class="kv" id="mem"></div>
+        </article>
+      </aside>
+    </div>
+  </section>
+
+  <section id="results" hidden>
+    <div class="bar"><div class="bar-group"><span class="bar-text" id="res-src">Loading results</span></div></div>
+    <div class="notice" id="res-notice" hidden></div>
+    <div class="res-grid">
+      <article class="card">
+        <div class="card-h">
+          <h2>Throughput vs load</h2>
+          <span class="meta">median per cell, band = min to max</span>
+          <div class="right"><button class="tbl-toggle" id="curve-tbl-btn" type="button" aria-expanded="false">Table</button></div>
+        </div>
+        <div class="legend" id="curve-legend" style="padding:12px 16px 0"></div>
+        <div class="chart-box" id="curve"></div>
+        <div class="tbl-wrap" id="curve-tbl" hidden></div>
+      </article>
+      <article class="card">
+        <div class="card-h"><h2>Pre-registered hypotheses</h2><span class="meta">every STASIS run must beat every baseline run</span></div>
+        <div id="score"></div>
+      </article>
+      <article class="card wide">
+        <div class="card-h"><h2>All runs</h2><span class="meta" id="runs-meta"></span></div>
+        <div class="tbl-wrap" id="runs-tbl"></div>
+      </article>
+    </div>
+  </section>
+
+  <section id="offline" hidden>
+    <article class="card offline-card">
+      <div class="empty">
+        <h3 id="off-title">This view needs the STASIS server</h3>
+        <p id="off-text">Live and Replay read from your VM. Start the server there, then open its address from the host's browser.</p>
+        <pre class="cmd">cd ~/stasis
+sudo python3 dashboard/server.py --results /srv/results
+# then open http://&lt;vm-ip&gt;:8686</pre>
+        <p class="small">Until then, the Simulator runs the same control law on a modelled 4 GiB machine.</p>
+        <button class="btn primary" type="button" id="go-sim">Open the simulator</button>
+      </div>
+    </article>
+  </section>
+
+  <footer class="foot">
+    <span><b>STASIS</b> · Scheduling To Avert Swap-Induced Stalls</span>
+    <span id="foot-src">Data: starting</span>
+    <span>PSI = Linux pressure stall information · PFF = page-fault frequency (major faults per ms of the job's own CPU time)</span>
+  </footer>
+</main>
+</div>
+<div class="tip" id="tip" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+// ============================================================ helpers
+const $ = (s, r = document) => r.querySelector(s);
+const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
+const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+const MiB = 1048576, GiB = 1073741824;
+const sum = (xs, f) => { let s = 0; for (const x of xs) s += f ? f(x) : x; return s; };
+
+function fmtBytes(b) {
+  if (b == null || !isFinite(b)) return '–';
+  if (b >= GiB) return (b / GiB).toFixed(b >= 10 * GiB ? 1 : 2) + ' GiB';
+  return Math.round(b / MiB) + ' MiB';
+}
+function fmtMiB(b) { return b == null ? '–' : Math.round(b / MiB).toLocaleString('en-US'); }
+function fmtPct(v) {
+  if (v == null || !isFinite(v)) return '–';
+  return v >= 10 ? String(Math.round(v)) : v.toFixed(1);
+}
+function fmtNum(v, d = 1) {
+  if (v == null || !isFinite(v)) return '–';
+  const a = Math.abs(v);
+  if (a >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (a >= 1e4) return (v / 1e3).toFixed(0) + 'K';
+  if (a >= 1e3) return (v / 1e3).toFixed(1) + 'K';
+  if (a >= 100) return v.toFixed(0);
+  return v.toFixed(a >= 10 ? Math.min(d, 1) : d);
+}
+function fmtPff(v) {
+  if (v == null || !isFinite(v)) return '–';
+  if (v === 0) return '0';
+  if (v < 0.01) return '<0.01';
+  if (v < 10) return v.toFixed(2);
+  if (v < 1000) return v.toFixed(0);
+  return fmtNum(v);
+}
+function fmtUs(us) {                     // latency: µs below 1 ms, then ms
+  if (us == null || !isFinite(us)) return '–';
+  return us < 1000 ? `${Math.round(us)} µs` : `${(us / 1000).toFixed(us < 10000 ? 2 : 1)} ms`;
+}
+function fmtClock(s) {
+  if (s == null || !isFinite(s)) return '–';
+  const neg = s < 0; s = Math.abs(Math.round(s));
+  const h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, x = s % 60;
+  const t = h ? `${h}:${String(m).padStart(2, '0')}:${String(x).padStart(2, '0')}` : `${m}:${String(x).padStart(2, '0')}`;
+  return (neg ? '−' : '') + t;
+}
+const pagesMiBs = (p) => p * 4096 / MiB;
+function mk(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text != null) e.textContent = text;
+  return e;
+}
+function svgEl(tag, attrs) {
+  const e = document.createElementNS('http://www.w3.org/2000/svg', tag);
+  for (const k in attrs) e.setAttribute(k, attrs[k]);
+  return e;
+}
+function bsearchT(frames, t) {          // first index with frame.t >= t
+  let lo = 0, hi = frames.length;
+  while (lo < hi) { const m = (lo + hi) >> 1; if (frames[m].t < t) lo = m + 1; else hi = m; }
+  return lo;
+}
+const ICON = {
+  ok: '<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="5" fill="currentColor"/><path d="m3.6 6.2 1.6 1.6 3.3-3.4" stroke="#fff" stroke-width="1.4" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  warn: '<svg viewBox="0 0 12 12"><path d="M6 1 11.2 10.5H.8Z" fill="currentColor"/><path d="M6 4.6v2.6" stroke="#000" stroke-width="1.3" stroke-linecap="round"/><circle cx="6" cy="8.7" r=".75" fill="#000"/></svg>',
+  crit: '<svg viewBox="0 0 12 12"><path d="M3.9 1h4.2L11 3.9v4.2L8.1 11H3.9L1 8.1V3.9Z" fill="currentColor"/><path d="M6 3.4v3.2" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="6" cy="8.4" r=".8" fill="#fff"/></svg>',
+  idle: '<svg viewBox="0 0 12 12"><circle cx="6" cy="6" r="4.5" fill="currentColor"/></svg>',
+  run: '<svg viewBox="0 0 10 10"><circle cx="5" cy="5" r="4" fill="currentColor"/></svg>',
+  park: '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"><path d="M5 .8v8.4M1.4 2.9l7.2 4.2M1.4 7.1l7.2-4.2"/></svg>',
+  done: '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="m1.8 5.2 2.1 2.1 4.3-4.6"/></svg>',
+  pass: '<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="currentColor"/><path d="m4.2 7.2 1.9 1.9 3.8-4" stroke="#fff" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>',
+  fail: '<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="6" fill="currentColor"/><path d="m4.8 4.8 4.4 4.4m0-4.4-4.4 4.4" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>',
+  missing: '<svg viewBox="0 0 14 14"><circle cx="7" cy="7" r="5.3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-dasharray="2.2 2"/></svg>',
+  info: '<svg width="16" height="16" viewBox="0 0 16 16"><circle cx="8" cy="8" r="7" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M8 7v4.2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><circle cx="8" cy="4.9" r=".9" fill="currentColor"/></svg>',
+  play: 'M4 2.5v11l9-5.5Z', pause: 'M4 2.5h3v11H4Zm5 0h3v11H9Z',
+};
+
+// ============================================================ theme colors
+let C = {};
+let hatch = null;
+function readColors() {
+  const cs = getComputedStyle(document.documentElement);
+  const g = (n) => cs.getPropertyValue(n).trim();
+  C = {
+    ink: g('--ink'), ink2: g('--ink-2'), ink3: g('--ink-3'), grid: g('--grid'), line: g('--line'),
+    panel: g('--panel'), panel2: g('--panel-2'), accent: g('--accent'),
+    full: g('--psi-full'), some: g('--psi-some'),
+    heat: [0, 1, 2, 3, 4, 5].map((i) => g('--heat-' + i)),
+    frost: g('--frost'), frostInk: g('--frost-ink'), done: g('--done'), track: g('--track'),
+    series: [1, 2, 3, 4, 5, 6, 7].map((i) => g('--s' + i)),
+  };
+  hatch = null;
+}
+function hatchPattern(ctx) {
+  if (hatch) return hatch;
+  const dpr = window.devicePixelRatio || 1;
+  const s = Math.round(6 * dpr);
+  const c = document.createElement('canvas');
+  c.width = c.height = s;
+  const x = c.getContext('2d');
+  x.fillStyle = C.frost; x.fillRect(0, 0, s, s);
+  x.strokeStyle = C.frostInk; x.lineWidth = 1.4 * dpr; x.lineCap = 'square';
+  x.beginPath();
+  x.moveTo(0, s); x.lineTo(s, 0);
+  x.moveTo(-s / 2, s / 2); x.lineTo(s / 2, -s / 2);
+  x.moveTo(s / 2, s * 1.5); x.lineTo(s * 1.5, s / 2);
+  x.stroke();
+  hatch = ctx.createPattern(c, 'repeat');
+  if (hatch && hatch.setTransform && window.DOMMatrix) hatch.setTransform(new DOMMatrix().scale(1 / dpr));
+  return hatch;
+}
+function fitCanvas(cv) {
+  const r = cv.getBoundingClientRect();
+  const dpr = window.devicePixelRatio || 1;
+  const w = Math.max(1, Math.round(r.width * dpr)), h = Math.max(1, Math.round(r.height * dpr));
+  if (cv.width !== w || cv.height !== h) { cv.width = w; cv.height = h; }
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, w: r.width, h: r.height };
+}
+// PFF -> heat step. Bins are log-spaced: calm jobs barely fault, thrashing ones fault on most touches.
+const HEAT_EDGES = [0.05, 0.3, 1, 5, 30];
+function heatIndex(pff) {
+  if (pff == null || !(pff > 0)) return 0;
+  let i = 0;
+  while (i < HEAT_EDGES.length && pff >= HEAT_EDGES[i]) i++;
+  return i;
+}
+
+// ============================================================ state
+const S = {
+  view: null, server: null,
+  frames: [], end: -1, win: 300, hover: null,
+  live: { es: null, frames: [], conn: 'idle', follow: true },
+  replay: { runs: null, id: null, frames: [], meta: null, metrics: null, probe: null, timer: null, speed: 4, loading: false },
+  sim: { eng: null, frames: [], timer: null, speed: 4, policy: 'full', n: 8 },
+  results: { data: null, loading: false, simRows: null },
+};
+
+function enrich(f) {
+  let run = 0, park = 0, done = 0, passes = 0, res = 0;
+  for (const j of f.jobs) {
+    if (j.state === 'run') run++; else if (j.state === 'park') park++; else done++;
+    passes += j.passes || 0;
+    if (j.state !== 'done') res += j.res || 0;
+  }
+  f._n = { run, park, done, passes, res };
+  f._jobs = new Map(f.jobs.map((j) => [j.id, j]));
+  return f;
+}
+
+// ============================================================ simulator
+// A model of the 4 GiB, 4-CPU lab VM running 700 MiB random-access jobs, with
+// stasisd's control law reproduced step for step. Illustrative, not measured.
+const SC = {
+  ram: 4096, sys: 620, cache: 150, swap: 8192, cpus: 4,   // MiB, CPUs
+  ws: 700, passes: 40, secPerPass: 1.5,                   // one job alone: 60 s
+  touch: 6e6, K: 600,                                     // page touches/s; fault latency / touch time
+  bwIn: 120, bwOut: 180, fill: 1200,                      // MiB/s: swap-in, swap-out, first touch
+  faultCpu: 5e-6,                                          // CPU s per major fault
+  pffHi: 1.0, grace: 2, grow: 0.005, setGrow: 0.001, calm: 5, cooldown: 2, quantum: 15, reserve: 0.10, trig: 0.10,
+  dt: 0.25,
+};
+function mulberry32(a) {
+  return function () {
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+class Sim {
+  constructor(n, policy, seed = 11, epoch = Date.now() / 1000) {
+    this.rnd = mulberry32(seed);
+    this.n = n; this.policy = policy; this.epoch = epoch; this.t = 0; this.steps = 0;
+    this.jobs = [];
+    for (let i = 0; i < n; i++) {
+      this.jobs.push({ id: 'job-' + (i + 1), state: 'run', start: i * 0.2, res: 0, touched: 0, peak: 0,
+        filled: false, passes: 0, cpu: 0, flt: 0, luck: this.rnd() - 0.5, since: i * 0.2, hot: 0,
+        pff: 0, frate: 0, hist: [], fPrev: 0, cPrev: 0 });
+    }
+    this.cnt = { swpin: 0, swpout: 0, majflt: 0, fullUs: 0, someUs: 0 };
+    this.avg = { full: 0, some: 0 };
+    this.fullWin = [];
+    this.lastTrig = -9; this.lastPressure = 0; this.lastHalve = -9; this.lastRotate = 0;
+    this.pending = [];
+    this.prev = null;
+    this.firstPark = null; this.firstPressure = null; this.firstFull = null;
+    if (policy !== 'eevdf') this.emit({ kind: 'start', signal: policy === 'full' ? 'bpf' : 'memstat', pff_hi: policy === 'full' ? SC.pffHi : null, quantum: SC.quantum });
+    this.prev = this.snapshot();
+  }
+  emit(e) { e.t = this.epoch + this.t; this.pending.push(e); }
+  setPolicy(p) {
+    if (p === this.policy) return;
+    if (p === 'eevdf') for (const j of this.jobs) if (j.state === 'park') this.wake(j, 'shutdown');
+    this.policy = p;
+    if (p !== 'eevdf') {
+      this.emit({ kind: 'start', signal: p === 'full' ? 'bpf' : 'memstat', pff_hi: p === 'full' ? SC.pffHi : null, quantum: SC.quantum });
+      this.lastPressure = this.t; this.lastRotate = this.t; this.lastHalve = -9;
+    }
+  }
+  park(j, why) { j.state = 'park'; j.hot = 0; this.emit({ kind: 'park', job: j.id, why }); if (this.firstPark == null) this.firstPark = this.t; }
+  wake(j, why) { j.state = 'run'; j.since = this.t; j.cpu0 = j.cpu; j.hot = 0; j.hist = []; this.emit({ kind: 'wake', job: j.id, why }); }
+  step() {
+    const c = SC, dt = c.dt;
+    this.t += dt; this.steps++;
+    const live = this.jobs.filter((j) => j.state !== 'done' && this.t >= j.start);
+    const act = live.filter((j) => j.state === 'run');
+    const par = live.filter((j) => j.state === 'park');
+    const cap = c.ram - c.sys - c.cache;
+    if (this.steps % 4 === 0) for (const j of act) j.luck = clamp(j.luck + (this.rnd() - 0.5) * 0.12, -0.5, 0.5);
+
+    // 1. what each running job asks for this step: first-touch fill, or refaults
+    let majWant = 0;
+    for (const j of act) {
+      if (!j.filled) { j.m = 0; j.fl = 0; j.g = 0; j.want = Math.min(c.fill * dt, c.ws - j.touched); continue; }
+      j.m = Math.max(0, 1 - j.res / c.ws);
+      j.fl = j.m > 1e-4 ? j.m * c.touch / (1 + c.K * j.m) : 0;      // faults/s, latency bound
+      j.want = Math.min(j.fl * dt / 256, c.ws - j.res);
+      majWant += j.want;
+    }
+    // 2. the swap device delivers at most bwIn
+    const io = majWant > c.bwIn * dt ? (c.bwIn * dt) / majWant : 1;
+    // 3. CPUs: memset is CPU-bound; a faulting job computes g of the time
+    let cpuDem = 0;
+    for (const j of act) {
+      if (!j.filled) { j.cpuF = 1; cpuDem += 1; continue; }
+      j.f = j.fl * io;
+      j.g = j.m > 1e-4 ? j.f / (j.m * c.touch) : 1;
+      j.cpuF = j.g + j.f * c.faultCpu;
+      cpuDem += j.cpuF;
+    }
+    const share = cpuDem > c.cpus ? c.cpus / cpuDem : 1;
+    // 4. memory: growth is granted from free memory plus what reclaim can swap out this step
+    for (const j of act) j.want = j.filled ? j.f * share * dt / 256 : j.want * share;
+    const resAll = sum(live, (j) => j.res);
+    const free = Math.max(0, cap - resAll);
+    const reclaimable = resAll;
+    const grant = free + Math.min(c.bwOut * dt, reclaimable);
+    const want = sum(act, (j) => j.want);
+    const k = want > grant ? grant / want : 1;
+    let evict = Math.max(0, want * k - free);
+    let swOut = evict;
+    if (evict > 0) {                                  // parked jobs' pages go first: they are cold
+      const pr = sum(par, (j) => j.res);
+      const fromPar = Math.min(evict, pr);
+      if (pr > 0) for (const j of par) j.res -= fromPar * (j.res / pr);
+      evict -= fromPar;
+      if (evict > 0) {                                // then running jobs, unevenly (some get luckier)
+        const w = sum(act, (j) => j.res * (1 - 0.7 * j.luck));
+        if (w > 0) for (const j of act) j.res = Math.max(0, j.res - evict * (j.res * (1 - 0.7 * j.luck)) / w);
+      }
+    }
+    // 5. advance each running job
+    let fullP = act.length ? 1 : 0, someQ = 1, swIn = 0, faults = 0;
+    for (const j of act) {
+      const got = j.want * k;
+      let stall = 0;
+      if (!j.filled) {
+        j.touched = Math.min(c.ws, j.touched + got);
+        j.res = Math.min(c.ws, j.res + got);
+        j.cpu += share * k * dt;
+        if (j.touched >= c.ws - 1e-6) j.filled = true;
+        stall = 1 - k;
+        j.pffNow = 0;
+      } else {
+        const g = j.g * share * k, f = j.f * share * k;
+        j.res = Math.min(c.ws, j.res + got);
+        j.passes = Math.min(c.passes, j.passes + g * dt / c.secPerPass);
+        const cpu = g + f * c.faultCpu;
+        j.cpu += cpu * dt; j.flt += f * dt; faults += f * dt; swIn += f * dt / 256;
+        j.pffNow = cpu > 1e-9 ? f / (cpu * 1000) : 0;
+        stall = j.m > 1e-4 ? clamp(1 - (g + f * c.faultCpu) / share, 0, 1) : 0;
+      }
+      j.peak = Math.max(j.peak, j.res);
+      fullP *= stall; someQ *= 1 - stall;
+      j.hist.push([this.t, j.res]);
+      while (j.hist.length > 2 && this.t - j.hist[1][0] >= 1) j.hist.shift();
+      if (j.passes >= c.passes - 1e-9) { j.passes = c.passes; j.state = 'done'; j.res = 0; }
+    }
+    const full = act.length ? fullP : 0, some = act.length ? 1 - someQ : 0;
+    this.cnt.fullUs += full * dt * 1e6; this.cnt.someUs += some * dt * 1e6;
+    const a = 1 - Math.exp(-dt / 10);
+    this.avg.full += (full * 100 - this.avg.full) * a; this.avg.some += (some * 100 - this.avg.some) * a;
+    this.cnt.swpin += swIn * 256; this.cnt.swpout += swOut * 256; this.cnt.majflt += faults;
+    if (this.firstFull == null && this.avg.full > 0.5) this.firstFull = this.t;
+    this.fullWin.push(full * dt); if (this.fullWin.length > 4) this.fullWin.shift();
+    if (this.policy !== 'eevdf') this.control();
+  }
+  rate(j) {                                    // resident growth over the last second, MiB/s
+    if (j.hist.length < 2) return null;
+    const [t0, r0] = j.hist[0], [t1, r1] = j.hist[j.hist.length - 1];
+    return t1 - t0 < 0.5 ? null : (r1 - r0) / (t1 - t0);
+  }
+  ws(j) { return Math.max(j.touched, j.peak); }  // resident + swapped: everything the job has touched
+  growth(js) {                                 // combined growth as a fraction of the working sets, per s
+    let r = 0, p = 0;
+    for (const j of js) { const x = this.rate(j); if (x == null) return Infinity; r += x; p += this.ws(j); }
+    return r / Math.max(1, p);
+  }
+  fits(js, extra = 0) {                        // Denning: do these working sets fit in usable memory?
+    const c = SC;
+    const usable = c.ram - c.sys - c.reserve * c.ram;   // parked memory counts as reclaimable
+    return sum(js, (x) => this.ws(x)) + extra <= usable;
+  }
+  wsEstimate(j) {                              // parked while still growing: assume the largest settled size
+    if (j.settled) return this.ws(j);
+    return Math.max(this.ws(j), ...this.jobs.filter((x) => x.settled && x.state !== 'done').map((x) => this.ws(x)));
+  }
+  control() {
+    const c = SC, t = this.t;
+    const act = this.jobs.filter((j) => j.state === 'run' && t >= j.start);
+    const par = this.jobs.filter((j) => j.state === 'park');
+    for (const j of act) j.settled = this.growth([j]) < c.grow;   // parked jobs keep their last value
+    let src = null;
+    if (sum(this.fullWin) >= c.trig && t - this.lastTrig >= 1) { src = 'psi'; this.lastTrig = t; }
+    if (!src && this.policy === 'full') {
+      for (const j of act) {
+        const g = this.growth([j]);
+        const hot = t - j.since >= c.grace && j.pffNow > c.pffHi && g < c.grow;
+        j.hot = hot ? j.hot + 1 : 0;
+        if (j.hot >= 3) { src = 'pff'; this.emit({ kind: 'pff', job: j.id, pff: +j.pffNow.toFixed(2), growth: +g.toFixed(4) }); break; }
+      }
+    }
+    const served = (j) => j.cpu;
+    if (src) {
+      if (this.firstPressure == null) this.firstPressure = t;
+      // Warm-up: the active set fits and is still faulting its pages back in. Wait.
+      const warming = this.fits(act) && this.growth(act) >= c.setGrow;
+      this.emit({ kind: 'pressure', src, active: act.length, parked: par.length, warming });
+      if (!warming) {
+        this.lastPressure = t;
+        if (t - this.lastHalve >= c.cooldown && act.length > 1) {
+          const keep = Math.max(1, Math.floor(act.length / 2));
+          const rate = this.policy === 'full' ? (j) => j.pffNow : (j) => j.f || 0;
+          act.slice().sort((x, y) => rate(y) - rate(x)).slice(0, act.length - keep).forEach((j) => this.park(j, 'pressure-' + src));
+          this.lastHalve = t;
+          this.lastRotate = t;                   // the rotation clock starts when jobs park
+          for (const j of act) j.hot = 0;
+        }
+      }
+    } else if (par.length && t - this.lastPressure >= c.calm && this.growth(act) < c.setGrow &&
+               this.fits(act, this.wsEstimate(par.reduce((m, j) => (served(j) < served(m) ? j : m))))) {
+      const j = par.reduce((m, x) => (served(x) < served(m) ? x : m));
+      this.wake(j, 'admit');
+      this.lastPressure = t;
+    } else if (par.length && act.length && t - this.lastRotate >= c.quantum) {
+      // quantum = CPU time since the last thaw, so refaulting doesn't eat it
+      const ready = act.filter((j) => j.cpu - (j.cpu0 || 0) >= c.quantum);
+      if (ready.length) {
+        const out = ready.reduce((m, x) => (served(x) > served(m) ? x : m));
+        const inn = par.reduce((m, x) => (served(x) < served(m) ? x : m));
+        if (served(inn) < served(out)) { this.park(out, 'rotate-out'); this.wake(inn, 'rotate-in'); }
+        this.lastRotate = t;
+      }
+    }
+  }
+  snapshot() {
+    return { t: this.epoch + this.t, cnt: { ...this.cnt }, jobs: new Map(this.jobs.map((j) => [j.id, { flt: j.flt, cpu: j.cpu }])) };
+  }
+  frame() {
+    for (let i = 0; i < 4; i++) this.step();
+    const c = SC, now = this.snapshot(), p = this.prev;
+    const dt = now.t - p.t;
+    const jobs = this.jobs.filter((j) => this.t >= j.start).map((j) => {
+      const q = p.jobs.get(j.id) || { flt: 0, cpu: 0 };
+      const dms = (j.cpu - q.cpu) * 1000;
+      const pff = j.state === 'run' ? (dms > 0.05 ? (j.flt - q.flt) / dms : 0) : null;
+      return { id: j.id, state: j.state, res: Math.round(j.res * MiB), peak: Math.round(j.peak * MiB),
+        pff: pff == null ? null : +pff.toFixed(3), cpu: +j.cpu.toFixed(2), passes: +j.passes.toFixed(2) };
+    });
+    const res = sum(this.jobs, (j) => (j.state === 'done' ? 0 : j.res));
+    const swapUsed = sum(this.jobs, (j) => (j.state === 'done' ? 0 : Math.max(0, j.touched - j.res)));
+    const allDone = this.jobs.every((j) => j.state === 'done');
+    const f = {
+      t: now.t,
+      psi: { full: +((now.cnt.fullUs - p.cnt.fullUs) / (dt * 1e4)).toFixed(2), some: +((now.cnt.someUs - p.cnt.someUs) / (dt * 1e4)).toFixed(2),
+        full10: +this.avg.full.toFixed(2), some10: +this.avg.some.toFixed(2) },
+      mem: { total: c.ram * MiB, avail: Math.max(40, c.ram - c.sys - res) * MiB, swap_total: c.swap * MiB, swap_free: Math.max(0, c.swap - swapUsed) * MiB },
+      rate: { swpin: (now.cnt.swpin - p.cnt.swpin) / dt, swpout: (now.cnt.swpout - p.cnt.swpout) / dt, majflt: (now.cnt.majflt - p.cnt.majflt) / dt },
+      oom: 0,
+      sched: this.policy === 'full' ? { state: 'enabled', ops: 'stasis' } : { state: 'disabled', ops: '' },
+      ctrl: { on: this.policy !== 'eevdf', signal: this.policy === 'full' ? 'bpf' : this.policy === 'ctrl' ? 'memstat' : null },
+      run: { id: 'simulated', config: this.policy === 'full' ? 'stasis' : this.policy, n: this.n, size: c.ws, passes: c.passes, t0: this.epoch, finished: allDone, sim: true },
+      jobs, ev: this.pending,
+    };
+    this.pending = [];
+    this.prev = now;
+    return f;
+  }
+}
+
+async function simResults(onProgress) {
+  // Headless runs of the model: N = 1..8, three seeds, three policies. 900 s cap.
+  // Yields to the browser between cells so the page stays responsive.
+  const rows = [];
+  const pol = [['eevdf', 'eevdf'], ['ctrl', 'ctrl'], ['full', 'stasis']];
+  let cell = 0;
+  for (const [p, label] of pol) {
+    for (let n = 1; n <= 8; n++) {
+      if (onProgress) onProgress(cell++, 24);
+      await new Promise((r) => setTimeout(r, 0));
+      for (let seed = 1; seed <= 3; seed++) {
+        const s = new Sim(n, p, seed * 97 + n, 0);
+        let firstDone = null, lastDone = null, passesAt = new Map(), atOnset = null, atFirst = null;
+        while (s.t < 900 && !s.jobs.every((j) => j.state === 'done')) {
+          s.step();
+          if (!atOnset && (s.firstFull != null || s.firstPressure != null)) atOnset = s.jobs.map((j) => j.passes);
+          for (const j of s.jobs) if (j.state === 'done' && !passesAt.has(j.id)) {
+            passesAt.set(j.id, s.t);
+            if (firstDone == null) { firstDone = s.t; atFirst = s.jobs.map((x) => x.passes); }
+            lastDone = s.t;
+          }
+        }
+        let jain = null;
+        if (atOnset) {
+          const end = atFirst || s.jobs.map((j) => j.passes);
+          const xs = end.map((v, i) => v - atOnset[i]);
+          const sx = sum(xs), sx2 = sum(xs, (x) => x * x);
+          jain = sx2 > 0 ? (sx * sx) / (xs.length * sx2) : null;
+        }
+        const allDone = s.jobs.every((j) => j.state === 'done');
+        const passes = sum(s.jobs, (j) => j.passes);
+        const end = allDone ? lastDone : s.t;
+        rows.push({ label, config: label, N: n, run: seed, status: allDone ? 'OK' : 'TIMEOUT', throughput: passes / end,
+          passes, kills: 0, jain, p99_us: null, ttfp_s: s.firstPark != null && s.firstFull != null ? s.firstPark - s.firstFull : null,
+          swap_pages: s.cnt.swpin + s.cnt.swpout, duration_s: end });
+      }
+    }
+  }
+  return rows;
+}
+
+// ============================================================ live source
+function startLive() {
+  if (S.live.es || !S.server) return;
+  const es = new EventSource('api/stream');
+  S.live.es = es;
+  setConn('connecting');
+  es.addEventListener('history', (e) => {
+    S.live.frames = JSON.parse(e.data).map(enrich);
+    setConn('ok');
+    if (S.view === 'live') { S.frames = S.live.frames; S.end = S.frames.length - 1; schedule(); }
+  });
+  es.addEventListener('frame', (e) => {
+    const f = enrich(JSON.parse(e.data));
+    const fr = S.live.frames;
+    fr.push(f);
+    if (fr.length > 3600) fr.splice(0, fr.length - 3600);
+    setConn('ok');
+    if (S.view === 'live') { S.frames = fr; S.end = fr.length - 1; schedule(); }
+  });
+  es.onerror = () => setConn(es.readyState === 2 ? 'closed' : 'retry');
+}
+function stopLive() { if (S.live.es) { S.live.es.close(); S.live.es = null; } }
+function setConn(c) { S.live.conn = c; if (S.view === 'live') renderPills(); }
+
+// ============================================================ replay source
+async function getJSON(url) {
+  const r = await fetch(url, { cache: 'no-store' });
+  if (!r.ok) throw new Error(`${url}: HTTP ${r.status}`);
+  return r.json();
+}
+async function enterReplay() {
+  const R = S.replay;
+  if (!R.runs) {
+    try { R.runs = (await getJSON('api/runs')).runs; } catch (e) { R.runs = []; R.error = e.message; }
+    const sel = $('#run-sel');
+    sel.textContent = '';
+    const groups = new Map();
+    for (const r of R.runs) { if (!groups.has(r.label)) groups.set(r.label, []); groups.get(r.label).push(r); }
+    for (const [label, rs] of groups) {
+      const og = mk('optgroup'); og.label = label;
+      for (const r of rs) { const o = mk('option', null, `${label} · N=${r.n} · run ${r.run}${r.status !== 'OK' ? ' · ' + r.status : ''}`); o.value = r.id; og.append(o); }
+      sel.append(og);
+    }
+  }
+  if (!R.runs.length) {
+    S.frames = []; S.end = -1;
+    showNotice('#notice', S.server && S.server.results
+      ? 'No finished runs yet. Runs appear here as soon as <code>sweep.sh</code> or <code>campaign.sh</code> completes one.'
+      : 'Replay needs recorded runs. Restart the server with <code>--results /srv/results</code> (the directory your sweeps write to).');
+    schedule();
+    return;
+  }
+  if (!R.id) {
+    const pick = R.runs.find((r) => r.label === 'stasis' && r.n === 8) || R.runs[R.runs.length - 1];
+    R.id = pick.id;
+  }
+  $('#run-sel').value = R.id;
+  if (!R.frames.length || R.loadedId !== R.id) await loadRun(R.id);
+  else { S.frames = R.frames; S.end = R.pos ?? R.frames.length - 1; schedule(); }
+}
+async function loadRun(id) {
+  const R = S.replay;
+  stopPlay();
+  R.loading = true; showNotice('#notice', `Loading <b>${escapeHTML(id)}</b>`);
+  try {
+    const d = await getJSON('api/run?id=' + encodeURIComponent(id));
+    R.frames = d.frames.map(enrich); R.meta = d.meta; R.metrics = d.metrics; R.probe = d.probe; R.loadedId = id;
+    hideNotice('#notice');
+  } catch (e) {
+    R.frames = []; showNotice('#notice', `Could not load ${escapeHTML(id)}: ${escapeHTML(e.message)}`);
+  }
+  R.loading = false;
+  if (S.view !== 'replay') return;
+  S.frames = R.frames; S.end = R.frames.length - 1; R.pos = S.end;
+  setWindow(0);
+  const sc = $('#scrub'); sc.max = Math.max(0, R.frames.length - 1); sc.value = S.end;
+  schedule();
+}
+function stopPlay() {
+  const R = S.replay;
+  if (R.timer) { clearInterval(R.timer); R.timer = null; }
+  $('#play-ico').setAttribute('d', ICON.play); $('#play-txt').textContent = 'Play'; $('#play').setAttribute('aria-label', 'Play');
+}
+function startPlay() {
+  const R = S.replay;
+  if (!R.frames.length) return;
+  if (S.end >= R.frames.length - 1) S.end = 0;
+  if (S.win === 0) setWindow(300);
+  $('#play-ico').setAttribute('d', ICON.pause); $('#play-txt').textContent = 'Pause'; $('#play').setAttribute('aria-label', 'Pause');
+  R.timer = setInterval(() => {
+    if (S.view !== 'replay') return;
+    if (S.end >= R.frames.length - 1) { stopPlay(); return; }
+    S.end++; R.pos = S.end; $('#scrub').value = S.end; schedule();
+  }, 1000 / R.speed);
+}
+
+// ============================================================ simulator source
+function simStart(preroll = 90) {
+  const M = S.sim;
+  M.eng = new Sim(M.n, M.policy, 11 + M.n);
+  M.eng.epoch = Date.now() / 1000 - preroll;
+  M.eng.prev = M.eng.snapshot();
+  M.frames = [];
+  for (let i = 0; i < preroll; i++) M.frames.push(enrich(M.eng.frame()));
+  if (S.view === 'sim') { S.frames = M.frames; S.end = M.frames.length - 1; schedule(); }
+}
+function simTick() {
+  const M = S.sim;
+  if (!M.eng || S.view !== 'sim') return;
+  const f = enrich(M.eng.frame());
+  M.frames.push(f);
+  if (M.frames.length > 3600) M.frames.splice(0, M.frames.length - 3600);
+  S.frames = M.frames; S.end = M.frames.length - 1;
+  schedule();
+}
+function simRun() {
+  const M = S.sim;
+  if (M.timer) clearInterval(M.timer);
+  M.timer = setInterval(simTick, 1000 / M.speed);
+}
+function simStop() { if (S.sim.timer) { clearInterval(S.sim.timer); S.sim.timer = null; } }
+
+// ============================================================ view switching
+function setView(v) {
+  if (!['live', 'replay', 'results', 'sim'].includes(v)) v = S.server ? 'live' : 'sim';
+  S.view = v;
+  for (const b of $$('.tabs button')) b.setAttribute('aria-selected', String(b.dataset.view === v));
+  if (location.hash !== '#' + v) { try { history.replaceState(null, '', '#' + v); } catch (e) { /* sandboxed */ } }
+  const needsServer = (v === 'live' || v === 'replay') && !S.server;
+  $('#monitor').hidden = v === 'results' || needsServer;
+  $('#results').hidden = v !== 'results';
+  $('#offline').hidden = !needsServer;
+  $('#bar-live').hidden = v !== 'live';
+  $('#bar-replay').hidden = v !== 'replay';
+  $('#bar-sim').hidden = v !== 'sim';
+  $('#card-run').hidden = v !== 'replay';
+  hideNotice('#notice');
+  S.hover = null; hideTip();
+  if (v !== 'live') stopLive();
+  if (v !== 'sim') simStop();
+  if (v !== 'replay') stopPlay();
+  if (needsServer) {
+    $('#off-title').textContent = v === 'live' ? 'Live needs the STASIS server on your VM' : 'Replay needs the STASIS server on your VM';
+    renderPills();
+    return;
+  }
+  if (v === 'live') {
+    S.frames = S.live.frames; S.end = S.frames.length - 1;
+    startLive();
+  } else if (v === 'sim') {
+    if (!S.sim.eng) simStart();
+    S.frames = S.sim.frames; S.end = S.frames.length - 1;
+    simRun();
+    showNotice('#notice', '<b>Simulated machine.</b> 4 GiB of RAM, 4 CPUs, 700 MiB random-access jobs, and stasisd\'s control law step for step. It shows the mechanism; the numbers are a model, not a measurement. Switch the policy to <b>EEVDF only</b> to watch the machine thrash.');
+  } else if (v === 'replay') {
+    S.frames = S.replay.frames; S.end = S.replay.pos ?? S.frames.length - 1;
+    enterReplay();
+  } else if (v === 'results') {
+    enterResults();
+  }
+  schedule();
+}
+function showNotice(sel, html) { const n = $(sel); n.innerHTML = ICON.info + '<div>' + html + '</div>'; n.hidden = false; }
+function hideNotice(sel) { $(sel).hidden = true; }
+function escapeHTML(s) { return String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]); }
+function setWindow(v) {
+  S.win = v;
+  for (const b of $$('#win button')) b.setAttribute('aria-checked', String(+b.dataset.v === v));
+  schedule();
+}
+
+// ============================================================ rendering
+let raf = 0;
+function schedule() { if (!raf) raf = requestAnimationFrame(() => { raf = 0; render(); }); }
+function render() {
+  renderPills();
+  renderFoot();
+  if (S.view === 'results') return;
+  if ($('#monitor').hidden) return;
+  const fr = S.frames;
+  if (!fr.length || S.end < 0) { renderEmpty(); return; }
+  S.end = clamp(S.end, 0, fr.length - 1);
+  const f = fr[S.end];
+  const vw = view();
+  renderBar(f);
+  renderKPIs(f);
+  renderPSI(vw);
+  renderLanes(vw);
+  renderAxis(vw);
+  renderEvents();
+  renderSched(f);
+  renderMem(f);
+  if (S.view === 'replay') renderRunSummary();
+  if (!$('#psi-tbl').hidden) renderPsiTable();
+}
+// Live history can span several runs; while one is being followed, start just before it.
+function firstT() {
+  const fr = S.frames, f = fr[S.end];
+  let first = fr[0].t - 1;
+  if (S.view === 'live' && f.run && f.run.t0) first = Math.max(first, f.run.t0 - 10);
+  return first;
+}
+function view() {
+  const fr = S.frames, end = S.end;
+  const t1 = fr[end].t;
+  // Start at the first sample until there is enough history to fill the window.
+  const first = firstT();
+  const t0 = S.win ? Math.max(t1 - S.win, first) : first;
+  const i0 = Math.max(0, bsearchT(fr, t0) - 1);
+  return { t0, t1, i0, i1: end, X: (t, w) => ((t - t0) / Math.max(1e-9, t1 - t0)) * w };
+}
+function runClockLabel(t) {
+  const f = S.frames[S.end];
+  const run = f && f.run;
+  if (run && run.t0) return fmtClock(t - run.t0);
+  return t >= f.t - 0.5 ? 'now' : fmtClock(t - f.t);
+}
+function renderEmpty() {
+  for (const id of ['#hero-v', '#k-jobs', '#k-thru', '#k-swap', '#k-kill']) $(id).textContent = '–';
+  $('#lanes').innerHTML = '<div class="empty-lanes">' + (S.view === 'live' ? (S.live.conn === 'ok' ? 'Collecting the first samples…' : 'Connecting to the server…') : S.view === 'replay' ? 'No run loaded.' : 'Starting…') + '</div>';
+  const { ctx, w, h } = fitCanvas($('#cv-psi')); ctx.clearRect(0, 0, w, h);
+  $('#ev-list').textContent = '';
+}
+
+function renderFoot() {
+  $('#foot-src').textContent = S.view === 'sim' ? 'Data: simulated model'
+    : S.view === 'replay' ? 'Data: recorded run, replayed from samples.jsonl'
+    : S.view === 'results' ? (S.server && S.server.results ? 'Data: finished runs, metrics from eval/analyze.py' : 'Data: simulated runs of the model')
+    : S.server ? 'Data: live from /proc, cgroup v2 and sched_ext' : 'Data: none until the server runs';
+}
+function renderPills() {
+  const f = S.frames[S.end];
+  const src = $('#pill-src'), sch = $('#pill-sched'), ctl = $('#pill-ctrl');
+  const set = (el, dot, html) => { el.querySelector('.dot').className = 'dot ' + (dot || ''); el.querySelector('span').innerHTML = html; };
+  if (S.view === 'sim') set(src, 'frost', '<b>Simulated</b>');
+  else if (S.view === 'replay') set(src, '', S.replay.meta ? `Replay <b>${escapeHTML(S.replay.meta.id)}</b>` : '<b>Replay</b>');
+  else if (S.view === 'results') set(src, '', S.server ? '<b>Results</b>' : '<b>Simulated results</b>');
+  else if (!S.server) set(src, '', '<b>No server</b>');
+  else set(src, S.live.conn === 'ok' ? 'good' : S.live.conn === 'retry' ? 'warning' : '', `${S.live.conn === 'ok' ? 'Live' : S.live.conn === 'retry' ? 'Reconnecting' : 'Connecting'} <b>${escapeHTML(S.server.host || '')}</b>`);
+  if (!f || S.view === 'results' || $('#monitor').hidden) {
+    sch.hidden = ctl.hidden = true; return;
+  }
+  sch.hidden = ctl.hidden = false;
+  const sd = f.sched || {};
+  if (sd.state === 'enabled') set(sch, sd.ops === 'stasis' ? 'good' : 'frost', `sched_ext <b>${escapeHTML(sd.ops === 'stasis' ? 'scx_stasis' : 'scx_' + (sd.ops || '?'))}</b>`);
+  else set(sch, '', 'Scheduler <b>EEVDF</b>');
+  const cf = f.ctrl || {};
+  if (cf.on) set(ctl, 'good', `stasisd <b>${escapeHTML(cf.signal || '')}</b>`);
+  else set(ctl, '', 'stasisd <b>off</b>');
+}
+
+const CONFIG_NAMES = { eevdf: 'EEVDF only', stasis: 'Full STASIS', ctrl: 'Controller only', scxonly: 'scx_stasis alone', oomd: 'EEVDF + systemd-oomd', simple: 'scx_simple', thrashprotect: 'thrash-protect' };
+function renderBar(f) {
+  if (S.view === 'live') {
+    const r = f.run;
+    const el = $('#live-run');
+    if (!r) { el.innerHTML = 'No run in progress. Showing the whole machine; start one with <code>scripts/run_mix.sh</code>.'; return; }
+    const cfg = CONFIG_NAMES[r.config] || r.config || '?';
+    const el2 = r.finished ? `finished, ${escapeHTML(r.status || '')}` : `running ${fmtClock(f.t - r.t0)}`;
+    el.innerHTML = `Following <b class="mono">${escapeHTML(r.id)}</b> · <b>${escapeHTML(cfg)}</b> · N=${r.n ?? '?'} · ${r.size ?? '?'} MB × ${r.passes ?? '?'} passes · ${el2}`;
+  } else if (S.view === 'replay') {
+    $('#scrub').max = Math.max(0, S.frames.length - 1); $('#scrub').value = S.end;
+    const r = f.run;
+    $('#scrub-t').textContent = r && r.t0 ? `${fmtClock(f.t - r.t0)} / ${fmtClock(S.frames[S.frames.length - 1].t - r.t0)}` : fmtClock(S.end);
+  }
+}
+
+function sparkPath(svg, vals, color) {
+  const w = 200, h = 28;
+  svg.setAttribute('viewBox', `0 0 ${w} ${h}`);
+  svg.textContent = '';
+  if (vals.length < 2) return;
+  const mx = Math.max(1e-9, ...vals);
+  const pts = vals.map((v, i) => [(i / (vals.length - 1)) * w, h - 2 - (v / mx) * (h - 5)]);
+  const d = pts.map((p, i) => (i ? 'L' : 'M') + p[0].toFixed(1) + ' ' + p[1].toFixed(1)).join('');
+  svg.append(svgEl('path', { d: d + `L${w} ${h}L0 ${h}Z`, fill: color, 'fill-opacity': '0.10', stroke: 'none' }));
+  svg.append(svgEl('path', { d, fill: 'none', stroke: color, 'stroke-width': '1.6', 'vector-effect': 'non-scaling-stroke', 'stroke-linejoin': 'round' }));
+  const last = pts[pts.length - 1];
+  svg.append(svgEl('circle', { cx: last[0], cy: last[1], r: 2.4, fill: color }));
+}
+function passesPerMin(i, span = 30) {
+  const fr = S.frames, f = fr[i];
+  const runStart = f.run && f.run.t0 ? bsearchT(fr, f.run.t0) : 0;   // never across two runs
+  const j = Math.max(0, runStart, bsearchT(fr, f.t - span));
+  if (j >= i) return null;
+  const dt = f.t - fr[j].t;
+  return dt > 0 ? ((f._n.passes - fr[j]._n.passes) / dt) * 60 : null;
+}
+function renderKPIs(f) {
+  const end = S.end, fr = S.frames;
+  // hero: PSI full over the last second; state from the last 5 s so it doesn't flicker
+  const recent = fr.slice(Math.max(0, end - 4), end + 1).map((x) => x.psi.full);
+  const avg5 = sum(recent) / recent.length;
+  const running = f._n.run + f._n.park > 0;
+  $('#hero-v').innerHTML = `${fmtPct(f.psi.full)}<small>%</small>`;
+  $('#hero-meter').style.height = clamp(f.psi.full, 0, 100) + '%';
+  const st = $('#hero-status');
+  let cls = 'good', txt = 'Calm', ico = ICON.ok, glow = 'transparent';
+  if (avg5 >= 10) { cls = 'critical pulse'; txt = 'Thrashing'; ico = ICON.crit; glow = 'color-mix(in srgb, var(--psi-full) 22%, transparent)'; }
+  else if (avg5 >= 1) { cls = 'warning'; txt = 'Under pressure'; ico = ICON.warn; glow = 'color-mix(in srgb, var(--warning) 12%, transparent)'; }
+  else if (!running) { cls = 'neutral'; txt = 'Idle'; ico = ICON.idle; }
+  st.className = 'status ' + cls; st.innerHTML = ico + txt;
+  $('#k-hero').style.setProperty('--hero-glow', glow);
+  $('#hero-sub').innerHTML = `Some <b>${fmtPct(f.psi.some)}%</b> · kernel avg10: full ${fmtPct(f.psi.full10)}%, some ${fmtPct(f.psi.some10)}%`;
+  // jobs
+  const n = f._n, total = n.run + n.park + n.done;
+  $('#k-jobs').innerHTML = total ? `${n.run}<small>running</small>` : '0';
+  $('#k-jobs-sub').textContent = total ? `${n.park} parked · ${n.done} done` : 'No jobs in stasis.slice';
+  const bar = $('#k-jobs-bar'); bar.textContent = '';
+  if (total) for (const [k, v] of [['run', n.run], ['park', n.park], ['done', n.done]]) if (v) { const i = mk('i', k); i.style.flex = String(v); bar.append(i); }
+  // throughput
+  const ppm = passesPerMin(end);
+  $('#k-thru').innerHTML = ppm == null ? '–' : `${fmtNum(ppm)}<small>passes/min</small>`;
+  $('#k-thru-sub').textContent = `${Math.floor(n.passes).toLocaleString('en-US')} passes in total · last 30 s`;
+  const tv = []; for (let i = Math.max(1, end - 119); i <= end; i += 2) { const v = passesPerMin(i, 15); tv.push(v == null ? 0 : v); }
+  sparkPath($('#sp-thru'), tv, C.accent);
+  // swap
+  const sw = pagesMiBs(f.rate.swpin + f.rate.swpout);
+  $('#k-swap').innerHTML = `${fmtNum(sw)}<small>MiB/s</small>`;
+  $('#k-swap-sub').innerHTML = `in ${fmtNum(pagesMiBs(f.rate.swpin))} · out ${fmtNum(pagesMiBs(f.rate.swpout))} · ${fmtNum(f.rate.majflt)} major faults/s`;
+  const sv = []; for (let i = Math.max(0, end - 119); i <= end; i++) sv.push(pagesMiBs(fr[i].rate.swpin + fr[i].rate.swpout));
+  sparkPath($('#sp-swap'), sv, C.full);
+  // kills
+  const kills = f.oom || 0;
+  $('#k-kill').textContent = String(kills);
+  $('#k-kill-sub').innerHTML = kills
+    ? `<span class="status critical">${ICON.crit}${kills} OOM kill${kills > 1 ? 's' : ''}</span>`
+    : `<span class="status good">${ICON.ok}None</span>`;
+}
+
+// ---- pressure chart
+const PSI_PAD_T = 16, PSI_PAD_B = 4;
+function renderPSI(vw) {
+  const cv = $('#cv-psi');
+  const { ctx, w, h } = fitCanvas(cv);
+  ctx.clearRect(0, 0, w, h);
+  const ph = h - PSI_PAD_T - PSI_PAD_B;
+  const Y = (v) => PSI_PAD_T + ph * (1 - clamp(v, 0, 100) / 100);
+  // y ticks live in the label column so they share the lanes' left edge
+  const ylab = $('#ylab');
+  let ticks = ylab.querySelectorAll('.tick');
+  if (!ticks.length) { for (const v of [100, 75, 50, 25, 0]) { const s = mk('span', 'tick', v + '%'); s.dataset.v = v; ylab.append(s); } ticks = ylab.querySelectorAll('.tick'); }
+  const ylabTop = cv.getBoundingClientRect().top - ylab.getBoundingClientRect().top;
+  for (const s of ticks) s.style.top = (ylabTop + Y(+s.dataset.v)) + 'px';
+  ctx.lineWidth = 1;
+  ctx.strokeStyle = C.grid;
+  for (const v of [0, 25, 50, 75, 100]) { const y = Math.round(Y(v)) + 0.5; ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(w, y); ctx.stroke(); }
+  // stasisd's trigger: 100 ms of full stall in a 1 s window = 10 %
+  ctx.save(); ctx.setLineDash([4, 4]); ctx.strokeStyle = C.ink3;
+  const yt = Math.round(Y(10)) + 0.5; ctx.beginPath(); ctx.moveTo(0, yt); ctx.lineTo(w, yt); ctx.stroke(); ctx.restore();
+  ctx.font = '11px ' + getComputedStyle(document.body).fontFamily;
+  const lbl = 'stasisd trigger · 10%', lw = ctx.measureText(lbl).width;
+  ctx.fillStyle = C.panel; ctx.globalAlpha = 0.85;
+  ctx.fillRect(w - lw - 14, yt - 17, lw + 10, 15); ctx.globalAlpha = 1;
+  ctx.fillStyle = C.ink3; ctx.textAlign = 'right'; ctx.fillText(lbl, w - 9, yt - 6);
+  const fr = S.frames;
+  const pts = (key) => { const out = []; for (let i = vw.i0; i <= vw.i1; i++) out.push([vw.X(fr[i].t, w), Y(fr[i].psi[key])]); return out; };
+  const line = (p, color, width) => {
+    if (p.length < 2) return;
+    ctx.beginPath(); ctx.moveTo(p[0][0], p[0][1]);
+    for (let i = 1; i < p.length; i++) ctx.lineTo(p[i][0], p[i][1]);
+    ctx.strokeStyle = color; ctx.lineWidth = width; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.stroke();
+  };
+  const some = pts('some'), full = pts('full');
+  line(some, C.some, 1.5);
+  if (full.length >= 2) {
+    ctx.beginPath(); ctx.moveTo(full[0][0], Y(0));
+    for (const p of full) ctx.lineTo(p[0], p[1]);
+    ctx.lineTo(full[full.length - 1][0], Y(0)); ctx.closePath();
+    ctx.globalAlpha = 0.13; ctx.fillStyle = C.full; ctx.fill(); ctx.globalAlpha = 1;
+  }
+  line(full, C.full, 2);
+  // decision marks in the top band: park (frost), wake (accent)
+  for (let i = vw.i0; i <= vw.i1; i++) {
+    for (const e of fr[i].ev || []) {
+      if (e.kind !== 'park' && e.kind !== 'wake') continue;
+      const x = vw.X(e.t, w);
+      if (x < 0 || x > w) continue;
+      ctx.fillStyle = e.kind === 'park' ? C.frostInk : C.accent;
+      ctx.beginPath();
+      if (e.kind === 'park') { ctx.moveTo(x - 4, 3); ctx.lineTo(x + 4, 3); ctx.lineTo(x, 10); }
+      else { ctx.moveTo(x - 4, 10); ctx.lineTo(x + 4, 10); ctx.lineTo(x, 3); }
+      ctx.closePath(); ctx.fill();
+    }
+  }
+  if (full.length) { const p = full[full.length - 1]; dot(ctx, p[0], p[1], C.full); }
+  drawCrosshair(ctx, vw, w, h);
+  // readout column
+  const f = fr[S.end];
+  const ro = $('#readout');
+  ro.innerHTML =
+    `<div class="ro"><span class="l"><i class="key-line" style="background:var(--psi-full)"></i>Full</span><span class="v">${fmtPct(f.psi.full)}<small>%</small></span></div>` +
+    `<div class="ro"><span class="l"><i class="key-line" style="background:var(--psi-some)"></i>Some</span><span class="v">${fmtPct(f.psi.some)}<small>%</small></span></div>` +
+    `<div class="ro"><span class="l">Swap in</span><span class="v">${fmtNum(pagesMiBs(f.rate.swpin))}<small>MiB/s</small></span></div>` +
+    `<div class="ro"><span class="l">Swap out</span><span class="v">${fmtNum(pagesMiBs(f.rate.swpout))}<small>MiB/s</small></span></div>`;
+}
+function dot(ctx, x, y, color) {
+  ctx.beginPath(); ctx.arc(x, y, 4, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+  ctx.lineWidth = 2; ctx.strokeStyle = C.panel; ctx.stroke();
+}
+function drawCrosshair(ctx, vw, w, h) {
+  if (S.hover == null || S.hover < vw.i0 || S.hover > vw.i1) return;
+  const x = Math.round(vw.X(S.frames[S.hover].t, w)) + 0.5;
+  ctx.strokeStyle = C.ink2; ctx.globalAlpha = 0.55; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, h); ctx.stroke(); ctx.globalAlpha = 1;
+}
+
+// ---- job lanes
+const laneRows = new Map();
+function laneIds(vw) {
+  const ids = new Set();
+  for (let i = vw.i0; i <= vw.i1; i++) for (const j of S.frames[i].jobs) ids.add(j.id);
+  const num = (id) => { const m = /(\d+)$/.exec(id); return m ? +m[1] : 1e9; };
+  return Array.from(ids).sort((a, b) => num(a) - num(b) || a.localeCompare(b));
+}
+function laneRow(id) {
+  let r = laneRows.get(id);
+  if (r) return r;
+  const row = mk('div', 'irow lane');
+  const lab = mk('div', 'lab');
+  const name = mk('span', 'name', id);
+  const chip = mk('span', 'chipst');
+  lab.append(name, chip);
+  const plot = mk('div', 'plot');
+  const cv = mk('canvas'); cv.tabIndex = 0; cv.setAttribute('role', 'img'); cv.setAttribute('aria-label', `${id} state over time`);
+  plot.append(cv);
+  const stats = mk('div', 'stats');
+  const prog = mk('div', 'prog'); const pi = mk('i'); prog.append(pi);
+  const pnum = mk('span', 'pnum');
+  const mstat = mk('span', 'mstat');
+  stats.append(prog, pnum, mstat);
+  row.append(lab, plot, stats);
+  cv.addEventListener('pointermove', (e) => onHover(e, cv, id));
+  cv.addEventListener('pointerleave', onLeave);
+  cv.addEventListener('keydown', (e) => onKey(e, cv, id));
+  cv.addEventListener('blur', onLeave);
+  r = { row, chip, cv, pi, pnum, mstat, id, last: '' };
+  laneRows.set(id, r);
+  return r;
+}
+function renderLanes(vw) {
+  const ids = laneIds(vw);
+  const box = $('#lanes');
+  const want = ids.map(laneRow);
+  if (!ids.length) {
+    if (!box.querySelector('.empty-lanes')) box.innerHTML = '<div class="empty-lanes">No jobs in this window. Jobs appear here when <code>stasis.slice</code> has any.</div>';
+    for (const r of laneRows.values()) r.row.remove();
+    return;
+  }
+  box.querySelector('.empty-lanes')?.remove();
+  for (const [id, r] of laneRows) if (!ids.includes(id)) { r.row.remove(); laneRows.delete(id); }
+  want.forEach((r, i) => { if (box.children[i] !== r.row) box.insertBefore(r.row, box.children[i] || null); });
+  const fr = S.frames, f = fr[S.end];
+  const target = f.run && f.run.passes;
+  for (const r of want) {
+    const { ctx, w, h } = fitCanvas(r.cv);
+    ctx.clearRect(0, 0, w, h);
+    const y0 = Math.round(h * 0.22), bh = Math.max(6, Math.round(h * 0.56));
+    // track
+    ctx.fillStyle = C.track; ctx.fillRect(0, y0, w, bh);
+    let segKey = null, segX = 0, segEnd = 0;
+    const flush = () => {
+      if (segKey == null || segEnd - segX < 0.2) return;
+      const x = Math.max(0, segX), ww = Math.min(w, segEnd) - x;
+      if (ww <= 0) return;
+      if (segKey === 'park') { ctx.fillStyle = hatchPattern(ctx) || C.frost; ctx.fillRect(x, y0, ww, bh); }
+      else if (segKey === 'done') { ctx.fillStyle = C.done; ctx.fillRect(x, y0, ww, bh); }
+      else { ctx.fillStyle = C.heat[segKey]; ctx.fillRect(x, y0, ww, bh); }
+    };
+    for (let i = vw.i0; i <= vw.i1; i++) {
+      const j = fr[i]._jobs.get(r.id);
+      const x1 = vw.X(fr[i].t, w);
+      const x0 = vw.X(i > 0 ? fr[i - 1].t : fr[i].t - 1, w);
+      if (!j || x1 <= 0) { flush(); segKey = null; continue; }
+      const key = j.state === 'run' ? heatIndex(j.pff) : j.state;
+      if (key === segKey && Math.abs(x0 - segEnd) < 1.5) segEnd = x1;
+      else { flush(); segKey = key; segX = x0; segEnd = x1; }
+    }
+    flush();
+    drawCrosshair(ctx, vw, w, h);
+    // stats for the frame at "now"
+    const j = f._jobs.get(r.id);
+    const st = j ? j.state : 'done';
+    const label = st === 'run' ? 'Running' : st === 'park' ? 'Parked' : 'Done';
+    const key = st + label;
+    if (r.last !== key) { r.chip.className = 'chipst ' + st; r.chip.innerHTML = ICON[st] + label; r.last = key; }
+    const passes = j && j.passes != null ? j.passes : null;
+    const pct = target && passes != null ? clamp(passes / target, 0, 1) * 100 : 0;
+    r.pi.style.width = pct + '%';
+    r.pi.style.background = st === 'done' ? 'var(--good)' : st === 'park' ? 'var(--frost-ink)' : 'var(--ink-2)';
+    r.pnum.textContent = passes == null ? '–' : target ? `${Math.floor(passes)} / ${target}` : `${Math.floor(passes)} passes`;
+    if (j && st !== 'done') r.mstat.innerHTML = `<b>${fmtMiB(j.res)}</b> of ${fmtMiB(j.peak)} MiB · PFF <b>${fmtPff(j.pff)}</b>`;
+    else r.mstat.textContent = 'finished';
+  }
+}
+function renderAxis(vw) {
+  const ax = $('#xaxis');
+  const w = ax.getBoundingClientRect().width;
+  const span = vw.t1 - vw.t0;
+  const steps = [5, 10, 15, 30, 60, 120, 300, 600, 900, 1800, 3600, 7200];
+  const maxTicks = Math.max(2, Math.floor(w / 80));
+  const step = steps.find((s) => span / s <= maxTicks) || 7200;
+  const f = S.frames[S.end];
+  const base = f.run && f.run.t0 ? f.run.t0 : vw.t1;
+  ax.textContent = '';
+  let first = Math.ceil((vw.t0 - base) / step) * step;
+  for (let v = first; base + v <= vw.t1 + 0.01; v += step) {
+    const x = vw.X(base + v, w);
+    if (x < 18 || x > w - 18) continue;
+    const s = mk('span', null, f.run && f.run.t0 ? fmtClock(v) : v === 0 ? 'now' : fmtClock(v));
+    s.style.left = x + 'px';
+    ax.append(s);
+  }
+}
+
+// ---- hover + tooltip
+function frameAt(cv, clientX) {
+  const r = cv.getBoundingClientRect();
+  const vw = view();
+  const t = vw.t0 + ((clientX - r.left) / Math.max(1, r.width)) * (vw.t1 - vw.t0);
+  let i = bsearchT(S.frames, t);
+  if (i > vw.i1) i = vw.i1;
+  if (i > 0 && Math.abs(S.frames[i - 1].t - t) < Math.abs(S.frames[i].t - t)) i--;
+  return Math.max(vw.i0, i);
+}
+function onHover(e, cv, laneId) {
+  if (!S.frames.length) return;
+  S.hover = frameAt(cv, e.clientX);
+  showTip(e.clientX, e.clientY, laneId);
+  schedule();
+}
+function onLeave() { S.hover = null; hideTip(); schedule(); }
+function onKey(e, cv, laneId) {
+  if (!S.frames.length) return;
+  const vw = view();
+  if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+    e.preventDefault();
+    S.hover = clamp((S.hover ?? vw.i1) + (e.key === 'ArrowLeft' ? -1 : 1), vw.i0, vw.i1);
+    const r = cv.getBoundingClientRect();
+    showTip(r.left + vw.X(S.frames[S.hover].t, r.width), r.top + r.height / 2, laneId);
+    schedule();
+  } else if (e.key === 'Escape') onLeave();
+}
+function hideTip() { $('#tip').hidden = true; }
+function showTip(x, y, laneId) {
+  const f = S.frames[S.hover];
+  if (!f) return;
+  const tip = $('#tip');
+  tip.textContent = '';
+  const head = mk('div', 'th');
+  head.append(mk('span', null, runClockLabel(f.t)));
+  const rows = [];
+  const row = (val, label, color, box) => {
+    const r = mk('div', 'tr');
+    const k = mk('i', 'k' + (box ? ' box' : ''));
+    if (color) k.style.background = color; else k.style.visibility = 'hidden';
+    r.append(k, mk('b', null, val), mk('span', null, label));
+    rows.push(r);
+  };
+  if (laneId) {
+    const j = f._jobs.get(laneId);
+    head.append(mk('span', null, laneId));
+    if (!j) row('–', 'not running yet');
+    else {
+      const st = j.state === 'run' ? 'Running' : j.state === 'park' ? 'Parked' : 'Done';
+      const col = j.state === 'run' ? C.heat[heatIndex(j.pff)] : j.state === 'park' ? C.frostInk : C.done;
+      row(st, '', col, true);
+      if (j.state !== 'done') {
+        row(`${fmtMiB(j.res)} MiB`, `resident, peak ${fmtMiB(j.peak)} MiB`);
+        row(fmtPff(j.pff), 'faults per CPU-ms');
+      }
+      if (j.passes != null) row(String(Math.floor(j.passes)), f.run && f.run.passes ? `of ${f.run.passes} passes` : 'passes');
+      row(`${j.cpu.toFixed(1)} s`, 'CPU time so far');
+    }
+  } else {
+    row(`${fmtPct(f.psi.full)}%`, 'full stall', C.full);
+    row(`${fmtPct(f.psi.some)}%`, 'some stall', C.some);
+    row(`${fmtNum(pagesMiBs(f.rate.swpin))} MiB/s`, 'swap in');
+    row(`${fmtNum(pagesMiBs(f.rate.swpout))} MiB/s`, 'swap out');
+    row(`${f._n.run} / ${f._n.park}`, 'running / parked');
+    const ev = (f.ev || []).filter((e) => e.kind === 'park' || e.kind === 'wake');
+    if (ev.length) row(String(ev.length), 'controller decisions this second');
+  }
+  tip.append(head, ...rows);
+  tip.hidden = false;
+  const tw = tip.offsetWidth, th = tip.offsetHeight;
+  let left = x + 16, top = y + 14;
+  if (left + tw > window.innerWidth - 8) left = x - tw - 16;
+  if (top + th > window.innerHeight - 8) top = y - th - 14;
+  tip.style.left = Math.max(8, left) + 'px';
+  tip.style.top = Math.max(8, top) + 'px';
+}
+
+// ---- decisions feed
+const WHY = {
+  'pressure-psi': 'PSI saw over 100 ms of full stall in 1 s, so the active set was halved',
+  'pressure-pff': 'Fault-frequency early warning, before PSI fired, so the active set was halved',
+  admit: 'Calm for 5 s and its working set fits in free memory',
+  shutdown: 'Controller stopped and thawed every job',
+};
+let evCache = { key: '', html: '' };
+function groupEvents(evs) {
+  const out = [];
+  let pff = null;
+  for (const e of evs) {
+    const prev = out[out.length - 1];
+    if (e.kind === 'pressure') continue;
+    if (e.kind === 'pff') { pff = e; continue; }
+    if (e.kind === 'start') { out.push({ t: e.t, kind: 'start', e }); continue; }
+    if (e.kind === 'park' && (e.why || '').startsWith('pressure')) {
+      if (prev && prev.kind === 'halve' && e.t - prev.t < 1) { prev.jobs.push(e.job); continue; }
+      out.push({ t: e.t, kind: 'halve', jobs: [e.job], why: e.why, pff: pff && e.t - pff.t < 1.5 ? pff : null });
+      continue;
+    }
+    if (e.why === 'rotate-out') { out.push({ t: e.t, kind: 'rotate', out: e.job, in: null }); continue; }
+    if (e.why === 'rotate-in') {
+      if (prev && prev.kind === 'rotate' && !prev.in && e.t - prev.t < 1) prev.in = e.job;
+      else out.push({ t: e.t, kind: 'rotate', out: null, in: e.job });
+      continue;
+    }
+    if (e.why === 'shutdown') {
+      if (prev && prev.kind === 'stop' && e.t - prev.t < 1) prev.jobs.push(e.job);
+      else out.push({ t: e.t, kind: 'stop', jobs: [e.job] });
+      continue;
+    }
+    out.push({ t: e.t, kind: e.kind === 'wake' ? 'wake' : 'park', jobs: [e.job], why: e.why });
+  }
+  return out;
+}
+function renderEvents() {
+  const fr = S.frames, end = S.end;
+  const evs = [];
+  let psiN = 0, pffN = 0, warmN = 0, firstSrc = null;
+  const from = Math.max(0, bsearchT(fr, firstT()));
+  for (let i = from; i <= end; i++) for (const e of fr[i].ev || []) {
+    evs.push(e);
+    if (e.kind === 'pressure') {
+      if (e.src === 'pff') pffN++; else psiN++;
+      if (e.warming) warmN++;
+      if (!firstSrc) firstSrc = e.src;
+    }
+  }
+  const f = fr[end];
+  const t0 = f.run && f.run.t0 ? f.run.t0 : fr[0].t;
+  const key = S.view + ':' + evs.length + ':' + (evs.length ? evs[evs.length - 1].t : 0) + ':' + t0;
+  if (key === evCache.key) return;
+  evCache.key = key;
+  const groups = groupEvents(evs).reverse().slice(0, 80);
+  const list = $('#ev-list');
+  list.textContent = '';
+  const nPark = evs.filter((e) => e.kind === 'park').length, nWake = evs.filter((e) => e.kind === 'wake').length;
+  $('#ev-meta').textContent = evs.length ? `${nPark} parks · ${nWake} wakes` : '';
+  if (!groups.length) {
+    const li = mk('li', 'ev-empty');
+    li.textContent = f.ctrl && f.ctrl.on ? 'No decisions yet. stasisd acts when memory pressure appears.' : 'stasisd is not running, so nothing gets parked. Under EEVDF alone every job keeps competing for memory.';
+    list.append(li);
+  }
+  for (const g of groups) {
+    const li = mk('li', 'ev');
+    const time = mk('time', null, fmtClock(g.t - t0));
+    let tag, title, text;
+    if (g.kind === 'halve') {
+      tag = ['halve', 'Halve']; title = `Parked ${g.jobs.join(', ')}`;
+      text = WHY[g.why] || g.why;
+      if (g.pff && g.pff.pff != null) text = `${g.pff.job} faulted ${fmtPff(g.pff.pff)} times per CPU-ms without its memory growing. Halved before PSI fired.`;
+    } else if (g.kind === 'rotate') {
+      tag = ['rotate', 'Rotate']; title = [g.out && `${g.out} out`, g.in && `${g.in} in`].filter(Boolean).join(', ');
+      text = 'Fair rotation: most-served out, least-served in';
+    } else if (g.kind === 'wake') {
+      tag = ['wake', 'Admit']; title = `Thawed ${g.jobs.join(', ')}`; text = WHY[g.why] || g.why;
+    } else if (g.kind === 'stop') {
+      tag = ['stop', 'Stop']; title = `Thawed ${g.jobs.length} job${g.jobs.length > 1 ? 's' : ''}`; text = WHY.shutdown;
+    } else if (g.kind === 'start') {
+      tag = ['start', 'Start']; title = `stasisd started, ${g.e.signal || 'memstat'} signal`;
+      text = g.e.signal === 'bpf' ? `PSI trigger plus PFF early warning (PFF_HI ${g.e.pff_hi ?? '?'})` : 'PSI trigger only';
+    } else {
+      tag = ['park', 'Park']; title = `Parked ${(g.jobs || []).join(', ')}`; text = g.why || '';
+    }
+    const tg = mk('span', 'tag ' + tag[0], tag[1]);
+    const b = mk('div', 'b');
+    b.append(mk('b', null, title), mk('span', null, text));
+    li.append(time, tg, b);
+    list.append(li);
+  }
+  const sumEl = $('#ev-sum');
+  if (psiN + pffN) {
+    sumEl.hidden = false;
+    sumEl.innerHTML = `Pressure signals: <b>${psiN}</b> from PSI, <b>${pffN}</b> from PFF. First signal came from <b>${firstSrc === 'pff' ? 'PFF' : 'PSI'}</b>.` +
+      (warmN ? ` <b>${warmN}</b> arrived while jobs were still faulting their pages back in, so nothing was halved.` : '');
+  } else sumEl.hidden = true;
+}
+
+// ---- scheduler + memory cards
+function renderSched(f) {
+  const el = $('#sched');
+  const sd = f.sched || {};
+  const cf = f.ctrl || {};
+  const on = sd.state === 'enabled';
+  const name = on ? (sd.ops === 'stasis' ? 'scx_stasis' : 'scx_' + (sd.ops || '?')) : 'EEVDF';
+  let html = `<div class="sched-head"><span class="sched-name">${escapeHTML(name)}</span>` +
+    (on ? `<span class="status good">${ICON.ok}Attached</span>` : sd.state === 'absent' ? `<span class="status warning">${ICON.warn}No sched_ext</span>` : `<span class="status neutral">${ICON.idle}Kernel default</span>`) + '</div>';
+  if (on && sd.ops === 'stasis' && sd.shared != null) {
+    const rows = [['Shared vtime queue', sd.shared], ['Priority queue (protected tasks)', sd.prio], ['Direct to an idle CPU', sd.local]];
+    const mx = Math.max(1, ...rows.map((r) => r[1] || 0));
+    html += rows.map(([l, v]) => `<div class="kv-row"><span class="l">${l}</span><span class="v">${fmtNum(v || 0)}<span class="small"> /s</span></span><span class="bar2"><i style="width:${((v || 0) / mx) * 100}%"></i></span></div>`).join('');
+  } else if (on) {
+    html += `<div class="small">${S.view === 'sim' ? 'The simulator models scheduling decisions, not dispatch counts.' : 'Dispatch counters appear when scx_stasis is loaded.'}</div>`;
+  } else {
+    html += `<div class="small">${S.view === 'sim' ? 'In this policy the kernel\'s own scheduler runs every job.' : 'No sched_ext scheduler is attached.'} Fault frequency still comes from cgroup counters.</div>`;
+  }
+  html += `<div class="kv-row"><span class="l">Load controller</span><span class="v">${cf.on ? 'stasisd · ' + escapeHTML(cf.signal || '?') : 'off'}</span></div>`;
+  el.innerHTML = html;
+}
+function renderMem(f) {
+  const el = $('#mem');
+  const m = f.mem || {};
+  if (!m.total) { el.innerHTML = '<div class="small">Memory totals were not recorded for this run.</div>'; $('#mem-meta').textContent = ''; return; }
+  const jobs = f._n.res;
+  const avail = m.avail ?? 0;
+  const other = Math.max(0, m.total - avail - jobs);
+  const pct = (v) => clamp((v / m.total) * 100, 0, 100);
+  const swapUsed = (m.swap_total || 0) - (m.swap_free || 0);
+  $('#mem-meta').textContent = fmtBytes(m.total) + ' RAM';
+  el.innerHTML =
+    `<div class="stack" role="img" aria-label="RAM: ${fmtBytes(jobs)} jobs, ${fmtBytes(other)} other, ${fmtBytes(avail)} available"><i class="jobs" style="width:${pct(jobs)}%"></i><i class="other" style="width:${pct(other)}%"></i></div>` +
+    `<div class="mem-legend"><span><i class="key-box" style="background:var(--heat-1)"></i>Jobs <b>${fmtBytes(jobs)}</b></span><span><i class="key-box" style="background:var(--ink-3)"></i>Other <b>${fmtBytes(other)}</b></span><span><i class="key-box" style="background:var(--track);box-shadow:inset 0 0 0 1px var(--line)"></i>Available <b>${fmtBytes(avail)}</b></span></div>` +
+    (m.swap_total ? `<div class="kv-row"><span class="l">Swap used</span><span class="v">${fmtBytes(swapUsed)} <span class="small">of ${fmtBytes(m.swap_total)}</span></span><span class="bar2"><i style="width:${clamp((swapUsed / m.swap_total) * 100, 0, 100)}%;background:var(--frost-ink)"></i></span></div>` : '<div class="small">No swap configured.</div>');
+}
+function renderRunSummary() {
+  const R = S.replay, m = R.metrics || {}, p = R.probe;
+  $('#run-status').textContent = R.meta ? (R.meta.status || '') : '';
+  const cell = (l, v) => `<div><div class="l">${l}</div><div class="v">${v}</div></div>`;
+  $('#run-summary').innerHTML =
+    cell('Throughput', m.throughput != null ? `${m.throughput.toFixed(3)} <span class="small">passes/s</span>` : '–') +
+    cell('Processes killed', m.kills != null ? String(m.kills) : '–') +
+    cell('Jain fairness', m.jain != null ? m.jain.toFixed(3) : '–') +
+    cell('Probe p99 latency', p && p.p99 != null ? fmtUs(p.p99) : '–') +
+    cell('Time to first park', m.ttfp_s != null ? `${m.ttfp_s.toFixed(1)} <span class="small">s</span>` : '–') +
+    cell('Swap traffic', m.swap_pages != null ? fmtBytes(m.swap_pages * 4096) : '–');
+}
+function renderPsiTable() {
+  const fr = S.frames, end = S.end;
+  const rows = [];
+  for (let i = Math.max(0, end - 29); i <= end; i++) {
+    const f = fr[i];
+    rows.push(`<tr><td>${runClockLabel(f.t)}</td><td class="num">${fmtPct(f.psi.full)}%</td><td class="num">${fmtPct(f.psi.some)}%</td><td class="num">${fmtNum(pagesMiBs(f.rate.swpin))}</td><td class="num">${fmtNum(pagesMiBs(f.rate.swpout))}</td><td class="num">${f._n.run}</td><td class="num">${f._n.park}</td></tr>`);
+  }
+  $('#psi-tbl').innerHTML = `<table class="data"><thead><tr><th>Time</th><th class="num">Full stall</th><th class="num">Some stall</th><th class="num">Swap in MiB/s</th><th class="num">Swap out MiB/s</th><th class="num">Running</th><th class="num">Parked</th></tr></thead><tbody>${rows.reverse().join('')}</tbody></table>`;
+}
+
+// ============================================================ results view
+const SERIES = ['stasis', 'eevdf', 'ctrl', 'thrashprotect', 'oomd', 'simple', 'scxonly'];
+async function enterResults() {
+  const RS = S.results;
+  if (RS.loading) return;
+  hideNotice('#res-notice');
+  if (S.server && S.server.results) {
+    RS.loading = true;
+    $('#res-src').innerHTML = 'Loading results…';
+    try { RS.data = await getJSON('api/results'); } catch (e) { RS.data = { rows: [], score: [], score_error: e.message }; }
+    RS.loading = false;
+    $('#res-src').innerHTML = `Measured runs from the server · <b>${RS.data.rows.length}</b> finished runs`;
+    drawResults(RS.data.rows, RS.data.score, RS.data.score_error, false);
+  } else {
+    if (S.server) showNotice('#res-notice', 'The server was started without <code>--results</code>, so these are simulated. Restart it with <code>--results /srv/results</code> to see your measured runs.');
+    if (!RS.simRows) {
+      RS.loading = true;
+      RS.simRows = await simResults((i, n) => { $('#res-src').innerHTML = `Simulating 72 runs of the model… <b>${Math.round((i / n) * 100)}%</b>`; });
+      RS.loading = false;
+    }
+    if (S.view !== 'results') return;
+    $('#res-src').innerHTML = '<b>Simulated example</b> · 3 policies × N = 1–8 × 3 seeds, from the model in the Simulator tab. Not measurements.';
+    drawResults(RS.simRows, null, null, true);
+  }
+}
+function median(v) { const s = v.slice().sort((a, b) => a - b); const n = s.length; return n ? (n % 2 ? s[(n - 1) / 2] : (s[n / 2 - 1] + s[n / 2]) / 2) : null; }
+function niceMax(v) { if (!(v > 0)) return 1; const p = Math.pow(10, Math.floor(Math.log10(v))); for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p; return 10 * p; }
+function drawResults(rows, score, scoreErr, simulated) {
+  const labels = SERIES.filter((l) => rows.some((r) => r.label === l));
+  for (const r of rows) if (!labels.includes(r.label)) labels.push(r.label);
+  const color = (l) => { const i = SERIES.indexOf(l); return i >= 0 ? `var(--s${i + 1})` : 'var(--ink-3)'; };
+  const name = (l) => CONFIG_NAMES[l] || l;
+  const Ns = Array.from(new Set(rows.filter((r) => r.N > 0).map((r) => r.N))).sort((a, b) => a - b);
+  const cells = new Map();
+  for (const l of labels) for (const n of Ns) {
+    const v = rows.filter((r) => r.label === l && r.N === n && r.throughput != null).map((r) => r.throughput);
+    if (v.length) cells.set(l + '|' + n, { med: median(v), min: Math.min(...v), max: Math.max(...v), runs: v.length });
+  }
+  // legend
+  const lg = $('#curve-legend'); lg.textContent = '';
+  for (const l of labels) { if (!Ns.some((n) => cells.has(l + '|' + n))) continue; const s = mk('span'); const k = mk('i', 'key-line'); k.style.background = color(l); s.append(k, document.createTextNode(name(l))); lg.append(s); }
+  // chart
+  const box = $('#curve'); box.textContent = '';
+  if (!Ns.length) { box.innerHTML = '<div class="empty"><h3>No throughput data yet</h3><p>Finished runs appear here, one point per configuration and job count.</p></div>'; }
+  else {
+    const W = 640, H = 300, L = 46, R = 112, T = 14, B = 36;
+    const pw = W - L - R, ph = H - T - B;
+    const ymax = niceMax(Math.max(...Array.from(cells.values()).map((c) => c.max)) * 1.05);
+    const X = (n) => L + (Ns.length === 1 ? pw / 2 : ((n - Ns[0]) / (Ns[Ns.length - 1] - Ns[0])) * pw);
+    const Y = (v) => T + ph * (1 - v / ymax);
+    const svg = svgEl('svg', { viewBox: `0 0 ${W} ${H}`, role: 'img', 'aria-label': 'Throughput against number of concurrent jobs, per configuration' });
+    for (let i = 0; i <= 4; i++) {
+      const v = (ymax / 4) * i, y = Y(v);
+      svg.append(svgEl('line', { x1: L, x2: L + pw, y1: y, y2: y, stroke: 'var(--grid)', 'stroke-width': 1 }));
+      const tx = svgEl('text', { x: L - 8, y: y + 4, 'text-anchor': 'end', 'font-size': 11, fill: 'var(--ink-3)' }); tx.textContent = fmtNum(v, 2); svg.append(tx);
+    }
+    for (const n of Ns) { const tx = svgEl('text', { x: X(n), y: T + ph + 18, 'text-anchor': 'middle', 'font-size': 11, fill: 'var(--ink-3)' }); tx.textContent = String(n); svg.append(tx); }
+    const xl = svgEl('text', { x: L + pw / 2, y: H - 4, 'text-anchor': 'middle', 'font-size': 11.5, fill: 'var(--ink-2)' }); xl.textContent = 'Concurrent jobs (N)'; svg.append(xl);
+    const yl = svgEl('text', { x: 12, y: T + ph / 2, transform: `rotate(-90 12 ${T + ph / 2})`, 'text-anchor': 'middle', 'font-size': 11.5, fill: 'var(--ink-2)' }); yl.textContent = 'Passes per second'; svg.append(yl);
+    const ends = [];
+    const drawOrder = labels.filter((l) => l !== 'stasis').concat(labels.includes('stasis') ? ['stasis'] : []);
+    for (const l of drawOrder) {
+      const pts = Ns.filter((n) => cells.has(l + '|' + n)).map((n) => ({ n, ...cells.get(l + '|' + n) }));
+      if (!pts.length) continue;
+      if (pts.length > 1) {
+        const band = pts.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.max)).join('') + pts.slice().reverse().map((p) => 'L' + X(p.n) + ' ' + Y(p.min)).join('') + 'Z';
+        svg.append(svgEl('path', { d: band, fill: color(l), 'fill-opacity': 0.1, stroke: 'none' }));
+        svg.append(svgEl('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.med)).join(''), fill: 'none', stroke: color(l), 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+      }
+      for (const p of pts) svg.append(svgEl('circle', { cx: X(p.n), cy: Y(p.med), r: 4, fill: color(l), stroke: 'var(--panel)', 'stroke-width': 2 }));
+      if (l === 'stasis' || l === 'eevdf') { const p = pts[pts.length - 1]; ends.push({ l, x: X(p.n), y: Y(p.med) }); }
+    }
+    ends.sort((a, b) => a.y - b.y);
+    for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].ly = ends[i - 1].y + 16;
+    for (const e of ends) {
+      const ly = e.ly ?? e.y;
+      svg.append(svgEl('line', { x1: e.x + 7, x2: e.x + 16, y1: e.y, y2: ly, stroke: color(e.l), 'stroke-width': 1.5 }));
+      const tx = svgEl('text', { x: e.x + 20, y: ly + 4, 'font-size': 12, 'font-weight': 600, fill: 'var(--ink)' }); tx.textContent = name(e.l); svg.append(tx);
+    }
+    // hover: crosshair snaps to N
+    const hl = svgEl('line', { y1: T, y2: T + ph, stroke: 'var(--ink-2)', 'stroke-opacity': 0.5, 'stroke-width': 1, visibility: 'hidden' });
+    svg.append(hl);
+    const hit = svgEl('rect', { x: L - 10, y: T, width: pw + 20, height: ph, fill: 'transparent', tabindex: 0 });
+    svg.append(hit);
+    let hN = null;
+    const showN = (n, cx, cy) => {
+      hN = n; hl.setAttribute('x1', X(n)); hl.setAttribute('x2', X(n)); hl.setAttribute('visibility', 'visible');
+      const tip = $('#tip'); tip.textContent = '';
+      const head = mk('div', 'th'); head.append(mk('span', null, `N = ${n}`), mk('span', null, 'passes/s')); tip.append(head);
+      const items = labels.map((l) => [l, cells.get(l + '|' + n)]).filter((x) => x[1]).sort((a, b) => b[1].med - a[1].med);
+      for (const [l, c] of items) { const r = mk('div', 'tr'); const k = mk('i', 'k'); k.style.background = color(l); r.append(k, mk('b', null, fmtNum(c.med, 3)), mk('span', null, `${name(l)} · ${fmtNum(c.min, 3)}–${fmtNum(c.max, 3)}`)); tip.append(r); }
+      tip.hidden = false;
+      const tw = tip.offsetWidth; let left = cx + 16; if (left + tw > window.innerWidth - 8) left = cx - tw - 16;
+      tip.style.left = Math.max(8, left) + 'px'; tip.style.top = Math.max(8, cy - 20) + 'px';
+    };
+    hit.addEventListener('pointermove', (e) => {
+      const r = svg.getBoundingClientRect(); const sx = ((e.clientX - r.left) / r.width) * W;
+      let best = Ns[0]; for (const n of Ns) if (Math.abs(X(n) - sx) < Math.abs(X(best) - sx)) best = n;
+      showN(best, e.clientX, e.clientY);
+    });
+    hit.addEventListener('pointerleave', () => { hl.setAttribute('visibility', 'hidden'); hideTip(); });
+    hit.addEventListener('keydown', (e) => {
+      if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+      e.preventDefault(); const i = clamp(Ns.indexOf(hN ?? Ns[0]) + (e.key === 'ArrowLeft' ? -1 : 1), 0, Ns.length - 1);
+      const r = svg.getBoundingClientRect(); showN(Ns[i], r.left + (X(Ns[i]) / W) * r.width, r.top + r.height / 3);
+    });
+    hit.addEventListener('blur', () => { hl.setAttribute('visibility', 'hidden'); hideTip(); });
+    box.append(svg);
+  }
+  // table view of the curve
+  const head = '<tr><th>Configuration</th>' + Ns.map((n) => `<th class="num">N=${n}</th>`).join('') + '</tr>';
+  const body = labels.map((l) => `<tr><td><span class="swatch" style="background:${color(l)}"></span>${escapeHTML(name(l))}</td>` + Ns.map((n) => { const c = cells.get(l + '|' + n); return `<td class="num">${c ? fmtNum(c.med, 3) + ` <span class="small">[${fmtNum(c.min, 3)}–${fmtNum(c.max, 3)}]</span>` : '–'}</td>`; }).join('') + '</tr>').join('');
+  $('#curve-tbl').innerHTML = `<table class="data"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  // hypotheses
+  const sc = $('#score');
+  if (simulated) sc.innerHTML = '<div class="empty"><h3>Scored on measured runs only</h3><p>H1–H5 come from <code>docs/00-prereg.md</code> and are judged against real runs, never against the model. Start the server with <code>--results</code> once the campaign has data.</p></div>';
+  else if (scoreErr) sc.innerHTML = `<div class="empty"><h3>Could not read the pre-registration</h3><p>${escapeHTML(scoreErr)}</p></div>`;
+  else if (!score || !score.length) sc.innerHTML = '<div class="empty"><h3>No hypotheses scored yet</h3><p>The table fills in as runs for each hypothesis finish.</p></div>';
+  else {
+    const fmtV = (v) => (v && v.length ? `${fmtNum(median(v), 3)} <span class="small">[${fmtNum(Math.min(...v), 3)}–${fmtNum(Math.max(...v), 3)}]</span>` : '–');
+    const verdict = (r) => { const k = r.result === 'PASS' ? 'pass' : r.result === 'FAIL' ? 'fail' : 'missing'; const t = r.result === 'PASS' ? 'Pass' : r.result === 'FAIL' ? 'Fail' : r.result === 'MISSING' ? 'No data' : 'No baseline'; return `<span class="verdict ${k}">${ICON[k]}${t}</span>`; };
+    sc.innerHTML = '<div class="tbl-wrap"><table class="data"><thead><tr><th>Hypothesis</th><th class="num">N</th><th class="num">STASIS</th><th class="num">Deciding baseline</th><th>Verdict</th></tr></thead><tbody>' +
+      score.map((r) => `<tr><td><b>${escapeHTML(r.id)}</b><span class="claim">${escapeHTML(r.claim)}</span></td><td class="num">${r.N}</td><td class="num">${fmtV(r.stasis)}</td><td class="num">${r.equals != null ? `must equal ${escapeHTML(String(r.equals))}` : r.baseline ? `${escapeHTML(name(r.baseline_label))}<br>${fmtV(r.baseline)}` : '–'}</td><td>${verdict(r)}</td></tr>`).join('') +
+      '</tbody></table></div>';
+  }
+  // all runs
+  const sorted = rows.slice().sort((a, b) => SERIES.indexOf(a.label) - SERIES.indexOf(b.label) || a.N - b.N || a.run - b.run);
+  $('#runs-meta').textContent = `${rows.length} runs`;
+  const num = (v, d) => (v == null || !isFinite(v) ? '–' : (+v).toFixed(d));
+  $('#runs-tbl').innerHTML = rows.length ? '<table class="data"><thead><tr><th>Configuration</th><th class="num">N</th><th class="num">Run</th><th>Status</th><th class="num">Passes/s</th><th class="num">Kills</th><th class="num">Jain</th><th class="num">Probe p99</th><th class="num">First park s</th><th class="num">Swap</th></tr></thead><tbody>' +
+    sorted.map((r) => `<tr><td><span class="swatch" style="background:${color(r.label)}"></span>${escapeHTML(name(r.label))}</td><td class="num">${r.N}</td><td class="num">${r.run}</td><td>${escapeHTML(r.status || '')}</td><td class="num">${num(r.throughput, 3)}</td><td class="num">${r.kills ?? '–'}</td><td class="num">${num(r.jain, 3)}</td><td class="num">${fmtUs(r.p99_us)}</td><td class="num">${num(r.ttfp_s, 1)}</td><td class="num">${r.swap_pages != null ? fmtBytes(r.swap_pages * 4096) : '–'}</td></tr>`).join('') +
+    '</tbody></table>' : '<div class="empty"><p>No finished runs yet.</p></div>';
+}
+
+// ============================================================ wiring
+function seg(id, onPick) {
+  const g = $(id);
+  g.addEventListener('click', (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    for (const x of g.querySelectorAll('button')) x.setAttribute('aria-checked', String(x === b));
+    onPick(b.dataset.v);
+  });
+  g.addEventListener('keydown', (e) => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    const bs = Array.from(g.querySelectorAll('button'));
+    const i = bs.findIndex((x) => x.getAttribute('aria-checked') === 'true');
+    const n = bs[clamp(i + (e.key === 'ArrowLeft' ? -1 : 1), 0, bs.length - 1)];
+    n.focus(); n.click(); e.preventDefault();
+  });
+}
+function wire() {
+  for (const b of $$('.tabs button')) b.addEventListener('click', () => setView(b.dataset.view));
+  $('#brand').addEventListener('click', (e) => { e.preventDefault(); setView(S.server ? 'live' : 'sim'); });
+  $('#go-sim').addEventListener('click', () => setView('sim'));
+  seg('#win', (v) => setWindow(+v));
+  seg('#rp-speed', (v) => { S.replay.speed = +v; if (S.replay.timer) { stopPlay(); startPlay(); } });
+  seg('#sim-speed', (v) => { S.sim.speed = +v; if (S.view === 'sim') simRun(); });
+  seg('#sim-policy', (v) => { S.sim.policy = v; if (S.sim.eng) S.sim.eng.setPolicy(v); schedule(); });
+  const setN = (n) => { S.sim.n = clamp(n, 1, 12); $('#n-out').textContent = String(S.sim.n); simStart(); };
+  $('#n-dec').addEventListener('click', () => setN(S.sim.n - 1));
+  $('#n-inc').addEventListener('click', () => setN(S.sim.n + 1));
+  $('#restart').addEventListener('click', () => simStart());
+  $('#play').addEventListener('click', () => (S.replay.timer ? stopPlay() : startPlay()));
+  $('#scrub').addEventListener('input', (e) => { stopPlay(); S.end = +e.target.value; S.replay.pos = S.end; schedule(); });
+  $('#run-sel').addEventListener('change', (e) => { S.replay.id = e.target.value; S.replay.pos = null; loadRun(e.target.value); });
+  const tgl = (btn, box, onOpen) => $(btn).addEventListener('click', () => { const b = $(box); b.hidden = !b.hidden; $(btn).setAttribute('aria-expanded', String(!b.hidden)); $(btn).textContent = b.hidden ? 'Table' : 'Hide table'; if (onOpen && !b.hidden) onOpen(); });
+  tgl('#psi-tbl-btn', '#psi-tbl', renderPsiTable);
+  tgl('#curve-tbl-btn', '#curve-tbl');
+  const cv = $('#cv-psi');
+  cv.addEventListener('pointermove', (e) => onHover(e, cv, null));
+  cv.addEventListener('pointerleave', onLeave);
+  cv.addEventListener('keydown', (e) => onKey(e, cv, null));
+  cv.addEventListener('blur', onLeave);
+  $('#theme-btn').addEventListener('click', () => {
+    const cur = document.documentElement.dataset.theme || (matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+    const next = cur === 'light' ? 'dark' : 'light';
+    document.documentElement.dataset.theme = next;
+    try { localStorage.setItem('stasis-theme', next); } catch (e) { /* storage blocked */ }
+  });
+  new ResizeObserver(() => schedule()).observe($('#inst'));
+  matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => { readColors(); schedule(); });
+  new MutationObserver(() => { readColors(); evCache.key = ''; schedule(); if (S.view === 'results') enterResults(); })
+    .observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
+  window.addEventListener('hashchange', () => { const v = location.hash.slice(1); if (v && v !== S.view) setView(v); });
+  document.addEventListener('visibilitychange', () => { if (S.view === 'sim') { if (document.hidden) simStop(); else simRun(); } });
+}
+async function probeServer() {
+  if (location.protocol === 'file:') return null;
+  try {
+    const ac = new AbortController();
+    const to = setTimeout(() => ac.abort(), 2500);
+    const r = await fetch('api/info', { cache: 'no-store', signal: ac.signal });
+    clearTimeout(to);
+    if (!r.ok) return null;
+    const j = await r.json();
+    return j && j.server === 'stasis' ? j : null;
+  } catch (e) { return null; }
+}
+async function boot() {
+  readColors();
+  wire();
+  S.server = await probeServer();
+  if (S.server) {
+    $('#theme-btn').hidden = false;
+    try { const t = localStorage.getItem('stasis-theme'); if (t) document.documentElement.dataset.theme = t; } catch (e) { /* storage blocked */ }
+    readColors();
+  }
+  const want = location.hash.slice(1);
+  setView(['live', 'replay', 'results', 'sim'].includes(want) ? want : S.server ? 'live' : 'sim');
+}
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => schedule());
+boot();
+})();
+</script>

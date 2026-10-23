@@ -9,7 +9,10 @@ HERE=$(cd "$(dirname "$0")" && pwd)
 for k in $(seq 1 "$RUNS"); do
   for n in $NS; do
     out="$ROOT/${LABEL:-$CONFIG}/N$n/run$k"
-    [[ -f $out/status ]] && { echo "skip $out"; continue; }
+    if [[ -f $out/status ]]; then
+      if [[ $(cat "$out/status") != RUNNING ]]; then echo "skip $out"; continue; fi
+      echo "rerun unfinished $out"; rm -rf "$out"
+    fi
     sync; echo 3 > /proc/sys/vm/drop_caches
     "$HERE/manifest.sh" "$out" "$CONFIG"
     "$HERE/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$CONFIG"

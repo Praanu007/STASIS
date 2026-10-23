@@ -21,15 +21,19 @@
 
 #define PFF_DIR  "/run/stasis"
 #define PFF_PATH PFF_DIR "/pff"
+#define STATS_PATH PFF_DIR "/stats"
 #define MAX_PRIO 64
 
 const char help_fmt[] =
 "scx_stasis: scx_simple + per-process page-fault-frequency accounting\n"
 "            + a priority queue for protected interactive tasks.\n"
 "\n"
-"Usage: %s [-p TGID]... [-v]\n"
+"Usage: %s [-p TGID]... [-w MS] [-v]\n"
 "\n"
 "  -p TGID       Protect this process (latency probe, demo shell); repeatable\n"
+"  -w MS         sched_ext watchdog timeout (default 30000). Lower it, e.g. to\n"
+"                5000, while developing so stalls show up quickly. Kernels\n"
+"                from 6.12 have no sysfs knob for this; it is set here.\n"
 "  -v            Print libbpf debug messages\n"
 "  -h            Display this help and exit\n";
 
@@ -91,6 +95,21 @@ static void export_pff(int map_fd)
 	rename(PFF_PATH ".tmp", PFF_PATH);	/* atomic swap */
 }
 
+/* Once a second: cumulative dispatch counters for the dashboard. */
+static void export_stats(const __u64 *stats)
+{
+	FILE *f = fopen(STATS_PATH ".tmp", "w");
+
+	if (!f)
+		return;
+	fprintf(f, "local %llu\nshared %llu\nprio %llu\n",
+		(unsigned long long)stats[STASIS_STAT_LOCAL],
+		(unsigned long long)stats[STASIS_STAT_SHARED],
+		(unsigned long long)stats[STASIS_STAT_PRIO]);
+	fclose(f);
+	rename(STATS_PATH ".tmp", STATS_PATH);
+}
+
 int main(int argc, char **argv)
 {
 	struct scx_stasis *skel;
@@ -109,8 +128,11 @@ restart:
 
 	optind = 1;
 	nr_prio = 0;
-	while ((opt = getopt(argc, argv, "p:vh")) != -1) {
+	while ((opt = getopt(argc, argv, "p:w:vh")) != -1) {
 		switch (opt) {
+		case 'w':
+			skel->struct_ops.stasis_ops->timeout_ms = strtoul(optarg, NULL, 10);
+			break;
 		case 'p':
 			if (nr_prio == MAX_PRIO) {
 				fprintf(stderr, "too many -p (max %d)\n", MAX_PRIO);
@@ -147,6 +169,7 @@ restart:
 			__u64 stats[STASIS_NR_STATS];
 
 			read_stats(skel, stats);
+			export_stats(stats);
 			printf("local=%llu shared=%llu prio=%llu\n",
 			       stats[STASIS_STAT_LOCAL], stats[STASIS_STAT_SHARED], stats[STASIS_STAT_PRIO]);
 			fflush(stdout);
