@@ -58,11 +58,12 @@ the hypotheses are scored at N = 4, 6 and 8.
 
 - **Throughput ratios.** Emulated swap makes thrashing far worse than on real
   hardware, and it makes reloading slow for STASIS too.
-- **Jain's index** (0.43 controller-only, 0.14 full STASIS). With PASSES = 60
-  a job needs about one quantum of CPU in total, so the first job finishes
-  before rotation can give anyone else a turn. J over [onset, first finish]
-  then measures who was in the first active set. The pre-registered PASSES
-  (about 60 s alone) gives each job about four quanta.
+- **Jain's index over the guide's window** (0.43 controller-only, 0.14 full
+  STASIS). J over [onset, first finish] measures who was in the first active
+  set, not fairness: the first job finishes before rotation reaches the
+  parked ones. Longer jobs don't cure it (the simulator gives 0.55 at N = 8
+  with four quanta per job), so the scored `jain` is now taken over the whole
+  run (deviation 20): 0.80–0.87 for full STASIS on these runs.
 - **Probe latency.** Even with nothing to do (EEVDF, N = 2), p99 was 5.5 ms:
   timer emulation dominates. The ranking still exposed a real design flaw
   (deviation 11).
@@ -202,4 +203,22 @@ below). The final controller's tests ran on the VM in a short third boot.
   no pass and MGLRU 6 in 300 s, while every STASIS run finished all 420 in
   202–397 s. One run each, emulated: the campaign measures this properly.
 - Whether measuring working sets pays is still open (H8).
+
+## Pilot for experiment C (`pilot-c/`): the early warning's race
+
+Every earlier run's first pressure event came from PSI, during the jobs'
+initial allocations (deviation 22). Two pilots tried the onset experiment C
+is built for: jobs whose working sets jump mid-run (`wss SIZE PASSES HOT
+JUMP`), so the extra demand arrives as refaults. Full STASIS only, PFF_HI
+0.029, the same emulated VM. `race.py RUN_DIR` prints what happened after the
+first jump.
+
+| Pilot | Workload | What happened |
+|---|---|---|
+| `1/` | 6 × 700 MB, 50 % hot, jobs 1–3 jump after pass 50 of 100 | The first halving (24 s, PSI, during allocation) parked jobs 4–6; jobs 1–3 jumped at 81–105 s while running nearly alone, fitted, and finished. No park for pressure after the jumps (only warm-up): the design jumped too early. |
+| `2/` | 6 × 800 MB, 40 % hot, jobs 1–4 jump after pass 250 of 400 | Slow reloads kept full STASIS at 2 of 6 jobs for most of the run, and the first two jumps (451 s, 566 s) came then. At 778.6 s job 1, rotated back in after its jump, reloaded far more than its stale pre-jump estimate; PFF fired and stasisd parked job 2 although the two-job set fitted, and reset the estimates. By 809 s all six were admitted; job 3 jumped at 808.7 s, its PFF crossed PFF_HI at 810.5 s (1.04 faults per CPU-ms) and stasisd halved the set (`pressure-pff`). PSI `full avg10` was 0.0 then; the PSI trigger didn't fire again until 842.4 s. Stopped at about 874 s, once that was seen; this copy was taken while it ran, so `status` reads RUNNING. |
+
+One race, won by 32 s, on emulated hardware with an uncalibrated threshold:
+evidence that the mechanism can work, not a measurement. Experiment C on the
+lab VM measures it.
 

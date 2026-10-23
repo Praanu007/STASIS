@@ -13,8 +13,8 @@ changed later is reported as a deviation, with the reason.
 |---|---|---|
 | SIZE (MB per job) | `700` | 4 jobs (2.8 GB) fit in 4 GB RAM; 8 don't |
 | PASSES | `__` | `scripts/calibrate.sh 700` → one job alone runs ~60 s |
-| HOT (share of each job's memory it keeps touching) | experiment A: 100 %; experiment B: 60 % | B: 8 hot sets (3.4 GB) overcommit 4 GB, 6 (2.5 GB) don't; 8 footprints are 5.6 GB |
-| N range | A: 1–8; B: 4, 6, 8 | |
+| HOT (share of each job's memory it keeps touching) | experiment A: 100 %; experiment B: 60 %; experiment C: 40 %, and 100 % for jobs 1–4 after 60 % of PASSES | B: 8 hot sets (3.4 GB) overcommit 4 GB, 6 (2.5 GB) don't; 8 footprints are 5.6 GB. C: 8 × 280 MB (2.2 GB) fit, 4 × 700 + 4 × 280 MB (3.9 GB) don't |
+| N range | A: 1–8; B: 4, 6, 8; C: 8 | |
 | Timeout per run | 1200 s | |
 | Runs per cell | 5 | |
 
@@ -239,6 +239,63 @@ changed later is reported as a deviation, with the reason.
     and 348 s. A window now opens at most every 10 s per job, and only while
     the job isn't stalling on memory (its PSI `some avg10` under 2%, and no
     stall since the sampler's last look).
+20. Fairness is measured over the whole run. The guide's Jain's index counts
+    each job's passes between pressure onset and the first job finishing. That
+    window ends before a load controller has rotated through its parked jobs,
+    so it reads about (jobs resident) / N for any admission controller: in the
+    rehearsal, full STASIS scored 0.14–0.41 at N = 7 (0.14 is 1/7: one job ran
+    all 60 of its passes while six waited their turn), and in the simulator,
+    with each job four rotation quanta long, it falls from 1.00 at N = 5 to
+    0.55 at N = 8 while EEVDF scores 0.99 at N = 8 because every job is
+    equally stuck. `jain` is now Jain's index over each job's progress rate
+    (passes divided by the time from the run's start until the job finished
+    or the run ended): the fairness of slowdowns, so a job killed or starved
+    for the whole run pulls it down. On the same rehearsal runs this reads
+    0.80–0.87 for full STASIS, 0.89 controller-only, 0.64 MGLRU and 0.57
+    EEVDF. The guide's version is still reported as `jain_window`; H3 and
+    H3c are scored on `jain`. Like any fairness index it rewards equal
+    misery, which is why it is read beside throughput.
+21. The sensitivity analysis is pre-registered, and sweeps the trigger too.
+    The guide asks to show that the result doesn't hinge on one lucky
+    setting, sweeping the rotation quantum (5, 15, 30 s) and the PSI trigger
+    (50, 100, 200 ms of full stall per 1 s window) at N = 8. The campaign
+    swept the quantum and the starvation bound (60, 120, 240 s, deviation 14)
+    but not the trigger, and nothing scored either. `campaign.sh plan
+    --sensitivity` now runs all three sweeps, 3 runs per setting (27 runs),
+    H10 scores each non-default setting against the N = 8 baselines on
+    throughput with the same strict rule as H1, and F8 plots them.
+22. A fair race for the early warning: experiment C and H5c. In every
+    rehearsal run the first pressure event came from PSI, and in experiments A
+    and B it always will: every job allocates its memory at the start, and the
+    first stall is reclaim during those allocations, before any page has been
+    swapped out and touched again, so there are no major faults yet for PFF to
+    count. H5 (time to first park) therefore measures that allocation
+    transient, where both configurations react to the same PSI event. The
+    early warning's claim is about another onset: thrashing that starts from
+    refaults in some jobs while the machine as a whole isn't yet fully
+    stalled. PSI `full` needs every runnable task stalled at once; PFF is per
+    job. Experiment C creates that onset: 8 jobs, 40 % hot (2.2 GB of hot sets
+    fit); after 60 % of their passes, jobs 1–4 make every page hot (`wss SIZE
+    PASSES 40 JUMP`), so their extra 1.7 GB arrives as refaults of pages
+    already in swap (3.9 GB of hot sets don't fit). `detect_s` is the time
+    from the first jump to the first park for pressure, and H5c scores it,
+    full STASIS (PSI or PFF) against controller-only (PSI only); `jump_src`
+    records which signal the first acted-on pressure came from. Parking sooner
+    is only worth it if it isn't parking for nothing, so H5d checks that full
+    STASIS also keeps more throughput than controller-only, and H11 that it
+    keeps more than EEVDF. H5 stays as registered. Two pilots on the emulated
+    rehearsal VM (`docs/rehearsal/pilot-c/`) checked the mechanics: the jump,
+    its log line, the metrics. They mostly couldn't reach the intended state:
+    with swap-in at about 3 MB/s a job rotated in spends about 100 s
+    reloading, so full STASIS was running only 2 of 6 jobs at the first two
+    jumps (and at 778.6 s PFF parked a job although the two-job set fitted: a
+    jumped job, rotated back in, reloaded far more than its stale estimate).
+    At the third jump all six were running: job 3's PFF crossed PFF_HI 1.8 s
+    after its jump and stasisd halved the set, while PSI `full` stayed at 0
+    and its trigger didn't fire until 32 s later. That is one event, on
+    emulated hardware, with an uncalibrated PFF_HI (0.029): it shows the race
+    can be won, not that it is. Experiment C, on the lab VM and after a pilot
+    there (Phase 5), measures it.
 
 Deviations 2–7, 9–11, 13, 14, 18 and 19 change the control law or the
 scheduler. All were found before any Phase 5 measurement: 3 by a fake-cgroup
@@ -246,7 +303,8 @@ test; 2, 4 and 5 by the dashboard's simulator, which runs the same law on a
 model of the lab VM, then confirmed and refined on the rehearsal VM; 6, 7 and
 9–11 on the rehearsal VM; 13–17 from an independent design review, using the
 rehearsal's logs as evidence; 18 by the simulator and the rehearsal VM; 19 on
-the rehearsal VM. Each controller change is in `controller/stasisd.py` and the
+the rehearsal VM; 20 from the rehearsal's logs and the simulator; 21 from
+the guide; 22 from the rehearsal's logs and a pilot on the rehearsal VM. Each controller change is in `controller/stasisd.py` and the
 simulator, and `tests/test_controller.sh` checks it.
 
 ## Baselines
@@ -264,7 +322,8 @@ simulator, and `tests/test_controller.sh` checks it.
 
 ## Metrics
 
-See the docstring of `eval/analyze.py`: throughput, kills, Jain's J, probe
+See the docstring of `eval/analyze.py`: throughput, kills, Jain's J (over the
+whole run, and the guide's onset-to-first-finish window), probe
 p99, time-to-first-park, swap traffic, longest park, longest time without
 progress, share of time parked, PSI full stall, major faults, jobs finished
 within 600 s, and makespan.
@@ -317,7 +376,34 @@ These are a proposed set: edit them before you freeze this file.
      "baselines": ["stasis-fp"]},
     {"id": "H9",  "experiment": "B", "claim": "With measured working sets, STASIS beats EEVDF when the hot sets overcommit memory",
      "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [8],
-     "baselines": ["eevdf"]}
+     "baselines": ["eevdf"]},
+    {"id": "H5c", "experiment": "C", "claim": "When working sets jump mid-run, the scheduler's PFF warning parks sooner than PSI alone",
+     "metric": "detect_s", "better": "lower", "stasis": "stasis", "N": [8],
+     "baselines": ["ctrl"]},
+    {"id": "H5d", "experiment": "C", "claim": "The early warning pays off: through a working-set jump, full STASIS keeps higher throughput than controller-only",
+     "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [8],
+     "baselines": ["ctrl"]},
+    {"id": "H11", "experiment": "C", "claim": "Through a working-set jump, full STASIS keeps higher throughput than EEVDF",
+     "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [8],
+     "baselines": ["eevdf"]},
+    {"id": "H10-q5", "claim": "Full STASIS still beats every baseline at N = 8 with a 5 s rotation quantum (--quantum=5)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-q5", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
+    {"id": "H10-q30", "claim": "Full STASIS still beats every baseline at N = 8 with a 30 s rotation quantum (--quantum=30)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-q30", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
+    {"id": "H10-w60", "claim": "Full STASIS still beats every baseline at N = 8 with a 60 s starvation bound (--max-wait=60)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-w60", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
+    {"id": "H10-w240", "claim": "Full STASIS still beats every baseline at N = 8 with a 240 s starvation bound (--max-wait=240)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-w240", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
+    {"id": "H10-t50", "claim": "Full STASIS still beats every baseline at N = 8 with a 50 ms PSI trigger (--trigger-ms=50)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-t50", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
+    {"id": "H10-t200", "claim": "Full STASIS still beats every baseline at N = 8 with a 200 ms PSI trigger (--trigger-ms=200)",
+     "metric": "throughput", "better": "higher", "stasis": "sens-t200", "N": [8],
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]}
   ]
 }
 ```

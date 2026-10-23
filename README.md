@@ -255,28 +255,45 @@ never fires first, report that honestly; it's evidence for H5 either way.
 
 ### Phase 5: evaluation campaign
 
-Two experiments, each in its own results root:
+Three experiments, each in its own results root:
 
 | | Workload | Configurations | Runs (K = 5) |
 |---|---|---|---|
-| **A**, the thrashing curve | every page hot (HOT 100) | EEVDF and full STASIS at N = 1–8; controller-only, MGLRU, systemd-oomd and thrash-protect at N = 4, 6, 8; ablations `stasis-norot` and `stasis-fp` at N = 8; EEVDF at N = 0 (probe reference) | 155 (173 with `--sensitivity`: quantum 5/15/30 s and bound 60/120/240 s at N = 8) |
+| **A**, the thrashing curve | every page hot (HOT 100) | EEVDF and full STASIS at N = 1–8; controller-only, MGLRU, systemd-oomd and thrash-protect at N = 4, 6, 8; ablations `stasis-norot` and `stasis-fp` at N = 8; EEVDF at N = 0 (probe reference) | 155 (182 with `--sensitivity`: quantum 5/15/30 s, bound 60/120/240 s and PSI trigger 50/100/200 ms per 1 s, at N = 8) |
 | **B**, measured working sets | 60% of each job's memory hot (HOT 60) | EEVDF, full STASIS and `stasis-fp` at N = 4, 6, 8 | 45 |
+| **C**, a working-set jump (H5c, the early warning) | 40% hot; after 60% of PASSES, jobs 1–4 make every page hot, so thrashing starts from refaults in half the jobs | EEVDF, controller-only and full STASIS at N = 8 | 15 |
 
 ```bash
 eval/campaign.sh plan /srv/results --experiment A --sensitivity
 eval/campaign.sh plan /srv/results-b --experiment B
+eval/campaign.sh plan /srv/results-c --experiment C
 # per batch: reboot the VM (fresh kernel state), then
 sudo -E STASISD_EXTRA=--pff-hi=<frozen> eval/campaign.sh run /srv/results 700 $PASSES 40
 sudo -E STASISD_EXTRA=--pff-hi=<frozen> eval/campaign.sh run /srv/results-b 700 $PASSES 40
+sudo -E STASISD_EXTRA=--pff-hi=<frozen> eval/campaign.sh run /srv/results-c 700 $PASSES 40
 # after each batch, copy the results to the host (PowerShell):
 #   scp -r <user>@<vm-ip>:/srv/results* .\
-for r in /srv/results /srv/results-b; do
+for r in /srv/results /srv/results-b /srv/results-c; do
   python3 eval/analyze.py metrics $r
   python3 eval/analyze.py figures $r
   python3 eval/analyze.py score $r docs/00-prereg.md     # pass/fail table
 done
 ```
 
+- **Pilot experiment C first.** Run one full-STASIS and one controller-only
+  run, then check that the jumps came while every job was running (the
+  `jump` lines in `job-1.log`…`job-4.log` against the thaws in
+  `decisions.jsonl`) and that the controller parked jobs for pressure
+  afterwards (`detect_s` in `analyze.py metrics`):
+  ```bash
+  for c in stasis ctrl; do
+    sudo -E STASISD_EXTRA=--pff-hi=<frozen> STASIS_HOT=40 STASIS_JUMP=$((PASSES * 6 / 10)):4 \
+      scripts/run_mix.sh 8 700 $PASSES /srv/pilot-c/$c/N8/run1 $c
+  done
+  python3 eval/analyze.py metrics /srv/pilot-c
+  ```
+  The rehearsal VM couldn't: at 3 MB/s of swap-in, full STASIS was still
+  reloading jobs when the jumps came (deviation 22).
 - **Reboot between batches, don't restore the snapshot.** Restoring `clean`
   also wipes `/srv/results`. Restore only to recover a broken system, and copy
   the results off first.

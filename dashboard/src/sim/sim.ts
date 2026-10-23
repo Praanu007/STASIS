@@ -440,19 +440,23 @@ export async function simResults(onProgress?: (cell: number, cells: number) => v
             lastDone = s.t;
           }
         }
-        let jain: number | null = null;
+        const jainOf = (xs: number[]): number | null => {
+          const sx = sum(xs), sx2 = sum(xs, (x) => x * x);
+          return sx2 > 0 ? (sx * sx) / (xs.length * sx2) : null;
+        };
+        // fairness of slowdowns over the whole run, as eval/analyze.py scores it
+        const jain = jainOf(s.jobs.map((j) => j.passes / (passesAt.get(j.id) ?? s.t)));
+        let jainWindow: number | null = null;   // the build guide's onset-to-first-finish window
         if (atOnset) {
           const onset = atOnset;
           const end = atFirst || s.jobs.map((j) => j.passes);
-          const xs = end.map((v, i) => v - onset[i]);
-          const sx = sum(xs), sx2 = sum(xs, (x) => x * x);
-          jain = sx2 > 0 ? (sx * sx) / (xs.length * sx2) : null;
+          jainWindow = jainOf(end.map((v, i) => v - onset[i]));
         }
         const allDone = s.done();
         const passes = s.totalPasses();
         const end = allDone && lastDone != null ? lastDone : s.t;
         rows.push({ label, config: label, N: n, run: seed, status: allDone ? 'OK' : 'TIMEOUT', throughput: passes / end,
-          passes, kills: 0, jain, p99_us: null, ttfp_s: s.firstPark != null && s.firstFull != null ? s.firstPark - s.firstFull : null,
+          passes, kills: 0, jain, jain_window: jainWindow, p99_us: null, ttfp_s: s.firstPark != null && s.firstFull != null ? s.firstPark - s.firstFull : null,
           swap_pages: s.cnt.swpin + s.cnt.swpout, duration_s: end });
       }
     }

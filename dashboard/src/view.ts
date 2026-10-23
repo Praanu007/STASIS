@@ -8,6 +8,10 @@ export const CONFIG_NAMES: Record<string, string> = {
   eevdf: 'EEVDF only', stasis: 'Full STASIS', ctrl: 'Controller only', scxonly: 'scx_stasis alone',
   oomd: 'EEVDF + systemd-oomd', simple: 'scx_simple', thrashprotect: 'thrash-protect', mglru: 'EEVDF + MGLRU min_ttl',
   'stasis-norot': 'STASIS, no rotation', 'stasis-fp': 'STASIS, footprint estimate',
+  // the sensitivity sweeps (campaign.sh --sensitivity)
+  'sens-q5': 'STASIS, quantum 5 s', 'sens-q15': 'STASIS, quantum 15 s', 'sens-q30': 'STASIS, quantum 30 s',
+  'sens-w60': 'STASIS, bound 60 s', 'sens-w120': 'STASIS, bound 120 s', 'sens-w240': 'STASIS, bound 240 s',
+  'sens-t50': 'STASIS, trigger 50 ms', 'sens-t100': 'STASIS, trigger 100 ms', 'sens-t200': 'STASIS, trigger 200 ms',
 };
 export const SHORT_NAMES: Record<string, string> = {
   eevdf: 'EEVDF', stasis: 'STASIS', ctrl: 'Controller only', thrashprotect: 'thrash-protect', oomd: 'oomd',

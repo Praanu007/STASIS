@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# campaign.sh plan  RESULTS_ROOT [--experiment A|B] [--runs K] [--sensitivity]
+# campaign.sh plan  RESULTS_ROOT [--experiment A|B|C] [--runs K] [--sensitivity]
 # campaign.sh run   RESULTS_ROOT SIZE_MB PASSES [MAX_RUNS]
 #
 # Phase 5 run matrix. Each experiment gets its own RESULTS_ROOT (for example
@@ -14,11 +14,17 @@
 #   stasis-fp      N=8  (stasis --ws=footprint: with every page hot, measuring
 #                        can't change a decision, so this isolates its cost)
 #   eevdf N=0 (unloaded probe reference)
-#   --sensitivity adds full STASIS at N=8 x3 for quantum 5/15/30 s and
-#   starvation bound 60/120/240 s.
+#   --sensitivity adds full STASIS at N=8 x3 for quantum 5/15/30 s,
+#   starvation bound 60/120/240 s and PSI trigger 50/100/200 ms of full
+#   stall per 1 s window (H10 in docs/00-prereg.md).
 # Experiment B, measured working sets (60% of each job's memory hot, HOT = 60):
 #   eevdf, stasis, stasis-fp (stasis --ws=footprint)   N=4,6,8
-# K runs per cell (default 5): A is 155 runs (173 with --sensitivity), B is 45.
+# Experiment C, a working-set jump (H5c): 8 jobs, 40% hot (their hot sets
+# fit); after 60% of PASSES, jobs 1-4 make every page hot, so the extra demand
+# arrives as refaults of swapped-out pages, the onset PFF is meant to catch:
+#   eevdf, ctrl, stasis   N=8
+# K runs per cell (default 5): A is 155 runs (182 with --sensitivity), B is
+# 45, C is 15.
 #
 # 'plan' shuffles the whole matrix once, so drift over time (thermals, host
 # load) doesn't line up with one configuration. 'run' works through the plan
@@ -42,7 +48,7 @@ plan)
     esac
     shift
   done
-  [[ $EXP == A || $EXP == B ]] || { echo "experiment must be A or B" >&2; exit 2; }
+  [[ $EXP == A || $EXP == B || $EXP == C ]] || { echo "experiment must be A, B or C" >&2; exit 2; }
   echo "$EXP" > "$ROOT/experiment"
   {
     # label config N run hot stasisd_args
@@ -58,18 +64,21 @@ plan)
         echo "stasis-norot stasis 8 $k 100 --no-rotation"
         echo "stasis-fp stasis 8 $k 100 --ws=footprint"
         echo "eevdf eevdf 0 $k 100 -"
-      else
+      elif [[ $EXP == B ]]; then
         for n in 4 6 8; do
           echo "eevdf eevdf $n $k 60 -"
           echo "stasis stasis $n $k 60 -"
           echo "stasis-fp stasis $n $k 60 --ws=footprint"
         done
+      else
+        for c in eevdf ctrl stasis; do echo "$c $c 8 $k 40 -"; done
       fi
     done
     if [[ $EXP == A && -n $SENS ]]; then
       for k in 1 2 3; do
         for q in 5 15 30; do echo "sens-q$q stasis 8 $k 100 --quantum=$q"; done
         for w in 60 120 240; do echo "sens-w$w stasis 8 $k 100 --max-wait=$w"; done
+        for t in 50 100 200; do echo "sens-t$t stasis 8 $k 100 --trigger-ms=$t"; done
       done
     fi
   } | shuf > "$ROOT/plan.txt"
@@ -77,6 +86,8 @@ plan)
 run)
   SIZE=$3 PASSES=$4 MAX=${5:-1000000}
   [[ -f $ROOT/plan.txt ]] || { echo "run '$0 plan $ROOT' first" >&2; exit 1; }
+  JUMP=
+  [[ $(cat "$ROOT/experiment" 2>/dev/null) == C ]] && JUMP="$((PASSES * 6 / 10)):4"   # jobs 1-4 jump
   [[ ${STASISD_EXTRA:-} == *--pff-hi=* ]] || {
     echo "set STASISD_EXTRA=--pff-hi=<value frozen in docs/00-prereg.md>" >&2; exit 1; }
   done_now=0
@@ -92,7 +103,7 @@ run)
     sync; echo 3 > /proc/sys/vm/drop_caches
     # </dev/null: nothing inside a run may read (and swallow) lines of plan.txt
     "$HERE/../scripts/manifest.sh" "$out" "$label $args" < /dev/null
-    STASIS_HOT=$hot STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
+    STASIS_HOT=$hot STASIS_JUMP=$JUMP STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
     done_now=$((done_now + 1))
   done < "$ROOT/plan.txt"
   left=$(while read -r label _ n k _ _; do

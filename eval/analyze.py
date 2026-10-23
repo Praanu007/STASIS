@@ -3,7 +3,7 @@
 
   analyze.py metrics   ROOT                 -> ROOT/metrics.csv
   analyze.py calibrate ROOT [--config eevdf] -> PFF distribution, PFF_HI hint
-  analyze.py figures   ROOT                 -> ROOT/figures/F1..F5.png
+  analyze.py figures   ROOT                 -> ROOT/figures/F1..F8.png
   analyze.py score     ROOT PREREG.md       -> ROOT/score.md
 
 ROOT holds LABEL/N<n>/run<k>/ directories written by run_mix.sh.
@@ -14,8 +14,16 @@ Metric definitions (build guide, Phase 5, plus the revised design's):
   kills         workload processes killed by the kernel's OOM killer or by
                 systemd-oomd (kills.txt + oomd_kills.txt). STASIS itself never
                 kills; this counts what the system did anyway.
-  jain          (sum x)^2 / (n * sum x^2), x_i = passes job i completed between
-                pressure onset and the first job finishing
+  jain          Jain's index (sum x)^2 / (n * sum x^2) over each job's progress
+                rate, x_i = passes job i completed / time from the run's start
+                until it finished (or the run ended): fairness of slowdowns over
+                the whole run. A killed or starved job scores low.
+  jain_window   the build guide's version: x_i = passes completed between
+                pressure onset and the first job finishing. Reported, not
+                scored: the window ends when the first job does, which is
+                before a load controller has rotated through the parked jobs,
+                so it reads about (jobs resident) / N for any admission
+                controller (docs/00-prereg.md, deviation 20).
   p99_us        p99 of the probe's cyclictest histogram
   ttfp_s        first sample with PSI full avg10 > 0 -> first freeze decision
   swap_pages    delta (pswpin + pswpout) across the run
@@ -30,16 +38,23 @@ Metric definitions (build guide, Phase 5, plus the revised design's):
   jobs_done_600 jobs finished within 600 s of the start
   makespan_s    time until the last job finished (empty if any didn't)
   hot, ws       the job's hot share (%) and stasisd's working-set estimate
+  jump_s        experiment C: when the first job's working set jumped (s from
+                the start; the job logs "jump <t>")
+  detect_s      experiment C: from that jump to the first park stasisd made
+                because of pressure (pressure-psi or pressure-pff)
+  jump_src      experiment C: the signal of the first pressure after the jump
+                that stasisd acted on (not warm-up): psi or pff
 Pressure onset is the earlier of the first PSI full avg10 > 0 sample and the
 controller's first logged pressure event, so every config uses one definition.
 """
 import csv, glob, json, math, os, re, statistics, sys
 
 FIELDS = ["label", "config", "N", "run", "status", "throughput", "passes",
-          "kills", "jain", "p99_us", "max_us", "ttfp_s", "first_src",
+          "kills", "jain", "jain_window", "p99_us", "max_us", "ttfp_s", "first_src",
           "swap_pages", "duration_s", "max_wait_s", "parked_pct", "max_gap_s",
-          "psi_full_pct", "majflt", "jobs_done_600", "makespan_s", "hot", "ws"]
-TEXT = ("label", "config", "status", "first_src", "ws")
+          "psi_full_pct", "majflt", "jobs_done_600", "makespan_s", "hot", "ws",
+          "jump_s", "detect_s", "jump_src"]
+TEXT = ("label", "config", "status", "first_src", "ws", "jump_src")
 
 # ---- loading ----------------------------------------------------------------
 
@@ -78,6 +93,20 @@ def job_logs(run):
                         pass
         jobs[os.path.basename(p)[:-4]] = pts
     return jobs
+
+def job_jumps(run):
+    """Times at which jobs changed phase (wss JUMP_PASS), sorted."""
+    out = []
+    for p in glob.glob(f"{run}/job-*.log"):
+        with open(p) as f:
+            for line in f:
+                parts = line.split()
+                if len(parts) == 2 and parts[0] == "jump":
+                    try:
+                        out.append(float(parts[1]))
+                    except ValueError:
+                        pass
+    return sorted(out)
 
 def probe_hist(run):
     """cyclictest -h histogram -> (sorted [(latency_us, count)], max_us)."""
@@ -163,13 +192,15 @@ def run_metrics(label, n, k, d):
     onset = min((t for t in (psi_t, dec_t) if t is not None), default=None)
     first_src = pres[0].get("src") if pres else None
 
-    J = None
-    if onset is not None and jobs:
-        t_first = min(done.values()) if done else t_end
+    J = Jw = None
+    if jobs and t0 and t_end:
+        J = jain([(p[-1][0] if p else 0) / (done.get(j, t_end) - t0) for j, p in jobs.items()])
+    t_first = min(done.values()) if done else t_end
+    if onset is not None and jobs and t_first is not None:
         xs = []
         for p in jobs.values():
             xs.append(sum(1 for (i, t) in p if i > 0 and onset <= t <= t_first))
-        J = jain(xs)
+        Jw = jain(xs)
 
     freezes = [e["t"] for e in decisions if e.get("frozen") is True]
     ttfp = (freezes[0] - psi_t) if (freezes and psi_t is not None) else None
@@ -194,10 +225,21 @@ def run_metrics(label, n, k, d):
             gaps.append(max(b - a for a, b in zip(ts, ts[1:])) if len(ts) > 1 else 0)
         gap = max(gaps)
     start = next((e for e in decisions if e.get("event") == "start"), {})
+    jumps = job_jumps(d)
+    jump_s = detect = jump_src = None
+    if jumps:
+        tj = jumps[0]
+        jump_s = tj - t0 if t0 else None
+        parks = [e["t"] for e in decisions if e.get("frozen") is True and e["t"] >= tj
+                 and str(e.get("why", "")).startswith("pressure-")]
+        detect = parks[0] - tj if parks else None
+        acted = next((e for e in decisions if e.get("event") == "pressure" and e["t"] >= tj
+                      and not e.get("warming")), None)
+        jump_src = acted.get("src") if acted else None
     hot = int(next((c.split("=")[1] for c in cfg if c.startswith("HOT=")), 100))
 
     return {"label": label, "config": cfg[0], "N": n, "run": k, "status": status,
-            "throughput": throughput, "passes": passes, "kills": kills, "jain": J,
+            "throughput": throughput, "passes": passes, "kills": kills, "jain": J, "jain_window": Jw,
             "p99_us": percentile(hist, 0.99), "max_us": mx, "ttfp_s": ttfp,
             "first_src": first_src, "swap_pages": swap,
             "duration_s": (t_end - t0) if t0 and t_end else None,
@@ -205,7 +247,8 @@ def run_metrics(label, n, k, d):
             "psi_full_pct": psi_pct, "majflt": majflt,
             "jobs_done_600": sum(1 for t in done.values() if t0 and t - t0 <= 600) if jobs else None,
             "makespan_s": (finish - t0) if (t0 and len(done) == len(jobs) and jobs) else None,
-            "hot": hot, "ws": start.get("ws", "footprint" if start else None)}
+            "hot": hot, "ws": start.get("ws", "footprint" if start else None),
+            "jump_s": jump_s, "detect_s": detect, "jump_src": jump_src}
 
 def parking(decisions, t_end):
     """(longest single parked stretch, share of job-time parked) from the
@@ -305,6 +348,7 @@ NAMES = {"eevdf": "EEVDF", "stasis": "Full STASIS", "ctrl": "STASIS controller-o
          "stasis-norot": "STASIS, no rotation", "stasis-fp": "STASIS, footprint estimate",
          "mglru": "EEVDF + MGLRU min_ttl", "oomd": "EEVDF + systemd-oomd",
          "thrashprotect": "thrash-protect", "simple": "scx_simple", "scxonly": "scx_stasis alone"}
+BASELINES = ("eevdf", "mglru", "oomd", "thrashprotect")
 
 def median_run(rows, label, n, key="throughput"):
     rs = [r for r in rows if r["label"] == label and r["N"] == n and r[key] is not None]
@@ -473,6 +517,33 @@ def cmd_figures(root):
         ax.legend(fontsize=7, ncol=4); ax.grid(alpha=.3)
         fig.tight_layout(); fig.savefig(f"{out}/F7_working_sets.png", dpi=150)
         break
+
+    # F8: sensitivity (H10). Full STASIS at N=8 under each swept setting,
+    # against the best baseline run at N=8: the result must not hinge on one
+    # lucky setting.
+    sens = [r for r in rows if r["label"].startswith("sens-") and r["N"] == 8 and r["throughput"] is not None]
+    if sens:
+        best = max((r["throughput"] for r in rows if r["label"] in BASELINES and r["N"] == 8
+                    and r["throughput"] is not None), default=None)
+        sweeps = [("q", "rotation quantum (s of CPU)", "15"), ("w", "starvation bound (s)", "120"),
+                  ("t", "PSI trigger (ms of full stall per s)", "100")]
+        fig, axes = plt.subplots(1, 3, figsize=(11, 3.6), sharey=True)
+        for ax, (key, name, default) in zip(axes, sweeps):
+            settings = sorted({r["label"][6:] for r in sens if r["label"][5] == key}, key=float)
+            for i, v in enumerate(settings):
+                ys = [r["throughput"] for r in sens if r["label"] == f"sens-{key}{v}"]
+                ax.scatter([i] * len(ys), ys, s=16, color="C0")
+                ax.hlines(statistics.median(ys), i - .25, i + .25, color="C0")
+            ax.set_xticks(range(len(settings)), [v + (" (default)" if v == default else "") for v in settings], fontsize=8)
+            if best is not None:
+                ax.axhline(best, color="k", ls="--", lw=1)
+            ax.set_title(name, fontsize=10); ax.grid(alpha=.3, axis="y")
+        axes[0].set_ylabel("throughput (passes / s)")
+        if best is not None:
+            axes[-1].text(1, best, "best baseline run ", transform=axes[-1].get_yaxis_transform(),
+                          ha="right", va="bottom", fontsize=8)
+        fig.suptitle("F8  Sensitivity: full STASIS at N=8 under each setting"); fig.tight_layout()
+        fig.savefig(f"{out}/F8_sensitivity.png", dpi=150)
     print(f"figures -> {out}/")
 
 # ---- scoring against the frozen pre-registration ----------------------------

@@ -13,20 +13,23 @@
 #   simple         scx_simple, no controller (not a baseline: Gate 0 only)
 # stasisd flags: $STASISD_EXTRA (e.g. the frozen --pff-hi=X) and $STASISD_ARGS
 # (ablations and sensitivity sweeps). $STASIS_HOT is the share of each job's
-# memory it keeps touching (percent, default 100). $DEMO_SHELL, if set, is also
-# protected by scx_stasis.
+# memory it keeps touching (percent, default 100). $STASIS_JUMP=P:K makes jobs
+# 1..K change phase after P passes, every page hot from then on (experiment C).
+# $DEMO_SHELL, if set, is also protected by scx_stasis.
 set -euo pipefail
 N=$1 SIZE=$2 PASSES=$3 OUT=$4 CONFIG=${5:-eevdf}
 HOME_DIR=${STASIS_HOME:-/opt/stasis}
 TIMEOUT=${STASIS_TIMEOUT:-1200}
 HOT=${STASIS_HOT:-100}
+JUMP=${STASIS_JUMP:-}
+[[ -z $JUMP || $JUMP =~ ^[0-9]+:[0-9]+$ ]] || { echo "STASIS_JUMP must be PASS:JOBS" >&2; exit 2; }
 THRASH_PROTECT=${THRASH_PROTECT:-/opt/thrash-protect/bin/thrash-protect}
 MGLRU_TTL=/sys/kernel/mm/lru_gen/min_ttl_ms
 mkdir -p "$OUT" /run/stasis
 echo RUNNING > "$OUT/status"
 ln -sfn "$OUT" /run/stasis/current          # the dashboard follows this link
 systemctl reset-failed 'stasis-*' 2>/dev/null || true
-echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES HOT=$HOT STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
+echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES HOT=$HOT${JUMP:+ JUMP=$JUMP} STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
 
 # A baseline this machine can't run is recorded as such, never as a result.
 unavailable() { echo "$CONFIG unavailable: $1" | tee "$OUT/unavailable.txt" >&2; echo UNAVAILABLE > "$OUT/status"; exit 3; }
@@ -40,7 +43,7 @@ esac
 
 # Start from a quiet machine: wait (up to 3 min) for the memory-stall average
 # left by a previous run to decay to zero. Otherwise this run's pressure onset
-# (Jain's window, time-to-first-park) is the last run's tail: on the rehearsal
+# (for time-to-first-park and Jain's window) is the last run's tail: on the rehearsal
 # VM a run started 22 s after another had its onset about 24 s before any job
 # stalled.
 quiet() { awk '/^full/ { split($2, a, "="); exit !(a[2] + 0 == 0) }' /proc/pressure/memory; }
@@ -122,9 +125,11 @@ sleep 1
 
 T0=$(date +%s.%N); echo "$T0" > "$OUT/t0"
 for i in $(seq 1 "$N"); do
+  jump=()
+  [[ -n $JUMP ]] && (( i <= ${JUMP#*:} )) && jump=("${JUMP%:*}")
   systemd-run --unit="stasis-job-$i" --slice=stasis.slice \
     -p StandardOutput=file:"$OUT/job-$i.log" \
-    "$HOME_DIR/wss" "$SIZE" "$PASSES" "$HOT"
+    "$HOME_DIR/wss" "$SIZE" "$PASSES" "$HOT" "${jump[@]}"
 done
 
 # status stays RUNNING until the run really ends, so a run cut short by a

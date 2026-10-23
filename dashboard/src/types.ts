@@ -98,7 +98,8 @@ export interface ResultRow {
   throughput?: number | null;
   passes?: number | null;
   kills?: number | null;
-  jain?: number | null;
+  jain?: number | null;           // fairness of slowdowns over the whole run
+  jain_window?: number | null;    // the build guide's onset-to-first-finish window
   p99_us?: number | null;
   ttfp_s?: number | null;
   swap_pages?: number | null;

@@ -1,2 +1,2 @@
-label,config,N,run,status,throughput,passes,kills,jain,p99_us,max_us,ttfp_s,first_src,swap_pages,duration_s,max_wait_s,parked_pct,max_gap_s,psi_full_pct,majflt,jobs_done_600,makespan_s,hot,ws
-stasis,stasis,7,1,OK,1.2626925113676344,420,0,0.16208943411159477,6300,367418,-2.044142246246338,psi,592539,334.720871925354,129.9,49.1,271.3585476875305,3.349675776819729,292730,7,332.62254762649536,100,refs
+label,config,N,run,status,throughput,passes,kills,jain,jain_window,p99_us,max_us,ttfp_s,first_src,swap_pages,duration_s,max_wait_s,parked_pct,max_gap_s,psi_full_pct,majflt,jobs_done_600,makespan_s,hot,ws,jump_s,detect_s,jump_src
+stasis,stasis,7,1,OK,1.2626925113676344,420,0,0.7990878450222392,0.16208943411159477,6300,367418,-2.044142246246338,psi,592539,334.720871925354,129.9,49.1,271.3585476875305,3.349675776819729,292730,7,332.62254762649536,100,refs,,,

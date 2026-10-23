@@ -2,7 +2,7 @@
  * print progress.
  * build: cc -O2 -o /opt/stasis/wss wss.c
  *
- *   wss SIZE_MB PASSES [HOT_PCT]
+ *   wss SIZE_MB PASSES [HOT_PCT [JUMP_PASS]]
  *
  * The whole buffer is written once, so the job's footprint is SIZE_MB. Each
  * pass then makes SIZE_MB worth of random page touches (one per 4 KiB page of
@@ -11,6 +11,12 @@
  * With HOT_PCT = 60 the working set is 60% of the footprint and the rest goes
  * cold: that is the workload where measuring working sets, rather than
  * counting memory, changes what fits.
+ *
+ * With JUMP_PASS, the job changes phase after that many passes: from then on
+ * every page is hot. Its working set jumps from HOT_PCT to 100% of a buffer
+ * that is already allocated, so the extra demand arrives as refaults of
+ * swapped-out pages rather than as new allocations (experiment C). The job
+ * prints "jump <wall-clock seconds>" when it does.
  *
  * Each progress line is "<pass> <wall-clock seconds>". The timestamp uses
  * CLOCK_REALTIME (not CLOCK_MONOTONIC as in the build guide) so job logs,
@@ -32,15 +38,16 @@ static double now(void)
 
 int main(int argc, char **argv)
 {
-	if (argc < 3 || argc > 4) {
-		fprintf(stderr, "usage: %s SIZE_MB PASSES [HOT_PCT]\n", argv[0]);
+	if (argc < 3 || argc > 5) {
+		fprintf(stderr, "usage: %s SIZE_MB PASSES [HOT_PCT [JUMP_PASS]]\n", argv[0]);
 		return 1;
 	}
 	size_t pages = strtoul(argv[1], NULL, 10) * 256;	/* 4 KiB pages */
 	long passes = strtol(argv[2], NULL, 10);
-	long hot_pct = argc == 4 ? strtol(argv[3], NULL, 10) : 100;
-	if (pages == 0 || hot_pct < 1 || hot_pct > 100) {
-		fprintf(stderr, "%s: SIZE_MB must be > 0 and HOT_PCT 1..100\n", argv[0]);
+	long hot_pct = argc >= 4 ? strtol(argv[3], NULL, 10) : 100;
+	long jump = argc == 5 ? strtol(argv[4], NULL, 10) : -1;	/* -1: never */
+	if (pages == 0 || hot_pct < 1 || hot_pct > 100 || (argc == 5 && jump < 0)) {
+		fprintf(stderr, "%s: SIZE_MB must be > 0, HOT_PCT 1..100, JUMP_PASS >= 0\n", argv[0]);
 		return 1;
 	}
 	size_t hot = pages * (size_t)hot_pct / 100;
@@ -57,6 +64,11 @@ int main(int argc, char **argv)
 
 	uint64_t x = 88172645463325252ULL;		/* xorshift64 state */
 	for (long p = 1; p <= passes; p++) {
+		if (p - 1 == jump) {				/* the phase change */
+			hot = pages;
+			printf("jump %.3f\n", now());
+			fflush(stdout);
+		}
 		for (size_t i = 0; i < pages; i++) {
 			x ^= x << 13; x ^= x >> 7; x ^= x << 17;
 			buf[(x % hot) * 4096] += 1;

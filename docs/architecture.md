@@ -66,6 +66,17 @@ faster. Pressure only halves the set when the set doesn't fit, or when it fits,
 is resident, has room and still thrashes, which means an estimate was wrong:
 then the active jobs' measured working sets are forgotten.
 
+**When the early warning can lead.** PSI and PFF see different things. PSI
+`full` counts time in which every runnable task is stalled on memory; PFF
+counts one job's major faults per millisecond of its own CPU. When jobs start
+together and allocate more than fits, the first stall is reclaim during those
+allocations, before any page has been swapped out and touched again: there are
+no major faults yet, so PSI always fires first (every rehearsal run). PFF can
+only lead when thrashing starts from refaults in some jobs while others keep
+the CPUs busy, so the machine as a whole isn't fully stalled yet. Experiment C
+(`docs/00-prereg.md`, deviation 22) creates exactly that onset, by making half
+the jobs' working sets jump mid-run.
+
 ## Fairness and the starvation bound
 
 Every job takes turns. A turn starts when a job is resumed and is measured in
