@@ -80,8 +80,11 @@ def norm_event(e):
     if t is None:
         return None
     if "frozen" in e:
-        return {"t": t, "kind": "park" if e["frozen"] else "wake",
-                "job": job_id(e.get("job", "")), "why": e.get("why", "")}
+        ev = {"t": t, "kind": "park" if e["frozen"] else "wake",
+              "job": job_id(e.get("job", "")), "why": e.get("why", "")}
+        if not e["frozen"] and num(e.get("waited")) is not None:
+            ev["waited"] = num(e.get("waited"))     # how long it had been parked
+        return ev
     kind = e.get("event")
     if kind == "pressure":
         hold = e.get("hold")
@@ -95,9 +98,21 @@ def norm_event(e):
     if kind == "reclaim":
         return {"t": t, "kind": "reclaim", "job": job_id(e.get("job", "")),
                 "bytes": num(e.get("bytes"))}
+    if kind == "ws":                                 # stasisd's working-set estimates
+        jobs = e.get("jobs") if isinstance(e.get("jobs"), dict) else {}
+        return {"t": t, "kind": "ws",
+                "jobs": {job_id(j): {"fp": num(v.get("fp")), "est": num(v.get("est")), "m": num(v.get("m"))}
+                         for j, v in jobs.items() if isinstance(v, dict)}}
+    if kind == "ws-reset":
+        return {"t": t, "kind": "wsreset", "jobs": [job_id(j) for j in e.get("jobs") or [] if isinstance(j, str)]}
+    if kind == "refused":
+        return {"t": t, "kind": "refused", "job": job_id(e.get("job", ""))}
     if kind == "start":
+        ws = e.get("ws")
         return {"t": t, "kind": "start", "signal": e.get("signal"),
-                "pff_hi": num(e.get("pff_hi")), "quantum": num(e.get("quantum"))}
+                "pff_hi": num(e.get("pff_hi")), "quantum": num(e.get("quantum")),
+                "ws": ws if ws in ("refs", "footprint") else None,
+                "max_wait": num(e.get("max_wait")), "rotation": e.get("rotation") is not False}
     return None
 
 def parse_config(run_dir):

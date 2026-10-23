@@ -1,0 +1,6 @@
+pid 8604's current scheduling policy: SCHED_OTHER
+pid 8604's current scheduling priority: 0
+pid 8604's current runtime parameter: 2100000
+pid 8606's current scheduling policy: SCHED_OTHER
+pid 8606's current scheduling priority: 0
+pid 8606's current runtime parameter: 2100000

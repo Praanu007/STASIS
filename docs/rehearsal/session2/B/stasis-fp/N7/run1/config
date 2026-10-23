@@ -1,0 +1,1 @@
+stasis N=7 SIZE=700 PASSES=60 HOT=60 STASISD_EXTRA=--pff-hi=0.029 STASISD_ARGS=--ws=footprint

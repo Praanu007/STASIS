@@ -1,0 +1,3 @@
+# Built from dashboard/src by dashboard/build.mjs (npm run build). GitHub leaves
+# generated files out of the language statistics and folds them in diffs.
+dashboard/index.html linguist-generated=true

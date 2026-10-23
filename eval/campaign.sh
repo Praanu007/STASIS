@@ -1,19 +1,29 @@
 #!/usr/bin/env bash
-# campaign.sh plan  RESULTS_ROOT [--sensitivity]   write RESULTS_ROOT/plan.txt
+# campaign.sh plan  RESULTS_ROOT [--experiment A|B] [--runs K] [--sensitivity]
 # campaign.sh run   RESULTS_ROOT SIZE_MB PASSES [MAX_RUNS]
 #
-# Phase 5 run matrix (about 140 runs of ~8 min, ~19 h of machine time):
-#   eevdf          N=1..8   x5        stasis (full)  N=1..8   x5
-#   ctrl           N=4,6,8  x5        oomd           N=4,6,8  x5
-#   simple         N=4,6,8  x5        thrashprotect  N=4,6,8  x5
-#   eevdf N=0 (unloaded probe reference) x5
-# --sensitivity adds full STASIS at N=8 x3 for rotation quantum 5/15/30 s and
-# trigger 50/100/200 ms per 1 s window.
+# Phase 5 run matrix. Each experiment gets its own RESULTS_ROOT (for example
+# /srv/results and /srv/results-skew); 'plan' records the experiment in
+# RESULTS_ROOT/experiment, which 'analyze.py score' uses to pick hypotheses.
+#
+# Experiment A, the thrashing curve (every page hot, HOT = 100):
+#   eevdf          N=1..8          stasis (full)   N=1..8
+#   ctrl           N=4,6,8         mglru           N=4,6,8
+#   oomd           N=4,6,8         thrashprotect   N=4,6,8
+#   stasis-norot   N=8  (stasis --no-rotation: the fairness ablation)
+#   stasis-fp      N=8  (stasis --ws=footprint: with every page hot, measuring
+#                        can't change a decision, so this isolates its cost)
+#   eevdf N=0 (unloaded probe reference)
+#   --sensitivity adds full STASIS at N=8 x3 for quantum 5/15/30 s and
+#   starvation bound 60/120/240 s.
+# Experiment B, measured working sets (60% of each job's memory hot, HOT = 60):
+#   eevdf, stasis, stasis-fp (stasis --ws=footprint)   N=4,6,8
+# K runs per cell (default 5): A is 155 runs (173 with --sensitivity), B is 45.
 #
 # 'plan' shuffles the whole matrix once, so drift over time (thermals, host
 # load) doesn't line up with one configuration. 'run' works through the plan
-# in order, skipping finished runs, so it is resumable: roll back to the
-# 'clean' snapshot, start a batch with MAX_RUNS, repeat.
+# in order, skipping finished runs, so it is resumable: reboot, start a batch
+# with MAX_RUNS, repeat.
 set -euo pipefail
 HERE=$(cd "$(dirname "$0")" && pwd)
 cmd=$1 ROOT=$2
@@ -21,33 +31,56 @@ mkdir -p "$ROOT"
 
 case $cmd in
 plan)
+  shift 2
+  EXP=A K=5 SENS=
+  while (( $# )); do
+    case $1 in
+      --experiment) EXP=$2; shift ;;
+      --runs) K=$2; shift ;;
+      --sensitivity) SENS=1 ;;
+      *) echo "unknown option $1" >&2; exit 2 ;;
+    esac
+    shift
+  done
+  [[ $EXP == A || $EXP == B ]] || { echo "experiment must be A or B" >&2; exit 2; }
+  echo "$EXP" > "$ROOT/experiment"
   {
-    # label config N run stasisd_args
-    for k in 1 2 3 4 5; do
-      for n in 1 2 3 4 5 6 7 8; do
-        echo "eevdf eevdf $n $k -"
-        echo "stasis stasis $n $k -"
-      done
-      for n in 4 6 8; do
-        for c in ctrl oomd simple thrashprotect; do echo "$c $c $n $k -"; done
-      done
-      echo "eevdf eevdf 0 $k -"
+    # label config N run hot stasisd_args
+    for k in $(seq 1 "$K"); do
+      if [[ $EXP == A ]]; then
+        for n in 1 2 3 4 5 6 7 8; do
+          echo "eevdf eevdf $n $k 100 -"
+          echo "stasis stasis $n $k 100 -"
+        done
+        for n in 4 6 8; do
+          for c in ctrl mglru oomd thrashprotect; do echo "$c $c $n $k 100 -"; done
+        done
+        echo "stasis-norot stasis 8 $k 100 --no-rotation"
+        echo "stasis-fp stasis 8 $k 100 --ws=footprint"
+        echo "eevdf eevdf 0 $k 100 -"
+      else
+        for n in 4 6 8; do
+          echo "eevdf eevdf $n $k 60 -"
+          echo "stasis stasis $n $k 60 -"
+          echo "stasis-fp stasis $n $k 60 --ws=footprint"
+        done
+      fi
     done
-    if [[ ${3:-} == --sensitivity ]]; then
+    if [[ $EXP == A && -n $SENS ]]; then
       for k in 1 2 3; do
-        for q in 5 15 30; do echo "sens-q$q stasis 8 $k --quantum=$q"; done
-        for t in 50 100 200; do echo "sens-t$t stasis 8 $k --trigger-ms=$t"; done
+        for q in 5 15 30; do echo "sens-q$q stasis 8 $k 100 --quantum=$q"; done
+        for w in 60 120 240; do echo "sens-w$w stasis 8 $k 100 --max-wait=$w"; done
       done
     fi
   } | shuf > "$ROOT/plan.txt"
-  echo "$(wc -l < "$ROOT/plan.txt") runs planned in $ROOT/plan.txt" ;;
+  echo "experiment $EXP: $(wc -l < "$ROOT/plan.txt") runs planned in $ROOT/plan.txt" ;;
 run)
   SIZE=$3 PASSES=$4 MAX=${5:-1000000}
   [[ -f $ROOT/plan.txt ]] || { echo "run '$0 plan $ROOT' first" >&2; exit 1; }
   [[ ${STASISD_EXTRA:-} == *--pff-hi=* ]] || {
     echo "set STASISD_EXTRA=--pff-hi=<value frozen in docs/00-prereg.md>" >&2; exit 1; }
   done_now=0
-  while read -r label config n k args; do
+  while read -r label config n k hot args; do
     out="$ROOT/$label/N$n/run$k"
     if [[ -f $out/status ]]; then
       [[ $(cat "$out/status") != RUNNING ]] && continue
@@ -55,14 +88,14 @@ run)
     fi
     (( done_now >= MAX )) && break
     [[ $args == - ]] && args=
-    echo "== $(date +%T) $label N=$n run$k $args"
+    echo "== $(date +%T) $label N=$n run$k hot=$hot $args"
     sync; echo 3 > /proc/sys/vm/drop_caches
     # </dev/null: nothing inside a run may read (and swallow) lines of plan.txt
     "$HERE/../scripts/manifest.sh" "$out" "$label $args" < /dev/null
-    STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
+    STASIS_HOT=$hot STASISD_ARGS="$args" "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
     done_now=$((done_now + 1))
   done < "$ROOT/plan.txt"
-  left=$(while read -r label _ n k _; do
+  left=$(while read -r label _ n k _ _; do
            f=$ROOT/$label/N$n/run$k/status
            [[ -f $f && $(cat "$f") != RUNNING ]] || echo x
          done < "$ROOT/plan.txt" | wc -l)

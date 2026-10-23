@@ -1,0 +1,154 @@
+
+== 16:10:55 install the revised build
+make: Leaving directory '/root/scx'
+No VM guests are running outdated hypervisor (qemu) binaries on this host.
+WARNING: Retrying (Retry(total=4, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProxyError('Cannot connect to proxy.', NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7c2278f89940>: Failed to establish a new connection: [Errno 111] Connection refused'))': /simple/thrash-protect/
+WARNING: Retrying (Retry(total=3, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProxyError('Cannot connect to proxy.', NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7c2278f84cd0>: Failed to establish a new connection: [Errno 111] Connection refused'))': /simple/thrash-protect/
+WARNING: Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProxyError('Cannot connect to proxy.', NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7c2278f84e10>: Failed to establish a new connection: [Errno 111] Connection refused'))': /simple/thrash-protect/
+WARNING: Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProxyError('Cannot connect to proxy.', NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7c2278f84f50>: Failed to establish a new connection: [Errno 111] Connection refused'))': /simple/thrash-protect/
+WARNING: Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'ProxyError('Cannot connect to proxy.', NewConnectionError('<pip._vendor.urllib3.connection.HTTPSConnection object at 0x7c2278f85090>: Failed to establish a new connection: [Errno 111] Connection refused'))': /simple/thrash-protect/
+ERROR: Could not find a version that satisfies the requirement thrash-protect==1.1.2 (from versions: none)
+ERROR: No matching distribution found for thrash-protect==1.1.2
+/root/verify2.sh: line 24: /opt/thrash-protect/bin/thrash-protect: No such file or directory
+
+== 16:27:55 preflight
+kernel 7.0.0-38-generic, 4 CPUs, 3.8 GiB RAM
+Layers 1-3: sensing, load control, parking
+  [ok]   cgroup v2 at /sys/fs/cgroup
+  [ok]   cgroup memory controller
+  [ok]   cgroup cpu controller
+  [ok]   PSI memory trigger (100 ms per 1 s window)
+  [ok]   swap 8191 MiB
+  [ok]   zswap off
+  [ok]   clear_refs + smaps_rollup Referenced (measured working sets)
+  [ok]   cgroup file cgroup.freeze
+  [ok]   cgroup file memory.reclaim
+  [ok]   cgroup file memory.peak
+  [ok]   cgroup file memory.swap.current
+  [ok]   cgroup file memory.pressure
+  [ok]   cgroup file memory.stat
+  [ok]   cgroup file cpu.stat
+  [ok]   cpu.stat user_usec
+  [ok]   freezer: froze a test process
+  [ok]   memory.reclaim accepts writes
+Layer 4: the scheduler
+  [ok]   CONFIG_SCHED_CLASS_EXT=y
+  [ok]   CONFIG_BPF_SYSCALL=y
+  [ok]   CONFIG_DEBUG_INFO_BTF=y
+  [ok]   sched_ext state: disabled
+  [ok]   BTF at /sys/kernel/btf/vmlinux
+  [ok]   clang 21.1.8
+  [ok]   bpftool v7.7.0
+Baselines
+  [ok]   MGLRU on (0x0007), min_ttl_ms writable
+  [ok]   systemd-oomd running
+  [warn] no thrash-protect at /opt/thrash-protect/bin/thrash-protect (setup_vm.sh installs 1.1.2)
+  [ok]   DAMON_RECLAIM not in this kernel (CONFIG_DAMON=n): not a baseline here
+Measurement
+  [ok]   cyclictest
+  [ok]   stress-ng
+Verdict
+  => layers 1-3 (controller)          GO
+  => measured working sets            GO
+  => layer 4 (sched_ext)              GO
+  => baseline mglru                   GO
+  => baseline oomd                    GO
+  => baseline thrash-protect          NO-GO
+0 failed, 1 warnings
+preflight exit 0
+
+== 16:28:03 rung 1 + 3: scx_stasis loads; probe latency under 8 CPU hogs, EEVDF vs scx_stasis
+sched_ext: disabled ops=
+EEVDF:      Min:    292 Act:  662 Avg: 1498 Max:   39565
+scx_stasis: Min:    258 Act:  790 Avg: 1414 Max:   41021
+local=2 shared=18022 prio=15920
+local=2 shared=18393 prio=16531
+EXIT: unregistered from user space
+Oct 23 16:29:15 stasis-vm kernel: sched_ext: BPF scheduler "stasis" enabled
+Oct 23 16:30:07 stasis-vm kernel: sched_ext: BPF scheduler "stasis" disabled (unregistered from user space)
+
+== 16:30:09 run stasis-hot60: N=7 hot=60% stasis 
+Running as unit: stasis-probe.service; invocation ID: 30beaabac97d425bb36707f1a28cf11e
+Running as unit: stasis-job-1.service; invocation ID: 30bed24bfa204677ab64766402ca03ba
+Running as unit: stasis-job-2.service; invocation ID: e8b86315599d49219343be66b590025c
+Running as unit: stasis-job-3.service; invocation ID: 7c3799209ba34177abfcc5e223d59903
+Running as unit: stasis-job-4.service; invocation ID: f30cf36d760540be94881b7a4ec7e06b
+Running as unit: stasis-job-5.service; invocation ID: 07a5de4ee0aa41f1a4f11c7dc1d9d8a9
+Running as unit: stasis-job-6.service; invocation ID: 56dc2446b56e40aea8dde5c28a4ac8d2
+Running as unit: stasis-job-7.service; invocation ID: bdcab8ca872548e3a51ed62ad3b14508
+done: OK -> /srv/v2/stasis-hot60
+status OK; passes 420
+
+== 16:36:49 run stasisfp-hot60: N=7 hot=60% stasis --ws=footprint
+Running as unit: stasis-probe.service; invocation ID: dbdbf2b3bd974f75b6ca53a4313fac20
+Running as unit: stasis-job-1.service; invocation ID: 6884fbc40db347e0925fc10ddf698e1e
+Running as unit: stasis-job-2.service; invocation ID: be30327ab1c94d8b9c4b4d15c93c82ab
+Running as unit: stasis-job-3.service; invocation ID: e7d2b8c1ccdd4287af7e892bb803072b
+Running as unit: stasis-job-4.service; invocation ID: 49c0bf96f7384d6fb1d49e07b9c39f84
+Running as unit: stasis-job-5.service; invocation ID: 2d2e44279dfc4c418a924c82c4e8ce56
+Running as unit: stasis-job-6.service; invocation ID: f1d6ba92e7e245c794cd1f799f76596d
+Running as unit: stasis-job-7.service; invocation ID: d52ab2ba67a645518c59c2967e7c9bc1
+done: OK -> /srv/v2/stasisfp-hot60
+status OK; passes 420
+
+== 16:41:18 run thrashprotect: N=7 hot=100% thrashprotect 
+Running as unit: stasis-probe.service; invocation ID: 703c75d3713e430aad1b332b0162146b
+Running as unit: stasis-job-1.service; invocation ID: 223c14ccff2a47d69c26a3fe8346262a
+Running as unit: stasis-job-2.service; invocation ID: 0972ab3827a449b3b1d2daa218055332
+Running as unit: stasis-job-3.service; invocation ID: 6df0007d5bb243fe999b815fd69cbff7
+Running as unit: stasis-job-4.service; invocation ID: c8a6c8c07c864d5e98edc93c0f70a66d
+Running as unit: stasis-job-5.service; invocation ID: e3d6d0cccd9c467f94cb6d8104177d3f
+Running as unit: stasis-job-6.service; invocation ID: 477e20f61f6a4415a56fca1dbbae1497
+Running as unit: stasis-job-7.service; invocation ID: 157e944116b2447282382033005320fd
+done: TIMEOUT -> /srv/v2/thrashprotect
+status TIMEOUT; passes 0
+
+== 16:46:37 run mglru: N=7 hot=100% mglru 
+Running as unit: stasis-probe.service; invocation ID: 4b10f9d5f0d64df4b09edf4c08020f69
+Running as unit: stasis-job-1.service; invocation ID: 02ab841fc61c48ceaf5b95f19ff318af
+Running as unit: stasis-job-2.service; invocation ID: 8e44381914e045cd98449667c5154cf7
+Running as unit: stasis-job-3.service; invocation ID: 18c6c56ae3bf4d719d3b9731a7a41d49
+Running as unit: stasis-job-4.service; invocation ID: 7fb16cf839a144cba46531e1e3dade68
+Running as unit: stasis-job-5.service; invocation ID: e33fc8aaf8344379adffe73f6e33a193
+Running as unit: stasis-job-6.service; invocation ID: 131492b5a5e74200889b16d80ec35815
+Running as unit: stasis-job-7.service; invocation ID: c92ad48a30e443ab8480d3e51932adfb
+done: TIMEOUT -> /srv/v2/mglru
+status TIMEOUT; passes 6
+
+== 16:52:59 controller tests on this kernel (slow machine)
+PASS  SIGTERM thaws parked jobs
+PASS  calm admits a parked job that fits
+PASS  admission waits until the active set stops growing
+PASS  rotation keeps going after the calm point
+PASS  the quantum is CPU time: no rotation without CPU
+PASS  PFF early warning parks a thrashing job
+PASS  PFF ignores a job that is warming up
+PASS  warm-up guard holds off, then halves once growth stops
+PASS  a parked job is paged out to make room, logged once
+PASS  a set that fits and is reloading is not halved
+PASS  reclaim writes whole bytes
+PASS  measured working sets admit what footprints can't
+PASS  counted by footprint, the fourth job waits
+PASS  a stalled job's working set isn't trusted
+PASS  rotation resumes the longest-waiting job first
+PASS  a job parked for --max-wait is resumed without a finished turn
+PASS  --no-rotation turns rotation and the bound off
+PASS  a halving parks the jobs with the most of their turn
+PASS  the bound only swaps out jobs that aren't stalled on memory
+PASS  the bound waits for the job it swapped in to reload
+PASS  rotation waits for the job it swapped in to reload
+0 failed
+
+== 16:57:36 run stasis-hot100: N=7 hot=100% stasis 
+Running as unit: stasis-probe.service; invocation ID: 528f8b3451824bfd8d4f89a58e072a67
+Running as unit: stasis-job-1.service; invocation ID: 6884803579674fa3965352d2376868cf
+Running as unit: stasis-job-2.service; invocation ID: 523c32ff08194c5eb998c25b14373cd6
+Running as unit: stasis-job-3.service; invocation ID: c57626f4164d4ac6990b156d051f74ae
+Running as unit: stasis-job-4.service; invocation ID: 0b8b52bcefb147b6bc6585c00aaff17a
+Running as unit: stasis-job-5.service; invocation ID: b14b60a2d74245c6aebb15ef38fc7d83
+Running as unit: stasis-job-6.service; invocation ID: ed56a88ffe194667b24ffc03add5df6c
+Running as unit: stasis-job-7.service; invocation ID: fa10a55dbc6945288d8fcca6abc2b547
+done: OK -> /srv/v2/stasis-hot100
+status OK; passes 420
+
+== 17:02:56 done

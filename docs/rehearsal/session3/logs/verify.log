@@ -1,0 +1,91 @@
+
+== 17:26:12 install
+1ad61688e6f80d58a6e507ff44cd5612  /opt/stasis/stasisd.py
+fd4ac8a3eb055d5430ded07a4c1a54f8  tests/test_controller.sh
+
+== 17:26:13 run stasis-hot60-r1: N=7 hot=60% stasis 
+Running as unit: stasis-probe.service; invocation ID: 67339dad7bcc41f985a856bf1bf91c4d
+Running as unit: stasis-job-1.service; invocation ID: a02357a5221f427fae4d7faac3aa33ed
+Running as unit: stasis-job-2.service; invocation ID: f16ec70b9942439caaa10022723e3072
+Running as unit: stasis-job-3.service; invocation ID: b1254a2ad9254c4788d398070f252ec2
+Running as unit: stasis-job-4.service; invocation ID: 5d96336610794aedb92eeda073fb336b
+Running as unit: stasis-job-5.service; invocation ID: 9bc3f8eb4d61472098c27410201df255
+Running as unit: stasis-job-6.service; invocation ID: 877d17d8258d47c78a1924cd92e0a675
+Running as unit: stasis-job-7.service; invocation ID: 62d1c7dd6dc1441d87abbde7c96e1e7f
+done: OK -> /srv/v3/stasis-hot60-r1
+status OK; passes 420
+
+== 17:30:18 run stasisfp-hot60-r1: N=7 hot=60% stasis --ws=footprint
+Running as unit: stasis-probe.service; invocation ID: ccb0fd1d121444b491f9dedf1339d83f
+Running as unit: stasis-job-1.service; invocation ID: 0db29406598e4249a8f7bc35dd23399d
+Running as unit: stasis-job-2.service; invocation ID: cacab0c97fe446bb9dad44e7e28eba18
+Running as unit: stasis-job-3.service; invocation ID: 2ab03bf8520b49be80f036cd5f484eba
+Running as unit: stasis-job-4.service; invocation ID: 7bceb60e76f44dcca6a4fcd4937b0708
+Running as unit: stasis-job-5.service; invocation ID: 9d13669f29c8492eb6872e3b45ffcfe6
+Running as unit: stasis-job-6.service; invocation ID: 1b944deb889f487493385d484f3833f7
+Running as unit: stasis-job-7.service; invocation ID: 4cb09eaa6eba43ceb1823010764b5a6d
+done: OK -> /srv/v3/stasisfp-hot60-r1
+status OK; passes 420
+
+== 17:33:56 run stasis-hot60-r2: N=7 hot=60% stasis 
+Running as unit: stasis-probe.service; invocation ID: d7b545d6a6364bcc9c2c220271732a07
+Running as unit: stasis-job-1.service; invocation ID: c848cefa708d437393ee1a664e217265
+Running as unit: stasis-job-2.service; invocation ID: 41a7c4553bb74ff284aeaf7c8d4666c8
+Running as unit: stasis-job-3.service; invocation ID: d7c9059cd4cc4c789730556306d77d57
+Running as unit: stasis-job-4.service; invocation ID: a21f1523a89b43b2a3c99f22c580af74
+Running as unit: stasis-job-5.service; invocation ID: f53ea10f5ef44ba6846508e95110ed18
+Running as unit: stasis-job-6.service; invocation ID: 5b1bfe3170d94dea81e11d33bd0f4d36
+Running as unit: stasis-job-7.service; invocation ID: b4cfcbb6e6454bf1b23c36154df82080
+done: OK -> /srv/v3/stasis-hot60-r2
+status OK; passes 420
+
+== 17:39:59 run stasisfp-hot60-r2: N=7 hot=60% stasis --ws=footprint
+Running as unit: stasis-probe.service; invocation ID: f6164f9252d84daba47c791c50490569
+Running as unit: stasis-job-1.service; invocation ID: 5c723a9cbc954ae4ba83a1eeef751eea
+Running as unit: stasis-job-2.service; invocation ID: aa261f1ecbd04545ab162b94c34220be
+Running as unit: stasis-job-3.service; invocation ID: 0e5fa16fa8e0427d91857138ad5ce859
+Running as unit: stasis-job-4.service; invocation ID: cfad43e862b24a1099262f968c54f25a
+Running as unit: stasis-job-5.service; invocation ID: 65f562b482a44a36bbb1e70999da2018
+Running as unit: stasis-job-6.service; invocation ID: a71cbaffb66d4c19a36bdef321a5059a
+Running as unit: stasis-job-7.service; invocation ID: 5727bbe546b14480958275a11a3bec84
+done: OK -> /srv/v3/stasisfp-hot60-r2
+status OK; passes 420
+
+== 17:46:54 run stasis-hot100: N=7 hot=100% stasis 
+Running as unit: stasis-probe.service; invocation ID: 8df590afbe404cf181f733cbecd5daf8
+Running as unit: stasis-job-1.service; invocation ID: ef5dff3181be488a995e92e0b6a820cf
+Running as unit: stasis-job-2.service; invocation ID: 8d9f3b94d43c4f41a6695c1a50f7747a
+Running as unit: stasis-job-3.service; invocation ID: ac57de6ac7d745f386585fcd0d07f16e
+Running as unit: stasis-job-4.service; invocation ID: 0a90cccbe29a4280b8086e1b3285a154
+Running as unit: stasis-job-5.service; invocation ID: 74c8d3ad2eeb48568384d33064c18f60
+Running as unit: stasis-job-6.service; invocation ID: 05af730977564d9da95ab780a49e93df
+Running as unit: stasis-job-7.service; invocation ID: 1047ed9a6ac44379b40fd54198e25399
+done: OK -> /srv/v3/stasis-hot100
+status OK; passes 420
+
+== 17:52:42 controller tests on this kernel
+PASS  SIGTERM thaws parked jobs
+PASS  calm admits a parked job that fits
+PASS  admission waits until the active set stops growing
+PASS  rotation keeps going after the calm point
+PASS  the quantum is CPU time: no rotation without CPU
+PASS  PFF early warning parks a thrashing job
+PASS  PFF ignores a job that is warming up
+PASS  warm-up guard holds off, then halves once growth stops
+PASS  a parked job is paged out to make room, logged once
+PASS  a set that fits and is reloading is not halved
+PASS  reclaim writes whole bytes
+PASS  measured working sets admit what footprints can't
+PASS  counted by footprint, the fourth job waits
+PASS  a stalled job's working set isn't trusted
+FAIL  a job stalling on memory isn't sampled: its referenced bits are left alone
+PASS  rotation resumes the longest-waiting job first
+PASS  a job parked for --max-wait is resumed without a finished turn
+PASS  --no-rotation turns rotation and the bound off
+PASS  a halving parks the jobs with the most of their turn
+PASS  the bound swaps out the job with the most of its turn
+PASS  the bound waits for the job it swapped in to reload
+PASS  rotation waits for the job it swapped in to reload
+1 failed
+
+== 17:57:26 done

@@ -13,7 +13,8 @@ changed later is reported as a deviation, with the reason.
 |---|---|---|
 | SIZE (MB per job) | `700` | 4 jobs (2.8 GB) fit in 4 GB RAM; 8 don't |
 | PASSES | `__` | `scripts/calibrate.sh 700` → one job alone runs ~60 s |
-| N range | 1–8 | |
+| HOT (share of each job's memory it keeps touching) | experiment A: 100 %; experiment B: 60 % | B: 8 hot sets (3.4 GB) overcommit 4 GB, 6 (2.5 GB) don't; 8 footprints are 5.6 GB |
+| N range | A: 1–8; B: 4, 6, 8 | |
 | Timeout per run | 1200 s | |
 | Runs per cell | 5 | |
 
@@ -26,7 +27,10 @@ changed later is reported as a deviation, with the reason.
 | QUANTUM | 15 s of the job's own user CPU time since it was last thawed (rotations at most every 15 s) |
 | PFF_HI (faults per CPU-ms) | `____` from `eval/analyze.py calibrate` |
 | PFF streak / grace | 3 consecutive 100 ms samples / 2 s after a job starts or is thawed |
-| Working-set estimate | `memory.current + memory.swap.current − swapcached`, at least `memory.peak` |
+| Working-set estimate | measured: memory referenced (`smaps_rollup` `Referenced`) during τ = 1 s of the job's own user CPU after clearing its bits (`/proc/PID/clear_refs`); a window counts only if the job stayed unfrozen, stalled on memory < 2% of it (cgroup `memory.pressure`) and grew its footprint < 0.5%/s; estimate = 1.10 × the largest of its last 10 trusted windows, never above the footprint. A window opens at most every 10 s per job (`WS_PERIOD`), and only while the job isn't stalling on memory: its PSI `some avg10` is under 2% and it hasn't stalled since the sampler's last look (0.5 s). Footprint (`memory.current + memory.swap.current − swapcached`, at least `memory.peak`) until then, and always with `--ws=footprint` |
+| Resumption | admission and rotation resume the parked job that has waited longest; halvings and rotations park the jobs with the most user CPU in their current turn |
+| One swap at a time | a rotation or a rescue waits while a job resumed less than 120 s ago hasn't yet had MIN_TURN = min(10 s, 120/4, QUANTUM) not stalled on memory (its cgroup's PSI `some`) |
+| Starvation bound | 120 s (`--max-wait`): a job parked that long is swapped in for the active job with the most user CPU in its turn, at the first step where no swap is still reloading; rescues ≥ 5 s apart |
 | Growth window | every growth figure is measured over the last 5 s (`GROW_WINDOW`); a halving restarts the survivors' windows |
 | PFF growth filter | the job's resident memory grew < 0.5% of its working set per second (`GROW_FRAC`) |
 | Warm-up guard | pressure is warm-up when the active set's working sets fit and it is growing ≥ 0.1% of them per second (`SET_GROW_FRAC`), or ≥ 2% of them is swapped out (`RELOAD_FRAC`), or parked jobs are still being paged out to make its room |
@@ -67,7 +71,7 @@ changed later is reported as a deviation, with the reason.
    threshold is now 0.1%/s: a slow device makes warm-up slow, not absent.
    The rotation clock also restarts when jobs are parked, so a job isn't
    rotated in seconds after a halving.
-5. Admission uses Denning's rule: admit the least-served parked job when the
+5. Admission uses Denning's rule: admit the next parked job when the
    working sets of the active jobs plus its own fit in the memory jobs can
    use, counting parked jobs' memory as reclaimable. The guide's test compared
    the job's missing pages with `MemAvailable`, which counts frozen jobs'
@@ -152,17 +156,118 @@ changed later is reported as a deviation, with the reason.
     cumulative stall counter, stalls began at 23.4 s and the first park
     followed 1.0 s later.
 
-Deviations 2–7 and 9–11 change the control law or the scheduler. All were
-found before any Phase 5 measurement: 3 by a fake-cgroup test; 2, 4 and 5 by
-the dashboard's simulator, which runs the same law on a model of the lab VM,
-then confirmed and refined on the rehearsal VM; 6, 7 and 9–11 on the
-rehearsal VM. Each controller fix is in both `controller/stasisd.py` and the
-simulator, and `tests/test_controller.sh` checks them.
+13. Working sets are measured, not counted. `memory.current` says how much
+    memory a job holds, not how much it needs; the footprint (everything it
+    has touched) is an upper bound that over-parks any job with cold memory.
+    stasisd now measures Denning's W(t, τ) per job: it clears the referenced
+    bits of the job's processes (`/proc/PID/clear_refs`), lets the job run
+    τ = 1 s of its own user CPU (Denning's window is in process time, not
+    wall time), and reads `Referenced` from `/proc/PID/smaps_rollup`. Tried
+    on a real kernel with a 400 MB job touching 100 %, 60 % and 25 % of its
+    memory: 401, 241 and 101 MiB, at about 15–20 ms per window. A thrashing
+    job references only what it keeps resident, so a window is trusted only
+    if the job ran unfrozen, didn't stall on memory and wasn't still
+    allocating; untrusted jobs keep the footprint. An estimate that a halving
+    proves wrong (the set "fit" but thrashed anyway) is forgotten. DAMON was
+    the reviewed alternative: Ubuntu 26.04's kernel (`7.0.0-38-generic`) is
+    built with `# CONFIG_DAMON is not set`, so it isn't available on the lab
+    VM; referenced bits need only `CONFIG_PROC_PAGE_MONITOR`, which it has.
+    The cost is that clearing the bits briefly makes a job's pages look
+    unused to reclaim. Deviation 19 limits it, and experiment A's `stasis-fp`
+    runs measure what is left.
+14. Fair resumption with a starvation bound. The guide parks the jobs with the
+    highest fault rate and resumes the least-served one, with no limit on
+    waiting. In the rehearsal, one job of the controller-only run stayed
+    parked for 399 s in a single stretch (full STASIS: 93 s), and halvings
+    parked jobs that had just been admitted and were still reloading (full
+    STASIS at 62.0 s parked job-3, admitted at 49.7 s): the highest fault rate
+    belongs to whoever is reloading, i.e. the job that has had the least of
+    its turn. Now every job takes turns: halvings and rotations park the jobs
+    with the most user CPU in their current turn, the job resumed is always
+    the one that has waited longest, and a job that has waited 120 s is
+    swapped in even if no turn has ended. `--no-rotation` (label
+    `stasis-norot`) is the ablation.
+15. Baselines, revised after an independent review. Added EEVDF + MGLRU
+    thrashing protection (`min_ttl_ms = 1000`, the kernel documentation's
+    value). thrash-protect is pinned to 1.1.2 (PyPI, 2026-04-12): its trigger
+    is swap traffic (swap-in × swap-out per interval) weighted up by PSI, OOM
+    prediction is on by default, and it parks system services with SIGSTOP. DAMON_RECLAIM was to be included if
+    the kernel had it; it doesn't (deviation 13), so it is left out.
+    `scx_simple` is no longer a baseline: it doesn't do load control, so it
+    stays only in Gate 0. Every baseline's settings are in "Baselines" below.
+16. Two experiments. A is the thrashing curve with every page hot. B makes
+    60 % of each job's memory hot (`wss SIZE PASSES 60`), so footprints
+    overstate working sets: it tests deviation 13 (`stasis` against
+    `stasis-fp`, and against EEVDF where the hot sets overcommit memory).
+17. More metrics: the longest single park (`max_wait_s`, for the starvation
+    bound), the longest time any job went without finishing a pass
+    (`max_gap_s`, comparable across every configuration whatever stopped
+    the job), the share of job-time parked, PSI full stall, major faults,
+    jobs finished within 600 s, and the makespan. Kills are reported as what
+    the kernel's OOM killer and systemd-oomd did: STASIS sends no kills, but
+    it can't promise the kernel won't.
+
+18. One swap at a time. A rotation or a rescue trades a resident job for one
+    that must fault its whole working set back in; overlapping swaps compete
+    for the swap device. The simulator showed the cost: at 3 MB/s swap-in the
+    first starvation bound (deviation 14) swapped the four parked jobs in 5 s
+    apart as soon as they passed 120 s, swapped two of them out again 10 s
+    later while they were still reloading, and repeated this round after
+    round, with every active job reloading at once. At N = 8 controller-only
+    STASIS completed 26 of 320 passes in 3000 s, and full STASIS 116. Now a
+    rotation or a rescue waits until the job resumed before it has had
+    MIN_TURN not stalled on memory, or 120 s have passed. In the simulator
+    N = 8 then finishes in 975 s at 3 MB/s, in 276 s instead of 524 s at
+    20 MB/s, and in 174 s instead of 228 s at the default 120 MB/s. Gating
+    admission the same way never helped and cost up to 10%, so admission
+    (which adds a job to a set that has room) is exempt.
+    The rescue's victim is the active job with the most user CPU in its turn.
+    A first version preferred jobs that had had MIN_TURN not stalled. On the
+    rehearsal VM (N = 7) that swapped out three jobs resumed 10–29 s
+    earlier, while three jobs that had run since the start were never
+    parked: stalling on memory, they never counted as having had a turn.
+19. The working-set sampler is paced and stays out of the way under pressure.
+    The first version opened a new window for every running job as soon as
+    its last one closed, under pressure too. Each window clears the job's
+    referenced bits, which makes its pages look idle to reclaim, and a window
+    in which the job stalls is discarded anyway: on the rehearsal VM at HOT
+    60 (N = 7) no job had a trusted window before 129 s, although every
+    measurement was right (419–420 MiB for a 420 MiB hot set). That run was
+    also slower than the same run with footprints (384 s against 253 s, with
+    78% more major faults), but one run each can't separate the sampler's
+    cost from run-to-run variation: two runs of the final version took 231 s
+    and 348 s. A window now opens at most every 10 s per job, and only while
+    the job isn't stalling on memory (its PSI `some avg10` under 2%, and no
+    stall since the sampler's last look).
+
+Deviations 2–7, 9–11, 13, 14, 18 and 19 change the control law or the
+scheduler. All were found before any Phase 5 measurement: 3 by a fake-cgroup
+test; 2, 4 and 5 by the dashboard's simulator, which runs the same law on a
+model of the lab VM, then confirmed and refined on the rehearsal VM; 6, 7 and
+9–11 on the rehearsal VM; 13–17 from an independent design review, using the
+rehearsal's logs as evidence; 18 by the simulator and the rehearsal VM; 19 on
+the rehearsal VM. Each controller change is in `controller/stasisd.py` and the
+simulator, and `tests/test_controller.sh` checks it.
+
+## Baselines
+
+| Label | What runs beside the jobs | Settings |
+|---|---|---|
+| `eevdf` | nothing: stock Linux 7.0 | |
+| `mglru` | EEVDF + MGLRU thrashing protection | `/sys/kernel/mm/lru_gen/min_ttl_ms = 1000`, restored after the run |
+| `oomd` | EEVDF + systemd-oomd | `ManagedOOMMemoryPressure=kill` on `stasis.slice`, systemd defaults otherwise |
+| `thrashprotect` | thrash-protect 1.1.2 | its defaults (swap-traffic trigger weighted by PSI, OOM prediction on); whitelist: sshd, shells, sudo, tmux, screen, systemd, journald, cyclictest, python3 |
+| `ctrl` | stasisd, memstat signal, under EEVDF | layers 1–3 only |
+| `stasis-norot`, `stasis-fp` | full STASIS with `--no-rotation`, `--ws=footprint` | ablations |
+| not run | DAMON_RECLAIM | not built into the lab kernel (`CONFIG_DAMON` not set) |
+| not a baseline | `scx_simple` | Gate 0 only: it doesn't control load |
 
 ## Metrics
 
 See the docstring of `eval/analyze.py`: throughput, kills, Jain's J, probe
-p99, time-to-first-park, and swap traffic.
+p99, time-to-first-park, swap traffic, longest park, longest time without
+progress, share of time parked, PSI full stall, major faults, jobs finished
+within 600 s, and makespan.
 
 ## Hypotheses
 
@@ -177,29 +282,58 @@ These are a proposed set: edit them before you freeze this file.
   "hypotheses": [
     {"id": "H1",  "claim": "Full STASIS has higher throughput than every baseline under overload",
      "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [6, 8],
-     "baselines": ["eevdf", "oomd", "simple", "thrashprotect"]},
+     "baselines": ["eevdf", "mglru", "oomd", "thrashprotect"]},
     {"id": "H1c", "claim": "Controller-only beats EEVDF on throughput",
      "metric": "throughput", "better": "higher", "stasis": "ctrl", "N": [8],
      "baselines": ["eevdf"]},
-    {"id": "H2",  "claim": "Full STASIS kills nothing",
+    {"id": "H2",  "claim": "No workload process is killed under full STASIS (it sends no kills; this checks that the OOM killer and oomd didn't either)",
      "metric": "kills", "equals": 0, "stasis": "stasis", "N": [4, 6, 8]},
-    {"id": "H2c", "claim": "Controller-only kills nothing",
+    {"id": "H2c", "claim": "No workload process is killed under controller-only STASIS",
      "metric": "kills", "equals": 0, "stasis": "ctrl", "N": [4, 6, 8]},
-    {"id": "H3",  "claim": "Full STASIS is fairer (Jain) than thrash-protect and oomd",
+    {"id": "H3",  "claim": "Full STASIS is fairer (Jain) than thrash-protect, oomd and MGLRU",
      "metric": "jain", "better": "higher", "stasis": "stasis", "N": [8],
-     "baselines": ["thrashprotect", "oomd"]},
+     "baselines": ["thrashprotect", "oomd", "mglru"]},
     {"id": "H3c", "claim": "Controller-only is fairer than thrash-protect",
      "metric": "jain", "better": "higher", "stasis": "ctrl", "N": [8],
      "baselines": ["thrashprotect"]},
     {"id": "H4",  "claim": "The protected probe's p99 latency is lower under full STASIS",
      "metric": "p99_us", "better": "lower", "stasis": "stasis", "N": [8],
-     "baselines": ["eevdf", "ctrl", "oomd", "thrashprotect"]},
+     "baselines": ["eevdf", "ctrl", "mglru", "oomd", "thrashprotect"]},
     {"id": "H5",  "claim": "Scheduler PFF parks jobs earlier than the controller alone",
      "metric": "ttfp_s", "better": "lower", "stasis": "stasis", "N": [6, 8],
-     "baselines": ["ctrl"]}
+     "baselines": ["ctrl"]},
+    {"id": "H6",  "claim": "The starvation bound holds: no job stays parked more than 180 s (120 s, then one swap at a time)",
+     "metric": "max_wait_s", "at_most": 180, "stasis": "stasis", "N": [6, 8]},
+    {"id": "H6c", "claim": "The starvation bound holds under controller-only STASIS",
+     "metric": "max_wait_s", "at_most": 180, "stasis": "ctrl", "N": [6, 8]},
+    {"id": "H7",  "claim": "Fair rotation shortens the longest time a job goes without progress",
+     "metric": "max_gap_s", "better": "lower", "stasis": "stasis", "N": [8],
+     "baselines": ["stasis-norot"]},
+    {"id": "H7b", "claim": "No job goes as long without progress under STASIS as under thrash-protect or MGLRU",
+     "metric": "max_gap_s", "better": "lower", "stasis": "stasis", "N": [8],
+     "baselines": ["thrashprotect", "mglru"]},
+    {"id": "H8",  "experiment": "B", "claim": "Measured working sets beat footprints when part of each job's memory is cold",
+     "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [6, 8],
+     "baselines": ["stasis-fp"]},
+    {"id": "H9",  "experiment": "B", "claim": "With measured working sets, STASIS beats EEVDF when the hot sets overcommit memory",
+     "metric": "throughput", "better": "higher", "stasis": "stasis", "N": [8],
+     "baselines": ["eevdf"]}
   ]
 }
 ```
 
+H6's 180 s: a halving at N = 8 parks 4 jobs at once, so up to 4 pass the
+bound together. The bound swaps them in one at a time, each once the one
+before has reloaded and had 10 s not stalled on memory: 120 + 3 × (10 s +
+one reload). On the lab VM's swap a 700 MB reload takes a few seconds; on
+the emulated rehearsal VM, three jobs passing the bound together waited up
+to 140 s. If more jobs are parked at once, or reloads are slow, the wait can
+exceed 180 s: the hard guarantee is only that each swap waits at most 120 s
+for the one before it.
+
 Expected losses, reported honestly: at N ≤ 4 everything fits, so the
-controller can only add overhead.
+controller can only add overhead. In experiment A, `stasis-fp` against
+`stasis` measures what sampling working sets costs when it can't help. In
+experiment B at N = 6 the hot sets fit: STASIS should only match EEVDF there,
+and `stasis-fp` should lose (it parks jobs it doesn't need to). Each run's
+`experiment` file decides which hypotheses `analyze.py score` checks.

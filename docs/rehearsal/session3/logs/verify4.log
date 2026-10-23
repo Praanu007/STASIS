@@ -1,0 +1,29 @@
+== 18:08:00 install
+d96a0031d1ee550598290376456692f9  /opt/stasis/stasisd.py
+d96a0031d1ee550598290376456692f9  controller/stasisd.py
+fd4ac8a3eb055d5430ded07a4c1a54f8  tests/test_controller.sh
+== 18:08:00 controller tests on this kernel
+PASS  SIGTERM thaws parked jobs
+PASS  calm admits a parked job that fits
+PASS  admission waits until the active set stops growing
+PASS  rotation keeps going after the calm point
+PASS  the quantum is CPU time: no rotation without CPU
+PASS  PFF early warning parks a thrashing job
+PASS  PFF ignores a job that is warming up
+PASS  warm-up guard holds off, then halves once growth stops
+PASS  a parked job is paged out to make room, logged once
+PASS  a set that fits and is reloading is not halved
+PASS  reclaim writes whole bytes
+PASS  measured working sets admit what footprints can't
+PASS  counted by footprint, the fourth job waits
+PASS  a stalled job's working set isn't trusted
+PASS  a job stalling on memory isn't sampled: its referenced bits are left alone
+PASS  rotation resumes the longest-waiting job first
+PASS  a job parked for --max-wait is resumed without a finished turn
+PASS  --no-rotation turns rotation and the bound off
+PASS  a halving parks the jobs with the most of their turn
+PASS  the bound swaps out the job with the most of its turn
+PASS  the bound waits for the job it swapped in to reload
+PASS  rotation waits for the job it swapped in to reload
+0 failed
+== 18:12:45 done

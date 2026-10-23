@@ -6,21 +6,37 @@
 #   eevdf          stock kernel scheduler, nothing else
 #   stasis         scx_stasis + stasisd --signal=bpf           (full STASIS)
 #   ctrl           EEVDF + stasisd --signal=memstat           (controller-only)
+#   mglru          EEVDF + MGLRU thrashing protection (min_ttl_ms = 1000)
 #   oomd           EEVDF + systemd-oomd killing in stasis.slice
-#   simple         scx_simple, no controller
+#   thrashprotect  EEVDF + thrash-protect 1.1.2 with PSI ($THRASH_PROTECT)
 #   scxonly        scx_stasis, no controller (Gate 3: scheduler alone changes nothing)
-#   thrashprotect  EEVDF + thrash-protect ($THRASH_PROTECT, pinned commit)
+#   simple         scx_simple, no controller (not a baseline: Gate 0 only)
 # stasisd flags: $STASISD_EXTRA (e.g. the frozen --pff-hi=X) and $STASISD_ARGS
-# (sensitivity sweeps). $DEMO_SHELL, if set, is also protected by scx_stasis.
+# (ablations and sensitivity sweeps). $STASIS_HOT is the share of each job's
+# memory it keeps touching (percent, default 100). $DEMO_SHELL, if set, is also
+# protected by scx_stasis.
 set -euo pipefail
 N=$1 SIZE=$2 PASSES=$3 OUT=$4 CONFIG=${5:-eevdf}
 HOME_DIR=${STASIS_HOME:-/opt/stasis}
 TIMEOUT=${STASIS_TIMEOUT:-1200}
+HOT=${STASIS_HOT:-100}
+THRASH_PROTECT=${THRASH_PROTECT:-/opt/thrash-protect/bin/thrash-protect}
+MGLRU_TTL=/sys/kernel/mm/lru_gen/min_ttl_ms
 mkdir -p "$OUT" /run/stasis
 echo RUNNING > "$OUT/status"
 ln -sfn "$OUT" /run/stasis/current          # the dashboard follows this link
 systemctl reset-failed 'stasis-*' 2>/dev/null || true
-echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
+echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES HOT=$HOT STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
+
+# A baseline this machine can't run is recorded as such, never as a result.
+unavailable() { echo "$CONFIG unavailable: $1" | tee "$OUT/unavailable.txt" >&2; echo UNAVAILABLE > "$OUT/status"; exit 3; }
+case $CONFIG in
+  stasis|scxonly|simple) [[ -e /sys/kernel/sched_ext/state ]] || unavailable "no sched_ext in this kernel" ;;
+  mglru) [[ -w $MGLRU_TTL && $(( $(cat /sys/kernel/mm/lru_gen/enabled) & 1 )) == 1 ]] \
+           || unavailable "MGLRU is off or has no min_ttl_ms" ;;
+  thrashprotect) [[ -x $THRASH_PROTECT ]] || unavailable "no thrash-protect at $THRASH_PROTECT (setup_vm.sh installs it)" ;;
+  oomd) systemctl is-active --quiet systemd-oomd || unavailable "systemd-oomd is not running" ;;
+esac
 
 # Start from a quiet machine: wait (up to 3 min) for the memory-stall average
 # left by a previous run to decay to zero. Otherwise this run's pressure onset
@@ -31,17 +47,20 @@ quiet() { awk '/^full/ { split($2, a, "="); exit !(a[2] + 0 == 0) }' /proc/press
 for waited in $(seq 0 180); do quiet && break; sleep 1; done
 echo "$waited" > "$OUT/quiesce_s"
 
-SCHED_PID= CTRL_PID= TP_PID= SAMPLER=
+SCHED_PID= CTRL_PID= TP_PID= SAMPLER= TTL0=
 cleanup() {
   [[ -n $SAMPLER ]] && kill "$SAMPLER" 2>/dev/null || true
   [[ -n $CTRL_PID ]] && kill -TERM "$CTRL_PID" 2>/dev/null && wait "$CTRL_PID" 2>/dev/null || true
-  [[ -n $TP_PID ]] && kill -TERM "$TP_PID" 2>/dev/null || true
-  # Never leave a job frozen behind us. Thaw before stopping: SIGTERM stays
-  # pending on a frozen task, so systemd would wait 90 s before SIGKILL.
+  [[ -n $TP_PID ]] && kill -TERM "$TP_PID" 2>/dev/null && wait "$TP_PID" 2>/dev/null || true
+  # Never leave a job frozen or stopped behind us. Thaw before stopping:
+  # SIGTERM stays pending on a frozen task, so systemd would wait 90 s before
+  # SIGKILL; and thrash-protect parks with SIGSTOP, which SIGCONT undoes.
   for f in /sys/fs/cgroup/stasis.slice/*/cgroup.freeze; do [[ -e $f ]] && echo 0 > "$f"; done 2>/dev/null || true
+  systemctl kill -s CONT 'stasis-job-*' 2>/dev/null || true
   systemctl stop stasis-probe 'stasis-job-*' 2>/dev/null || true
   [[ -n $SCHED_PID ]] && kill -INT "$SCHED_PID" 2>/dev/null && wait "$SCHED_PID" 2>/dev/null || true
   [[ $CONFIG == oomd ]] && systemctl set-property --runtime stasis.slice ManagedOOMMemoryPressure=auto || true
+  [[ -n $TTL0 ]] && echo "$TTL0" > "$MGLRU_TTL" || true
 }
 trap cleanup EXIT
 
@@ -73,6 +92,10 @@ case $CONFIG in
     python3 "$HOME_DIR/stasisd.py" --signal=memstat --log "$OUT/decisions.jsonl" ${STASISD_ARGS:-} \
       > "$OUT/stasisd.log" 2>&1 &
     CTRL_PID=$! ;;
+  mglru)
+    # "N=1000 usually eliminates intolerable janks due to thrashing" (kernel
+    # docs, multigen_lru); the OOM killer fires if that working set can't stay
+    TTL0=$(cat "$MGLRU_TTL"); echo 1000 > "$MGLRU_TTL" ;;
   oomd)
     systemctl set-property --runtime stasis.slice ManagedOOMMemoryPressure=kill ;;
   simple)
@@ -82,7 +105,13 @@ case $CONFIG in
     "$HOME_DIR/scx_stasis" -p "$PROBE_PID" > "$OUT/scx.log" 2>&1 &
     SCHED_PID=$!; wait_sched stasis ;;
   thrashprotect)
-    "${THRASH_PROTECT:?set THRASH_PROTECT to the pinned thrash-protect script}" > "$OUT/tp.log" 2>&1 &
+    # Its defaults (swap-traffic trigger weighted up by PSI, OOM prediction on), plus the
+    # measurement processes and remote shell on its whitelist so it doesn't
+    # pick the probe. Against system services it parks with SIGSTOP (it
+    # freezes cgroups only for user-session scopes such as tmux).
+    "$THRASH_PROTECT" --version > "$OUT/tp_version.txt" 2>&1 || true
+    "$THRASH_PROTECT" --use-psi --cmd-whitelist sshd bash sh dash sudo tmux screen \
+      systemd systemd-journald cyclictest python3 > "$OUT/tp.log" 2>&1 &
     TP_PID=$! ;;
   *) echo "unknown CONFIG $CONFIG" >&2; exit 2 ;;
 esac
@@ -95,7 +124,7 @@ T0=$(date +%s.%N); echo "$T0" > "$OUT/t0"
 for i in $(seq 1 "$N"); do
   systemd-run --unit="stasis-job-$i" --slice=stasis.slice \
     -p StandardOutput=file:"$OUT/job-$i.log" \
-    "$HOME_DIR/wss" "$SIZE" "$PASSES"
+    "$HOME_DIR/wss" "$SIZE" "$PASSES" "$HOT"
 done
 
 # status stays RUNNING until the run really ends, so a run cut short by a

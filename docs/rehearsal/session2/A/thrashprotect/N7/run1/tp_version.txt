@@ -1,0 +1,1 @@
+thrash-protect 1.1.2

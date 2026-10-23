@@ -1,0 +1,6 @@
+pid 1835's current scheduling policy: SCHED_OTHER
+pid 1835's current scheduling priority: 0
+pid 1835's current runtime parameter: 2100000
+pid 1837's current scheduling policy: SCHED_OTHER
+pid 1837's current scheduling priority: 0
+pid 1837's current runtime parameter: 2100000

@@ -5,16 +5,18 @@ set -euo pipefail
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 SCX_DIR=${SCX_DIR:-/root/scx}
 SCX_COMMIT=${SCX_COMMIT:-370b1cea95c6bb668d5b9261f069d433142b9986}   # pinned scx-c-examples
+TP_VERSION=${TP_VERSION:-1.1.2}                                        # pinned thrash-protect (PyPI)
 SRC=/root/src
 
 echo "== packages"
 apt-get update
 apt-get install -y build-essential clang llvm libbpf-dev libelf-dev \
   zlib1g-dev libzstd-dev pkg-config git python3 python3-matplotlib \
-  python3-numpy stress-ng rt-tests linux-tools-common "linux-tools-$(uname -r)" || \
+  python3-numpy python3-venv stress-ng rt-tests systemd-oomd \
+  linux-tools-common "linux-tools-$(uname -r)" || \
 apt-get install -y build-essential clang llvm libbpf-dev libelf-dev \
   zlib1g-dev libzstd-dev pkg-config git python3 python3-matplotlib \
-  python3-numpy stress-ng rt-tests linux-tools-common
+  python3-numpy python3-venv stress-ng rt-tests systemd-oomd linux-tools-common
 
 echo "== 8 GB swap file (replaces Ubuntu's /swap.img)"
 if ! swapon --show=NAME --noheadings | grep -qx /swapfile; then
@@ -67,6 +69,14 @@ install -d /opt/stasis /var/log/stasis /run/stasis
 install -m 755 "$REPO/workloads/wss" "$SCX_DIR/build/scheds/c/scx_simple" \
   "$SCX_DIR/build/scheds/c/scx_stasis" /opt/stasis/
 install -m 755 "$REPO/scripts/sample.py" "$REPO/controller/stasisd.py" /opt/stasis/
+
+echo "== baselines: systemd-oomd running, thrash-protect $TP_VERSION in its own venv"
+systemctl enable --now systemd-oomd
+if [[ $(/opt/thrash-protect/bin/pip show thrash-protect 2>/dev/null | sed -n 's/^Version: //p') != "$TP_VERSION" ]]; then
+  python3 -m venv /opt/thrash-protect
+  /opt/thrash-protect/bin/pip install --quiet "thrash-protect==$TP_VERSION"
+fi
+/opt/thrash-protect/bin/thrash-protect --help > /dev/null
 
 echo "== stasis.slice (persistent so oomd properties can be set on it)"
 cat > /etc/systemd/system/stasis.slice <<'EOF'

@@ -6,17 +6,12 @@ ok()  { printf '  [ok]   %s\n' "$1"; }
 bad() { printf '  [FAIL] %s\n' "$1"; fail=1; }
 rd()  { cat "$1" 2>/dev/null; }
 
-echo "kernel $(uname -r)"
-[[ -e /sys/kernel/sched_ext/state ]] && ok "sched_ext present ($(rd /sys/kernel/sched_ext/state))" \
-  || bad "/sys/kernel/sched_ext missing: kernel lacks CONFIG_SCHED_CLASS_EXT - fix this first"
-[[ -e /sys/kernel/btf/vmlinux ]] && ok "BTF present" || bad "/sys/kernel/btf/vmlinux missing"
-[[ -e /proc/pressure/memory ]] && ok "PSI present" || bad "PSI missing (boot with psi=1)"
-grep -qw memory /sys/fs/cgroup/cgroup.controllers && grep -qw cpu /sys/fs/cgroup/cgroup.controllers \
-  && ok "cgroup v2 memory+cpu controllers" || bad "cgroup v2 memory/cpu controllers missing"
-
+# Every layer's prerequisites, tried for real (scripts/preflight.sh)
+"$(dirname "$0")/preflight.sh" || bad "preflight: the controller can't run on this machine"
+[[ -e /sys/kernel/sched_ext/state ]] || bad "no sched_ext: Gate 0 needs the scheduler too"
 swap_kb=$(awk '/SwapTotal/ {print $2}' /proc/meminfo)
-(( swap_kb >= 8000000 )) && ok "swap $((swap_kb / 1024)) MB" || bad "swap is only $((swap_kb / 1024)) MB (want 8 GB)"
-[[ $(rd /sys/module/zswap/parameters/enabled) != Y ]] && ok "zswap off" || bad "zswap is on"
+(( swap_kb >= 8000000 )) || bad "swap is only $((swap_kb / 1024)) MB (want 8 GB)"
+[[ $(rd /sys/module/zswap/parameters/enabled) != Y ]] || bad "zswap is on"
 echo "  info   MGLRU=$(rd /sys/kernel/mm/lru_gen/enabled) THP=$(rd /sys/kernel/mm/transparent_hugepage/enabled) swappiness=$(rd /proc/sys/vm/swappiness)"
 
 for b in wss scx_simple scx_stasis sample.py stasisd.py; do

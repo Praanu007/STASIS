@@ -95,8 +95,8 @@ real runs of Phase 2–4 will be their first test.
   rejects that.
 - **`tests/test_controller.sh`.** On the VM, 4 of its then 9 tests failed:
   the fake workloads were paced by loop counts, and emulation slowed the
-  loops. They are paced by the clock now and pass under a 7× CPU slowdown.
-  They haven't been re-run on the VM.
+  loops. They are paced by the clock now, and sessions 2 and 3 below ran
+  them on the VM.
 
 ## History: how the law got here
 
@@ -111,3 +111,95 @@ One controller-only N = 7 run per version, each kept as its decision log
 | `4-settled-admission` | stopped at 633 s, 11 passes | parked jobs kept their memory while running jobs evicted each other (`samples.jsonl` kept) | deviation 7 |
 | `5-total-cpu-quantum` | stopped at 665 s, 6 passes | `usage_usec` counts fault handling, so jobs left mid-reload; a flat 1 s window halved 3 → 1 | deviations 6 and 9 |
 | `results/` (final) | OK, 420 / 420 both | transitional halvings, probe latency, stale PSI at the start | deviations 10–12 |
+
+## Sessions 2 and 3: the revised design
+
+After the independent review the controller changed (deviations 13–19 in
+`docs/00-prereg.md`): measured working sets, first-in-first-out turns with a
+starvation bound, new baselines and a preflight. Two more bounded sessions ran
+it on the same VM, with the same caveats: emulated, one or two runs per cell,
+N = 7, PASSES = 60. Every run is kept, laid out as a results root, so
+`eval/analyze.py` and the dashboard read them directly
+(`python3 dashboard/server.py --results docs/rehearsal/session3/B`).
+
+### Session 2 (`session2/`): the first version
+
+- `preflight.sh`: layers 1–3, measured working sets, sched_ext, MGLRU and
+  systemd-oomd GO. thrash-protect NO-GO until installed: the VM's pip
+  couldn't reach the network, so 1.1.2 was installed from a wheel copied in.
+- Rungs 1 and 3 again, now with the preempt kick (deviation 11): scx_stasis
+  attached and gave the protected cyclictest 16,531 priority dispatches under
+  8 CPU hogs. Its latency averaged 1.41 ms against 1.50 ms under EEVDF, and
+  the maxima were about 40 ms in both (41.0 and 39.6 ms): timer emulation.
+  The scheduler also attached 8 s into the 60 s measurement. So this doesn't
+  test the kick; the lab VM must (Phase 3, rung 3).
+- Runs (baselines capped at 300 s):
+
+| run | HOT | status | passes | makespan | major faults | full stall | longest park | probe p99 | kills |
+|---|---|---|---|---|---|---|---|---|---|
+| full STASIS | 100 | OK | 420 / 420 | 304 s | 337k | 5.3% | 140 s | 6.2 ms | 0 |
+| thrash-protect 1.1.2 | 100 | TIMEOUT | 0 / 420 | – | 43k | 13.1% | – | 5.9 ms | 0 |
+| MGLRU, `min_ttl_ms` = 1000 | 100 | TIMEOUT | 6 / 420 | – | 450k | 39.3% | – | 8.9 ms | 0 |
+| full STASIS, measured working sets | 60 | OK | 420 / 420 | 384 s | 424k | 10.0% | 135 s | 10.5 ms | 0 |
+| full STASIS, footprints | 60 | OK | 420 / 420 | 253 s | 238k | 6.2% | 125 s | 7.1 ms | 0 |
+
+  Under thrash-protect, six of the seven jobs finished allocating and none
+  completed a pass. In 85% of its job-seconds a job got no CPU time at all,
+  which fits thrash-protect keeping most jobs stopped with `SIGSTOP` (under
+  MGLRU: 0%). Under MGLRU the jobs ran and thrashed: every task was waiting
+  on memory for 39% of the run.
+- `tests/test_controller.sh`: 21 / 21 on kernel 7.0.
+- What it found (deviations 18 and 19). The bound's victim rule preferred
+  jobs that had had 10 s not stalled, so it swapped out three jobs resumed
+  10–29 s earlier while three that had run since the start were never
+  parked. And the sampler opened windows back to back under pressure: no job
+  had a trusted window before 129 s, although every measurement read
+  419–420 MiB for a 420 MiB hot set.
+
+### Session 3 (`session3/`): the final version
+
+Session 3's runs used the final controller except for two sampler details
+changed afterwards: after a thaw the sampler compared a job's stall with its
+reading from before the park instead of starting afresh, and it judged "not
+stalling" from the last 0.5 s alone (now PSI's `some avg10` too; see the tests
+below). The final controller's tests ran on the VM in a short third boot.
+
+| run | HOT | status | passes | makespan | major faults | full stall | longest park | probe p99 | kills |
+|---|---|---|---|---|---|---|---|---|---|
+| full STASIS, measured, run 1 | 60 | OK | 420 / 420 | 231 s | 259k | 6.3% | 130 s | 13.5 ms | 0 |
+| full STASIS, measured, run 2 | 60 | OK | 420 / 420 | 348 s | 418k | 5.5% | 135 s | 6.4 ms | 0 |
+| full STASIS, footprints, run 1 | 60 | OK | 420 / 420 | 202 s | 224k | 7.6% | 130 s | 6.6 ms | 0 |
+| full STASIS, footprints, run 2 | 60 | OK | 420 / 420 | 397 s | 368k | 5.4% | 131 s | 7.2 ms | 0 |
+| full STASIS | 100 | OK | 420 / 420 | 333 s | 292k | 3.3% | 130 s | 6.3 ms | 0 |
+
+- Measured against footprints is **inconclusive here**: each configuration
+  varied by a factor of 1.5–2 between its two runs, more than the two differ.
+  Both made the same kinds of decisions (4–6 admissions, 2–4 rescues), and
+  the measurements arrived only after 74–114 s, so in runs this short they
+  changed few of them. Every measurement read 397–420 MiB for a 420 MiB hot
+  set; 6 of the 7 jobs were measured in each run. Experiment B decides H8.
+- No run rotated: with PASSES = 60 a job needs about 17 s of CPU in all, so
+  turns rarely reach the 15 s quantum, and the starvation bound did the
+  turn-taking. Its longest park was 125–140 s in every run of both
+  sessions: the bound's 120 s, plus the wait for the swaps before it.
+- `tests/test_controller.sh`: 21 of 22 in session 3. The failure was the
+  new check that the sampler leaves a stalling job's referenced bits alone:
+  under emulation the fake stall feeder sometimes didn't update between two
+  of the sampler's polls 0.5 s apart, so the job looked unstalled for that
+  moment. That was the fake's timing, not the kernel's, but a gate that one
+  late reading can open is fragile: the sampler now also requires the job's
+  PSI `some avg10` to be under 2%. With the feeder slowed to one update per 1.2 s, the old gate
+  failed 3 runs of 3 and the new one passed 3 of 3. A short third boot then
+  ran the final controller's tests on the VM: **22 / 22**
+  (`session3/logs/verify4.log`).
+
+### What sessions 2 and 3 show
+
+- The revised controller runs on kernel 7.0: every STASIS run completed all
+  420 passes, with no kills.
+- The referenced-bit sampler measures real jobs' working sets accurately.
+- At N = 7 the baselines tried here didn't recover: thrash-protect completed
+  no pass and MGLRU 6 in 300 s, while every STASIS run finished all 420 in
+  202–397 s. One run each, emulated: the campaign measures this properly.
+- Whether measuring working sets pays is still open (H8).
+

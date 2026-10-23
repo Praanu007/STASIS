@@ -8,15 +8,28 @@
 
 ROOT holds LABEL/N<n>/run<k>/ directories written by run_mix.sh.
 
-Metric definitions (build guide, Phase 5):
-  throughput   total passes / (time until the last job finishes); a run that
-               timed out is scored with the passes completed by the timeout
-  kills        lines in kills.txt + oomd_kills.txt
-  jain         (sum x)^2 / (n * sum x^2), x_i = passes job i completed between
-               pressure onset and the first job finishing
-  p99_us       p99 of the probe's cyclictest histogram
-  ttfp_s       first sample with PSI full avg10 > 0 -> first freeze decision
-  swap_pages   delta (pswpin + pswpout) across the run
+Metric definitions (build guide, Phase 5, plus the revised design's):
+  throughput    total passes / (time until the last job finishes); a run that
+                timed out is scored with the passes completed by the timeout
+  kills         workload processes killed by the kernel's OOM killer or by
+                systemd-oomd (kills.txt + oomd_kills.txt). STASIS itself never
+                kills; this counts what the system did anyway.
+  jain          (sum x)^2 / (n * sum x^2), x_i = passes job i completed between
+                pressure onset and the first job finishing
+  p99_us        p99 of the probe's cyclictest histogram
+  ttfp_s        first sample with PSI full avg10 > 0 -> first freeze decision
+  swap_pages    delta (pswpin + pswpout) across the run
+  max_wait_s    longest time any job spent parked by stasisd in one stretch
+                (stasisd configs only; the starvation bound is tested on it)
+  parked_pct    share of all job-time spent parked (stasisd configs only)
+  max_gap_s     longest time any job went without finishing a pass, from its
+                start until it finished (or the run ended): the starvation
+                metric every configuration has, whatever stopped the job
+  psi_full_pct  share of the run in which every task waited on memory (PSI full)
+  majflt        major page faults across the run (whole machine)
+  jobs_done_600 jobs finished within 600 s of the start
+  makespan_s    time until the last job finished (empty if any didn't)
+  hot, ws       the job's hot share (%) and stasisd's working-set estimate
 Pressure onset is the earlier of the first PSI full avg10 > 0 sample and the
 controller's first logged pressure event, so every config uses one definition.
 """
@@ -24,7 +37,9 @@ import csv, glob, json, math, os, re, statistics, sys
 
 FIELDS = ["label", "config", "N", "run", "status", "throughput", "passes",
           "kills", "jain", "p99_us", "max_us", "ttfp_s", "first_src",
-          "swap_pages", "duration_s"]
+          "swap_pages", "duration_s", "max_wait_s", "parked_pct", "max_gap_s",
+          "psi_full_pct", "majflt", "jobs_done_600", "makespan_s", "hot", "ws"]
+TEXT = ("label", "config", "status", "first_src", "ws")
 
 # ---- loading ----------------------------------------------------------------
 
@@ -104,11 +119,12 @@ def jain(xs):
 
 def runs(root):
     """Finished runs as (label, N, run, dir). A run whose status still says
-    RUNNING never finished (the guest wedged or was reset) and is skipped."""
+    RUNNING never finished (the guest wedged or was reset), and an UNAVAILABLE
+    one never started (its baseline can't run on this kernel): both skipped."""
     for d in sorted(glob.glob(f"{root}/*/N*/run*")):
         try:
             with open(f"{d}/status") as f:
-                if f.read().strip() == "RUNNING":
+                if f.read().strip() in ("RUNNING", "UNAVAILABLE"):
                     continue
         except FileNotFoundError:
             continue
@@ -159,16 +175,60 @@ def run_metrics(label, n, k, d):
     ttfp = (freezes[0] - psi_t) if (freezes and psi_t is not None) else None
 
     hist, mx = probe_hist(d)
-    swap = None
+    swap = psi_pct = majflt = None
     if len(samples) >= 2:
-        swap = (samples[-1]["pswpin"] + samples[-1]["pswpout"]
-                - samples[0]["pswpin"] - samples[0]["pswpout"])
+        a, b = samples[0], samples[-1]
+        swap = b["pswpin"] + b["pswpout"] - a["pswpin"] - a["pswpout"]
+        if b["t"] > a["t"]:
+            psi_pct = 100 * (b["psi"]["full"]["total"] - a["psi"]["full"]["total"]) / 1e6 / (b["t"] - a["t"])
+        majflt = b.get("pgmajfault", 0) - a.get("pgmajfault", 0)
+
+    wait, parked_pct = parking(decisions, t_end)
+    gap = None
+    if jobs and t0:
+        gaps = []
+        for p in jobs.values():
+            ts = [t0] + [t for (i, t) in p if i > 0]
+            if not (p and p[-1][0] >= passes_target) and t_end:
+                ts.append(t_end)                   # still unfinished at the end
+            gaps.append(max(b - a for a, b in zip(ts, ts[1:])) if len(ts) > 1 else 0)
+        gap = max(gaps)
+    start = next((e for e in decisions if e.get("event") == "start"), {})
+    hot = int(next((c.split("=")[1] for c in cfg if c.startswith("HOT=")), 100))
 
     return {"label": label, "config": cfg[0], "N": n, "run": k, "status": status,
             "throughput": throughput, "passes": passes, "kills": kills, "jain": J,
             "p99_us": percentile(hist, 0.99), "max_us": mx, "ttfp_s": ttfp,
             "first_src": first_src, "swap_pages": swap,
-            "duration_s": (t_end - t0) if t0 and t_end else None}
+            "duration_s": (t_end - t0) if t0 and t_end else None,
+            "max_wait_s": wait, "parked_pct": parked_pct, "max_gap_s": gap,
+            "psi_full_pct": psi_pct, "majflt": majflt,
+            "jobs_done_600": sum(1 for t in done.values() if t0 and t - t0 <= 600) if jobs else None,
+            "makespan_s": (finish - t0) if (t0 and len(done) == len(jobs) and jobs) else None,
+            "hot": hot, "ws": start.get("ws", "footprint" if start else None)}
+
+def parking(decisions, t_end):
+    """(longest single parked stretch, share of job-time parked) from the
+    decision log, or (None, None) if stasisd didn't run."""
+    if not any(e.get("event") == "start" for e in decisions):
+        return None, None
+    t_start = decisions[0]["t"]
+    since, longest, parked, first, last = {}, 0.0, 0.0, {}, {}
+    for e in decisions:
+        if "frozen" not in e:
+            continue
+        j, t = e["job"], e["t"]
+        first.setdefault(j, t_start); last[j] = t
+        if e["frozen"]:
+            since[j] = t
+        elif j in since:
+            dt = t - since.pop(j)
+            longest, parked = max(longest, dt), parked + dt
+    end = t_end or (decisions[-1]["t"] if decisions else t_start)
+    for j, t in since.items():                   # still parked when the run ended
+        longest, parked = max(longest, end - t), parked + (end - t)
+    span = sum(max(0.0, end - first[j]) for j in first)
+    return round(longest, 1), (round(100 * parked / span, 1) if span else 0.0)
 
 def load_metrics(root):
     path = f"{root}/metrics.csv"
@@ -178,7 +238,10 @@ def load_metrics(root):
     with open(path) as f:
         for r in csv.DictReader(f):
             for k in FIELDS:
-                if k in ("label", "config", "status", "first_src"):
+                if k in TEXT:
+                    continue
+                if k not in r:                 # metrics.csv from an older analyze.py
+                    r[k] = None
                     continue
                 r[k] = float(r[k]) if r[k] not in ("", "None") else None
             r["N"] = int(r["N"]); r["run"] = int(r["run"])
@@ -236,10 +299,12 @@ def cmd_calibrate(root, config="eevdf"):
 
 # ---- figures ----------------------------------------------------------------
 
-ORDER = ["eevdf", "stasis", "ctrl", "scxonly", "oomd", "simple", "thrashprotect"]
+ORDER = ["eevdf", "stasis", "ctrl", "stasis-norot", "stasis-fp", "mglru", "oomd",
+         "thrashprotect", "scxonly", "simple"]
 NAMES = {"eevdf": "EEVDF", "stasis": "Full STASIS", "ctrl": "STASIS controller-only",
-         "oomd": "EEVDF + systemd-oomd", "simple": "scx_simple", "scxonly": "scx_stasis alone",
-         "thrashprotect": "thrash-protect"}
+         "stasis-norot": "STASIS, no rotation", "stasis-fp": "STASIS, footprint estimate",
+         "mglru": "EEVDF + MGLRU min_ttl", "oomd": "EEVDF + systemd-oomd",
+         "thrashprotect": "thrash-protect", "simple": "scx_simple", "scxonly": "scx_stasis alone"}
 
 def median_run(rows, label, n, key="throughput"):
     rs = [r for r in rows if r["label"] == label and r["N"] == n and r[key] is not None]
@@ -324,6 +389,7 @@ def cmd_figures(root):
     # F4: CDF of probe wake-up latency at N=8, plus the unloaded reference
     fig, ax = plt.subplots(figsize=(7, 4.2))
     series = [(l, 8) for l in labels] + [("eevdf", 0)]
+    plotted = 0
     for l, n in series:
         pooled = {}
         for r in rows:
@@ -338,9 +404,12 @@ def cmd_figures(root):
         ax.plot([max(x, 1) for x in xs], ys,
                 label="unloaded" if n == 0 else NAMES.get(l, l),
                 ls="--" if n == 0 else "-")
-    ax.set_xscale("log"); ax.set_xlabel("probe wake-up latency (µs)"); ax.set_ylabel("CDF")
-    ax.set_title("F4  Interactive latency at N=8"); ax.legend(fontsize=8); ax.grid(alpha=.3)
-    fig.tight_layout(); fig.savefig(f"{out}/F4_latency_cdf.png", dpi=150)
+        plotted += 1
+    if plotted:                                   # no N=8 runs yet: no F4
+        ax.set_xscale("log"); ax.set_xlabel("probe wake-up latency (µs)"); ax.set_ylabel("CDF")
+        ax.set_title("F4  Interactive latency at N=8"); ax.legend(fontsize=8); ax.grid(alpha=.3)
+        fig.tight_layout(); fig.savefig(f"{out}/F4_latency_cdf.png", dpi=150)
+    plt.close(fig)
 
     # F5: ablation, controller-only vs full STASIS
     metrics = [("ttfp_s", "time to first park (s)"), ("p99_us", "probe p99 (µs)"),
@@ -359,17 +428,72 @@ def cmd_figures(root):
     axes[0].legend(fontsize=8)
     fig.suptitle("F5  Ablation: what the scheduler adds"); fig.tight_layout()
     fig.savefig(f"{out}/F5_ablation.png", dpi=150)
+
+    # F6: starvation. Longest time without progress per run at N=8, every
+    # config; the starvation bound applies to the stasisd ones.
+    shown = [l for l in labels if any(r["label"] == l and r["N"] == 8 and r["max_gap_s"] is not None
+                                      for r in rows)]
+    if shown:
+        fig, ax = plt.subplots(figsize=(max(6, 1.1 * len(shown) + 2), 4))
+        for i, l in enumerate(shown):
+            v = [r["max_gap_s"] for r in rows if r["label"] == l and r["N"] == 8 and r["max_gap_s"] is not None]
+            ax.scatter([i] * len(v), v, s=16, color=f"C{i}")
+            ax.hlines(statistics.median(v), i - .25, i + .25, color=f"C{i}")
+        bound = next((e.get("max_wait") for r in rows if r["label"] == "stasis" and r["N"] == 8
+                      for e in jsonl(f"{run_dir(r)}/decisions.jsonl")[:1] if e.get("max_wait")), None)
+        if bound:
+            ax.axhline(bound, color="k", ls="--", lw=1)
+            ax.text(len(shown) - .5, bound, f" starvation bound {bound:g} s", va="bottom", ha="right", fontsize=8)
+        ax.set_xticks(range(len(shown)), [NAMES.get(l, l) for l in shown], rotation=20, ha="right", fontsize=8)
+        ax.set_ylabel("longest time without progress (s)")
+        ax.set_title("F6  Starvation at N=8: the longest any job went without finishing a pass")
+        ax.grid(alpha=.3, axis="y"); fig.tight_layout(); fig.savefig(f"{out}/F6_starvation.png", dpi=150)
+
+    # F7: working sets, measured vs footprint, in one full-STASIS run (the
+    # median-throughput run at the largest N that logged measurements)
+    for n in (8, 6, 4):
+        r = median_run(rows, "stasis", n)
+        if not r:
+            continue
+        ws = [e for e in jsonl(f"{run_dir(r)}/decisions.jsonl") if e.get("event") == "ws"]
+        if not any(v.get("m") for e in ws for v in e["jobs"].values()):
+            continue
+        t0 = read_float(f"{run_dir(r)}/t0") or ws[0]["t"]
+        fig, ax = plt.subplots(figsize=(8, 4))
+        names = sorted({j for e in ws for j in e["jobs"]}, key=lambda j: int(re.sub(r"\D", "", j) or 0))
+        for i, j in enumerate(names):
+            pts = [(e["t"] - t0, e["jobs"][j]) for e in ws if j in e["jobs"]]
+            ax.plot([t for t, _ in pts], [v["fp"] / 2**20 for _, v in pts], color=f"C{i % 10}", ls=":", lw=1)
+            m = [(t, v["m"] / 2**20) for t, v in pts if v.get("m")]
+            if m:
+                ax.plot([t for t, _ in m], [x for _, x in m], color=f"C{i % 10}", lw=1.5,
+                        label=j.replace("stasis-", "").replace(".service", ""))
+        ax.set_xlabel("time (s)"); ax.set_ylabel("MiB")
+        ax.set_title(f"F7  Working sets in one STASIS run (N={n}): measured (solid) vs footprint (dotted)")
+        ax.legend(fontsize=7, ncol=4); ax.grid(alpha=.3)
+        fig.tight_layout(); fig.savefig(f"{out}/F7_working_sets.png", dpi=150)
+        break
     print(f"figures -> {out}/")
 
 # ---- scoring against the frozen pre-registration ----------------------------
 
-def load_hypotheses(prereg):
-    """The ```json hypotheses block of the frozen pre-registration."""
+def load_hypotheses(prereg, experiment=None):
+    """The ```json hypotheses block of the frozen pre-registration; with an
+    experiment ("A" or "B"), only that experiment's (no "experiment" key = A)."""
     text = open(prereg).read()
     m = re.search(r"```json\s*(\{.*?\})\s*```", text, re.S)
     if not m:
         raise ValueError(f"no ```json hypotheses block in {prereg}")
-    return json.loads(m.group(1))["hypotheses"]
+    hyps = json.loads(m.group(1))["hypotheses"]
+    if experiment:
+        hyps = [h for h in hyps if h.get("experiment", "A") == experiment]
+    return hyps
+
+def experiment_of(root):
+    try:
+        return open(f"{root}/experiment").read().strip() or "A"
+    except FileNotFoundError:
+        return "A"
 
 def score_table(rows, hyps):
     """One row per (hypothesis, N): the STASIS values, the deciding baseline's
@@ -381,13 +505,15 @@ def score_table(rows, hyps):
             vals = lambda l: [r[h["metric"]] for r in rows
                               if r["label"] == l and r["N"] == n and r[h["metric"]] is not None]
             row = {"id": h["id"], "claim": h["claim"], "N": n, "metric": h["metric"],
-                   "better": h.get("better"), "equals": h.get("equals"),
+                   "better": h.get("better"), "equals": h.get("equals"), "at_most": h.get("at_most"),
                    "stasis": vals(h["stasis"]), "baseline": None, "baseline_label": None}
             s = row["stasis"]
             if not s:
                 row["result"] = "MISSING"
             elif "equals" in h:
                 row["result"] = "PASS" if all(v == h["equals"] for v in s) else "FAIL"
+            elif "at_most" in h:
+                row["result"] = "PASS" if all(v <= h["at_most"] for v in s) else "FAIL"
             else:
                 ok, best = True, None
                 for b in h["baselines"]:
@@ -410,7 +536,7 @@ def score_table(rows, hyps):
 
 def cmd_score(root, prereg):
     try:
-        hyps = load_hypotheses(prereg)
+        hyps = load_hypotheses(prereg, experiment_of(root))
     except ValueError as e:
         sys.exit(str(e))
     fmt = lambda v: f"{statistics.median(v):.3g} [{min(v):.3g}, {max(v):.3g}]"
@@ -420,6 +546,8 @@ def cmd_score(root, prereg):
         stasis = fmt(r["stasis"]) if r["stasis"] else "no data"
         if r["equals"] is not None:
             base = f"(= {r['equals']})"
+        elif r["at_most"] is not None:
+            base = f"(at most {r['at_most']})"
         else:
             base = f"{r['baseline_label']} {fmt(r['baseline'])}" if r["baseline"] else "-"
         lines.append(f"| {r['id']} | {r['claim']} | {r['N']} | {stasis} | {base} | {r['result']} |")

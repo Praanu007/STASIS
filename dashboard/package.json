@@ -1,0 +1,23 @@
+{
+  "name": "stasis-control-room",
+  "private": true,
+  "version": "2.0.0",
+  "description": "STASIS Control Room: live, replay, results and simulator views of the STASIS load controller",
+  "type": "module",
+  "scripts": {
+    "build": "node build.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "node test/run.mjs",
+    "check": "npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "react": "19.3.0",
+    "react-dom": "19.3.0"
+  },
+  "devDependencies": {
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "esbuild": "0.28.2",
+    "typescript": "6.0.3"
+  }
+}

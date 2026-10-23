@@ -1,0 +1,6 @@
+pid 9263's current scheduling policy: SCHED_OTHER
+pid 9263's current scheduling priority: 0
+pid 9263's current runtime parameter: 2100000
+pid 9265's current scheduling policy: SCHED_OTHER
+pid 9265's current scheduling priority: 0
+pid 9265's current runtime parameter: 2100000
