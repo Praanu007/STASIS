@@ -30,7 +30,8 @@ RUN_LINK = os.environ.get("STASIS_CURRENT", "/run/stasis/current")
 DEFAULT_DECISIONS = "/var/log/stasis/decisions.jsonl"
 RUN_ID = re.compile(r"^[\w.+-]+/N\d+/run\d+$")
 PAGE_HEAD = (b'<!doctype html>\n<html lang="en">\n<head>\n<meta charset="utf-8">\n'
-             b'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n')
+             b'<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">\n'
+             b'<meta name="stasis-server" content="1">\n')     # the page asks the API only when served from here
 
 
 def load(name, path):
@@ -83,12 +84,17 @@ def norm_event(e):
                 "job": job_id(e.get("job", "")), "why": e.get("why", "")}
     kind = e.get("event")
     if kind == "pressure":
+        hold = e.get("hold")
         return {"t": t, "kind": "pressure", "src": e.get("src", ""),
                 "active": num(e.get("active")), "parked": num(e.get("parked")),
-                "warming": bool(e.get("warming", False))}
+                "warming": bool(e.get("warming", False)),
+                "hold": hold if hold in ("growing", "reloading", "making-room") else None}
     if kind == "pff_hi":
         return {"t": t, "kind": "pff", "job": job_id(e.get("job", "")),
                 "pff": num(e.get("pff")), "growth": num(e.get("growth"))}
+    if kind == "reclaim":
+        return {"t": t, "kind": "reclaim", "job": job_id(e.get("job", "")),
+                "bytes": num(e.get("bytes"))}
     if kind == "start":
         return {"t": t, "kind": "start", "signal": e.get("signal"),
                 "pff_hi": num(e.get("pff_hi")), "quantum": num(e.get("quantum"))}
@@ -490,7 +496,8 @@ def main():
     httpd.daemon_threads = True
     httpd.app = app
     print(f"STASIS Control Room on port {args.port}. Open from the host:", flush=True)
-    for a in host_ips() or ["<vm-ip>"]:
+    wildcard = args.bind in ("", "0.0.0.0", "::")
+    for a in (host_ips() or ["<vm-ip>"]) if wildcard else [args.bind]:
         print(f"  http://{a}:{args.port}", flush=True)
     if args.results:
         print(f"recorded runs from {os.path.abspath(args.results)}", flush=True)

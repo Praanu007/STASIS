@@ -7,7 +7,9 @@
  * This scheduler only (1) measures, for every process, the major faults it
  * takes per millisecond of its own CPU time - page-fault frequency in Chu and
  * Opderbeck's sense - and (2) keeps a small set of protected tasks (the
- * latency probe, the demo shell) ahead of the batch jobs.
+ * latency probe, the demo shell) ahead of the batch jobs: they are queued
+ * first, and a waking one preempts a batch job instead of waiting for its
+ * slice to run out.
  *
  * Why counting in running/stopping catches every fault: a major fault is
  * accounted in the faulting task's own context, so p->maj_flt can only move
@@ -88,6 +90,13 @@ void BPF_STRUCT_OPS(stasis_enqueue, struct task_struct *p, u64 enq_flags)
 	if (bpf_map_lookup_elem(&prio_tgid, &tgid)) {
 		stat_inc(STASIS_STAT_PRIO);
 		scx_bpf_dsq_insert(p, PRIO_DSQ, SCX_SLICE_DFL, enq_flags);
+		/*
+		 * No idle CPU took it in select_cpu. Queueing first isn't enough:
+		 * every CPU may be running a batch job with up to SCX_SLICE_DFL
+		 * (20 ms) left, which the rehearsal VM measured as probe latency.
+		 * Preempt the task's last CPU; its dispatch takes PRIO_DSQ first.
+		 */
+		scx_bpf_kick_cpu(scx_bpf_task_cpu(p), SCX_KICK_PREEMPT);
 		return;
 	}
 	stat_inc(STASIS_STAT_SHARED);

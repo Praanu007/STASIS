@@ -22,6 +22,15 @@ ln -sfn "$OUT" /run/stasis/current          # the dashboard follows this link
 systemctl reset-failed 'stasis-*' 2>/dev/null || true
 echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
 
+# Start from a quiet machine: wait (up to 3 min) for the memory-stall average
+# left by a previous run to decay to zero. Otherwise this run's pressure onset
+# (Jain's window, time-to-first-park) is the last run's tail: on the rehearsal
+# VM a run started 22 s after another had its onset about 24 s before any job
+# stalled.
+quiet() { awk '/^full/ { split($2, a, "="); exit !(a[2] + 0 == 0) }' /proc/pressure/memory; }
+for waited in $(seq 0 180); do quiet && break; sleep 1; done
+echo "$waited" > "$OUT/quiesce_s"
+
 SCHED_PID= CTRL_PID= TP_PID= SAMPLER=
 cleanup() {
   [[ -n $SAMPLER ]] && kill "$SAMPLER" 2>/dev/null || true

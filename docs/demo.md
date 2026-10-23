@@ -33,7 +33,8 @@ dispatch counters.
    - the first **Halve** decision parks half the jobs (their lanes frost over),
    - the stall falls back under the trigger line and the status returns to
      **Calm**,
-   - **Rotate** decisions every 15 s, so every job keeps making progress.
+   - **Rotate** decisions once a running job has had 15 s of CPU, so every
+     job keeps making progress.
 
    `ls` stays responsive, and **Processes killed** stays at 0.
 3. **Results (30 s).** Switch to the **Results** tab: the throughput curve
@@ -65,7 +66,15 @@ the same control law on a model of the 4 GiB VM.
   test.
 - **"Why doesn't one halving turn into a cascade?"** The jobs that survive a
   halving have to fault their pages back in, which looks like pressure for a
-  few seconds. stasisd only halves when the active set's resident memory has
-  stopped growing: faulting that grows the resident set is warm-up, faulting
-  that doesn't is thrashing. The simulator showed the guide's original rule
-  cascading 8 → 4 → 2 → 1.
+  while. If the active set's working sets fit, that pressure is a transition:
+  halving more jobs can't bring their pages back faster. So stasisd treats
+  it as warm-up while the set is still growing, still has pages in swap, or
+  is still waiting for parked jobs to be paged out. Only pressure on a set
+  that fits, is resident and has room means an estimate is wrong. The
+  guide's original rule cascaded 7 → 3 → 1 within 4 s on the rehearsal VM
+  (`docs/rehearsal/history/1-first-warm-up-guard`).
+- **"Why does the probe stay responsive when the jobs run flat out?"**
+  scx_stasis queues protected tasks first, and a waking one preempts a batch
+  job (`SCX_KICK_PREEMPT`) instead of waiting up to a 20 ms slice. The
+  rehearsal showed why that matters: without the kick, the probe's p99 was
+  worse under STASIS than under EEVDF.

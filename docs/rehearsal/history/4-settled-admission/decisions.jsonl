@@ -1,0 +1,438 @@
+{"t": 1792755649.097072, "event": "start", "signal": "memstat", "trigger_ms": 100, "window_ms": 1000, "quantum": 15.0, "pff_hi": null, "grace": 2.0, "grow_frac": 0.005, "set_grow_frac": 0.001, "reserve": 0.1}
+{"t": 1792755669.217494, "event": "pressure", "src": "psi", "active": 7, "parked": 0, "warming": false, "fits": false, "growth": 0.051}
+{"t": 1792755669.2261837, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755669.231547, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755669.2367964, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755669.241456, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755670.1980102, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0176}
+{"t": 1792755672.0115254, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0296}
+{"t": 1792755673.4719257, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0152}
+{"t": 1792755674.457849, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.01}
+{"t": 1792755675.6707907, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0105}
+{"t": 1792755676.1509712, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0069}
+{"t": 1792755676.9005735, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0067}
+{"t": 1792755677.3440318, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0097}
+{"t": 1792755679.4706404, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0081}
+{"t": 1792755680.7413208, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0079}
+{"t": 1792755681.671774, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792755683.231055, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0045}
+{"t": 1792755684.8478963, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0037}
+{"t": 1792755686.22662, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0075}
+{"t": 1792755687.6779847, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0107}
+{"t": 1792755689.290519, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0079}
+{"t": 1792755690.7262514, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0088}
+{"t": 1792755691.6334515, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0062}
+{"t": 1792755692.0253882, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792755693.4324205, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0106}
+{"t": 1792755695.1634367, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0011}
+{"t": 1792755696.0732107, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792755697.6790593, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0036}
+{"t": 1792755698.8956954, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0011}
+{"t": 1792755700.007978, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792755701.2287877, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792755702.8254166, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0003}
+{"t": 1792755702.8444724, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755702.857533, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755702.9812293, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0056}
+{"t": 1792755704.7254796, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0052}
+{"t": 1792755704.9792292, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0177}
+{"t": 1792755706.442057, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.021}
+{"t": 1792755707.0104775, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0127}
+{"t": 1792755707.8330543, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0019}
+{"t": 1792755708.782036, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792755710.4114118, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792755711.597384, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0021}
+{"t": 1792755712.239606, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0025}
+{"t": 1792755713.626488, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792755714.5130324, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0012}
+{"t": 1792755715.0859244, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792755716.217716, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755716.5604434, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755716.5797098, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755719.1149442, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0602}
+{"t": 1792755719.7863302, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0133}
+{"t": 1792755720.3857343, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0154}
+{"t": 1792755721.216301, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0171}
+{"t": 1792755722.2826521, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0382}
+{"t": 1792755723.4606009, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.005}
+{"t": 1792755724.79853, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0185}
+{"t": 1792755725.474421, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0068}
+{"t": 1792755726.9643502, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0118}
+{"t": 1792755727.6512053, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0047}
+{"t": 1792755728.8125615, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0049}
+{"t": 1792755729.8807952, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0086}
+{"t": 1792755730.8526967, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0305}
+{"t": 1792755731.4510195, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0275}
+{"t": 1792755732.2849615, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755732.3256161, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755732.9698503, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792755733.5393252, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0113}
+{"t": 1792755735.599417, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.031}
+{"t": 1792755736.7644691, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0328}
+{"t": 1792755737.327507, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0043}
+{"t": 1792755738.3364081, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0091}
+{"t": 1792755738.8606708, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0094}
+{"t": 1792755739.8732536, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0243}
+{"t": 1792755741.4389684, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0298}
+{"t": 1792755741.9018335, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0151}
+{"t": 1792755742.677257, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0075}
+{"t": 1792755743.5727453, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0018}
+{"t": 1792755744.6453867, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0028}
+{"t": 1792755745.8307118, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755746.710375, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0025}
+{"t": 1792755747.7462947, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792755748.9812315, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0161}
+{"t": 1792755749.844575, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792755750.8453062, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0038}
+{"t": 1792755751.727181, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755751.7309508, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755752.3665242, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792755753.4070742, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0407}
+{"t": 1792755754.785415, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0463}
+{"t": 1792755755.5459952, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0248}
+{"t": 1792755756.6298938, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0182}
+{"t": 1792755757.5365078, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0064}
+{"t": 1792755758.823027, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0395}
+{"t": 1792755759.5814624, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0084}
+{"t": 1792755760.6734295, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792755760.7709758, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755761.8940167, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0174}
+{"t": 1792755764.2879786, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0107}
+{"t": 1792755764.7734342, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.012}
+{"t": 1792755766.3085072, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0089}
+{"t": 1792755767.8844173, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0064}
+{"t": 1792755770.6915133, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0082}
+{"t": 1792755773.6083574, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0094}
+{"t": 1792755775.4545772, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0014}
+{"t": 1792755776.1282957, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0011}
+{"t": 1792755776.1300628, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755776.5040507, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0013}
+{"t": 1792755777.7763503, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0024}
+{"t": 1792755778.5778403, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755780.16867, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0006}
+{"t": 1792755781.0472052, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792755781.8894055, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792755783.5167458, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792755790.9700134, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0066}
+{"t": 1792755791.3239992, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755791.3535082, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755791.4670265, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792755800.9185762, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792755801.2933993, "job": "stasis-job-6.service", "frozen": false, "why": "admit"}
+{"t": 1792755801.8745859, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755803.0340345, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0005}
+{"t": 1792755803.0421698, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755803.9482906, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0038}
+{"t": 1792755805.0198832, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0038}
+{"t": 1792755806.0762951, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792755807.1773038, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755808.130173, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792755808.9669125, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792755809.243977, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755810.326904, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0052}
+{"t": 1792755810.3314712, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755822.179162, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0071}
+{"t": 1792755822.9924557, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792755824.5445893, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755824.9715447, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0013}
+{"t": 1792755826.76048, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755826.844224, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755828.4266763, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755830.2730596, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.014}
+{"t": 1792755830.6198273, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0054}
+{"t": 1792755832.2333627, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0038}
+{"t": 1792755832.7631845, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792755833.4718845, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792755835.9770718, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792755837.6526701, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792755840.6111019, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": -0.0005}
+{"t": 1792755840.6690762, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755840.7467635, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755841.2123773, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792755848.2771196, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0063}
+{"t": 1792755848.9991271, "job": "stasis-job-6.service", "frozen": false, "why": "admit"}
+{"t": 1792755849.4733841, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755853.3433695, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0078}
+{"t": 1792755855.0678234, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755855.0864325, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755855.14679, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755855.4162767, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755856.5312846, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.004}
+{"t": 1792755858.1980891, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0004}
+{"t": 1792755858.2010071, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755858.5497997, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0035}
+{"t": 1792755859.6117802, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0042}
+{"t": 1792755860.6992564, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0072}
+{"t": 1792755861.6759, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792755871.830331, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0043}
+{"t": 1792755872.9995115, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792755873.1999967, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755876.2797182, "job": "stasis-job-6.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755876.2870862, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755878.4498878, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0014}
+{"t": 1792755878.4741685, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755878.6350758, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0019}
+{"t": 1792755880.5270977, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0062}
+{"t": 1792755882.267482, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792755883.0227978, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0021}
+{"t": 1792755886.7094102, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0007}
+{"t": 1792755888.5204847, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0054}
+{"t": 1792755891.808922, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.005}
+{"t": 1792755893.8243277, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792755894.7411003, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755901.8151307, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0013}
+{"t": 1792755902.4944327, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792755902.9104002, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755904.1731236, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755904.1782272, "job": "stasis-job-7.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755904.8500094, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755906.0859535, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792755908.0173752, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0073}
+{"t": 1792755909.4298325, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0001}
+{"t": 1792755909.4325628, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755913.1639974, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0012}
+{"t": 1792755914.1968296, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.004}
+{"t": 1792755917.0167446, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0082}
+{"t": 1792755918.9252386, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792755922.1962364, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0073}
+{"t": 1792755923.6621673, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792755925.0800338, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792755928.4802065, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.006}
+{"t": 1792755929.2941658, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792755929.6293902, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755930.4721358, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.006}
+{"t": 1792755931.6808507, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755931.683219, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755933.26815, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755933.3920407, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0009}
+{"t": 1792755933.4264278, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755934.453451, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0039}
+{"t": 1792755935.5441692, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792755936.5201461, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0044}
+{"t": 1792755937.5395868, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.002}
+{"t": 1792755942.7815588, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0067}
+{"t": 1792755943.4014082, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792755946.2155185, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0074}
+{"t": 1792755947.3172388, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792755948.269192, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792755949.9143503, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0018}
+{"t": 1792755950.4100826, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0015}
+{"t": 1792755951.1651204, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792755951.4619615, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792755956.2191129, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0007}
+{"t": 1792755956.2259898, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755956.2418327, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755956.3344045, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0016}
+{"t": 1792755958.1788094, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792755959.426917, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792755962.4045, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0067}
+{"t": 1792755963.4908893, "job": "stasis-job-5.service", "frozen": false, "why": "admit"}
+{"t": 1792755963.6523597, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792755964.9394653, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0015}
+{"t": 1792755965.9745705, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792755967.590374, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0021}
+{"t": 1792755970.3085139, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0051}
+{"t": 1792755972.8747542, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792755973.9749453, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0006}
+{"t": 1792755974.0475957, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792755974.3831308, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0015}
+{"t": 1792755974.7982943, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0014}
+{"t": 1792755975.496961, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792755976.7478514, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0027}
+{"t": 1792755977.5063403, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0025}
+{"t": 1792755978.796267, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792755986.1393766, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0067}
+{"t": 1792755988.1149995, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792755988.1182287, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792755989.820383, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792755997.9298446, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0052}
+{"t": 1792756000.70372, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0069}
+{"t": 1792756001.3674664, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792756004.125536, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0062}
+{"t": 1792756004.99139, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0014}
+{"t": 1792756006.0354505, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0016}
+{"t": 1792756006.7874017, "job": "stasis-job-5.service", "frozen": false, "why": "admit"}
+{"t": 1792756006.949218, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792756008.1330438, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0028}
+{"t": 1792756009.0809212, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792756010.1222057, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0032}
+{"t": 1792756011.1688156, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792756014.2629259, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792756014.73705, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792756015.212, "event": "pressure", "src": "psi", "active": 4, "parked": 3, "warming": true, "fits": true, "growth": null}
+{"t": 1792756016.2521105, "event": "pressure", "src": "psi", "active": 4, "parked": 3, "warming": false, "fits": true, "growth": 0.0009}
+{"t": 1792756016.257861, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756016.2612748, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756017.481647, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0018}
+{"t": 1792756018.237663, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0024}
+{"t": 1792756019.186195, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756020.1501384, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0011}
+{"t": 1792756020.15421, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756021.0563354, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0014}
+{"t": 1792756022.1812549, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0045}
+{"t": 1792756023.174494, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0018}
+{"t": 1792756035.1170838, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756035.1220694, "job": "stasis-job-7.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756035.6545951, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792756035.996396, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792756036.6280797, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756038.9426503, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792756039.1515038, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792756039.8625054, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756040.9133961, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792756042.117792, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792756043.0854592, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792756043.9412122, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792756043.9815025, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792756047.9973505, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0005}
+{"t": 1792756048.0021794, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756048.004115, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756048.8214145, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792756049.8339908, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0045}
+{"t": 1792756050.9048934, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792756057.0943675, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0078}
+{"t": 1792756059.480517, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756061.3115048, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.009}
+{"t": 1792756062.386938, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756063.0661948, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756063.0782628, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756063.4339278, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792756064.4728577, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792756065.5528631, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792756071.4283772, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.005}
+{"t": 1792756077.7654707, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0061}
+{"t": 1792756078.956314, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0001}
+{"t": 1792756081.717797, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0077}
+{"t": 1792756088.9863925, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0015}
+{"t": 1792756089.3123777, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756089.320065, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756090.1144147, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792756090.4432876, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792756091.1742039, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756092.4020846, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792756093.9337006, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0019}
+{"t": 1792756093.943523, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756094.272194, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756099.3130214, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0054}
+{"t": 1792756108.3401906, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0072}
+{"t": 1792756109.0139804, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792756109.6153953, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756112.538144, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.007}
+{"t": 1792756113.544092, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792756114.5418026, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0023}
+{"t": 1792756115.918432, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792756116.8135257, "job": "stasis-job-6.service", "frozen": false, "why": "admit"}
+{"t": 1792756117.5397768, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792756117.5896149, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0007}
+{"t": 1792756117.5921884, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756117.5934472, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756120.5466266, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0069}
+{"t": 1792756121.7981787, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0024}
+{"t": 1792756122.612785, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0051}
+{"t": 1792756125.8292797, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792756126.9531932, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0044}
+{"t": 1792756130.652212, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0068}
+{"t": 1792756131.6705825, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792756132.7042568, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756132.709182, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756135.6473117, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0075}
+{"t": 1792756136.6721897, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792756140.829481, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0066}
+{"t": 1792756141.8561516, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756142.3023021, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792756144.8094432, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0056}
+{"t": 1792756146.1025019, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0006}
+{"t": 1792756146.1054256, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756146.8884392, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0019}
+{"t": 1792756151.2052472, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0065}
+{"t": 1792756151.9848192, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0017}
+{"t": 1792756153.1484876, "job": "stasis-job-3.service", "frozen": false, "why": "admit"}
+{"t": 1792756153.2039452, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756157.3826377, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0069}
+{"t": 1792756158.004807, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0011}
+{"t": 1792756158.422192, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792756159.382268, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": -0.0004}
+{"t": 1792756159.3854043, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756159.3906496, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756159.9162478, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0019}
+{"t": 1792756161.0454583, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756162.0800881, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792756163.1171472, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756164.1171725, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0003}
+{"t": 1792756165.1163485, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0048}
+{"t": 1792756176.5920627, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0068}
+{"t": 1792756179.1712615, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0013}
+{"t": 1792756179.5995798, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792756180.227323, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756180.665053, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756180.671791, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756181.4418466, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756182.8256235, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0032}
+{"t": 1792756183.4664018, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0028}
+{"t": 1792756184.3327308, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0006}
+{"t": 1792756184.3357003, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756192.4234424, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0066}
+{"t": 1792756193.4123366, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0027}
+{"t": 1792756193.7910385, "job": "stasis-job-7.service", "frozen": false, "why": "admit"}
+{"t": 1792756196.6387937, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0067}
+{"t": 1792756197.841787, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0059}
+{"t": 1792756198.834485, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0028}
+{"t": 1792756199.8772361, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756200.3683438, "job": "stasis-job-5.service", "frozen": false, "why": "admit"}
+{"t": 1792756201.6281996, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": null}
+{"t": 1792756202.8659108, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0004}
+{"t": 1792756202.8968244, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756202.8984175, "job": "stasis-job-7.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756203.0770113, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0043}
+{"t": 1792756204.0093744, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756205.046522, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0033}
+{"t": 1792756212.651162, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0066}
+{"t": 1792756213.7875857, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0042}
+{"t": 1792756214.7468858, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792756215.0400274, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756215.8714721, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792756217.02522, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756217.0273397, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756219.2247782, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0051}
+{"t": 1792756221.0693161, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0013}
+{"t": 1792756221.2069855, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": -0.0009}
+{"t": 1792756221.2093766, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756222.7960622, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792756226.2811322, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0052}
+{"t": 1792756226.9273648, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792756227.8410397, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": 0.0005}
+{"t": 1792756229.8848739, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.006}
+{"t": 1792756230.8984556, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792756232.458837, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792756234.6645455, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0078}
+{"t": 1792756236.026131, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0039}
+{"t": 1792756236.6894798, "job": "stasis-job-7.service", "frozen": false, "why": "admit"}
+{"t": 1792756236.774692, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756237.9825358, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756241.134134, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0024}
+{"t": 1792756242.0780864, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0031}
+{"t": 1792756242.2069693, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792756246.115799, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756246.1198256, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756247.3583074, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": null}
+{"t": 1792756248.5168362, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0008}
+{"t": 1792756248.520451, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756248.9335654, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0016}
+{"t": 1792756262.2115653, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0093}
+{"t": 1792756265.03354, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756265.0370665, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756267.613518, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0063}
+{"t": 1792756268.6922379, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0046}
+{"t": 1792756269.7859836, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0061}
+{"t": 1792756270.8093195, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0075}
+{"t": 1792756275.172397, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0046}
+{"t": 1792756276.2592487, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0038}
+{"t": 1792756277.188465, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0041}
+{"t": 1792756278.3342752, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0044}
+{"t": 1792756282.0161781, "job": "stasis-job-1.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0200295, "job": "stasis-job-2.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0293162, "job": "stasis-job-3.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0348022, "job": "stasis-job-4.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0477383, "job": "stasis-job-5.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0501862, "job": "stasis-job-6.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756282.0566223, "job": "stasis-job-7.service", "frozen": false, "why": "shutdown"}

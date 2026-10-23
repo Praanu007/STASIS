@@ -114,7 +114,7 @@ h1, h2, h3 { margin: 0; font-weight: 600; text-wrap: balance; }
 /* ---------- top bar ---------- */
 .top {
   position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20;
-  margin: 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px)));
+  margin: 0 calc(-1 * max(16px, env(safe-area-inset-right, 0px))) 0 calc(-1 * max(16px, env(safe-area-inset-left, 0px)));
   padding-left: max(16px, env(safe-area-inset-left, 0px));
   padding-right: max(16px, env(safe-area-inset-right, 0px));
   background: color-mix(in srgb, var(--bg) 82%, transparent);
@@ -819,7 +819,7 @@ const SC = {
   touch: 6e6, K: 600,                                     // page touches/s; fault latency / touch time
   bwIn: 120, bwOut: 180, fill: 1200,                      // MiB/s: swap-in, swap-out, first touch
   faultCpu: 5e-6,                                          // CPU s per major fault
-  pffHi: 1.0, grace: 2, grow: 0.005, setGrow: 0.001, calm: 5, cooldown: 2, quantum: 15, reserve: 0.10, trig: 0.10,
+  pffHi: 1.0, grace: 2, grow: 0.005, setGrow: 0.001, reload: 0.02, calm: 5, cooldown: 2, quantum: 15, reserve: 0.10, trig: 0.10,
   dt: 0.25,
 };
 function mulberry32(a) {
@@ -861,7 +861,7 @@ class Sim {
     }
   }
   park(j, why) { j.state = 'park'; j.hot = 0; this.emit({ kind: 'park', job: j.id, why }); if (this.firstPark == null) this.firstPark = this.t; }
-  wake(j, why) { j.state = 'run'; j.since = this.t; j.cpu0 = j.cpu; j.hot = 0; j.hist = []; this.emit({ kind: 'wake', job: j.id, why }); }
+  wake(j, why) { j.state = 'run'; j.since = this.t; j.ucpu0 = j.ucpu || 0; j.hot = 0; j.hist = []; this.emit({ kind: 'wake', job: j.id, why }); }
   step() {
     const c = SC, dt = c.dt;
     this.t += dt; this.steps++;
@@ -901,11 +901,16 @@ class Sim {
     const want = sum(act, (j) => j.want);
     const k = want > grant ? grant / want : 1;
     let evict = Math.max(0, want * k - free);
+    const need0 = evict;
     let swOut = evict;
-    if (evict > 0) {                                  // parked jobs' pages go first: they are cold
+    if (evict > 0) {                                  // parked jobs' pages go first: stasisd pages them out (memory.reclaim)
       const pr = sum(par, (j) => j.res);
       const fromPar = Math.min(evict, pr);
       if (pr > 0) for (const j of par) j.res -= fromPar * (j.res / pr);
+      if (fromPar > 0 && this.policy !== 'eevdf') {   // stasisd logs each job at most every 10 s
+        const big = par.reduce((m, j) => (j.res > m.res ? j : m), par[0]);
+        if (this.t - (big.reclaimLogged ?? -1e9) >= 10) { big.reclaimLogged = this.t; this.emit({ kind: 'reclaim', job: big.id, bytes: Math.round(Math.min(pr, need0) * MiB) }); }
+      }
       evict -= fromPar;
       if (evict > 0) {                                // then running jobs, unevenly (some get luckier)
         const w = sum(act, (j) => j.res * (1 - 0.7 * j.luck));
@@ -929,15 +934,23 @@ class Sim {
         j.res = Math.min(c.ws, j.res + got);
         j.passes = Math.min(c.passes, j.passes + g * dt / c.secPerPass);
         const cpu = g + f * c.faultCpu;
-        j.cpu += cpu * dt; j.flt += f * dt; faults += f * dt; swIn += f * dt / 256;
+        j.cpu += cpu * dt; j.ucpu = (j.ucpu || 0) + g * dt; j.flt += f * dt; faults += f * dt; swIn += f * dt / 256;
         j.pffNow = cpu > 1e-9 ? f / (cpu * 1000) : 0;
         stall = j.m > 1e-4 ? clamp(1 - (g + f * c.faultCpu) / share, 0, 1) : 0;
       }
       j.peak = Math.max(j.peak, j.res);
       fullP *= stall; someQ *= 1 - stall;
       j.hist.push([this.t, j.res]);
-      while (j.hist.length > 2 && this.t - j.hist[1][0] >= 1) j.hist.shift();
+      while (j.hist.length > 2 && this.t - j.hist[1][0] >= 5) j.hist.shift();   // 5 s growth window
       if (j.passes >= c.passes - 1e-9) { j.passes = c.passes; j.state = 'done'; j.res = 0; }
+    }
+    // 6. would stasisd's reclaimer still have work? (the room itself was made above)
+    this.makingRoom = false;
+    if (this.policy !== 'eevdf' && par.length) {
+      const run = act.filter((j) => j.state === 'run');
+      const resNow = sum(live, (j) => (j.state === 'done' ? 0 : j.res));
+      const room = this.missing(run) - Math.max(0, (c.ram - c.sys - resNow) - c.reserve * c.ram);
+      this.makingRoom = room >= 8 && sum(par, (j) => j.res) >= 8;   // MiB: under a quarter chunk is ignored
     }
     const full = act.length ? fullP : 0, some = act.length ? 1 - someQ : 0;
     this.cnt.fullUs += full * dt * 1e6; this.cnt.someUs += some * dt * 1e6;
@@ -954,6 +967,7 @@ class Sim {
     return t1 - t0 < 0.5 ? null : (r1 - r0) / (t1 - t0);
   }
   ws(j) { return Math.max(j.touched, j.peak); }  // resident + swapped: everything the job has touched
+  missing(js) { return sum(js, (j) => Math.max(0, this.ws(j) - j.res)); }   // swapped-out part of the working sets
   growth(js) {                                 // combined growth as a fraction of the working sets, per s
     let r = 0, p = 0;
     for (const j of js) { const x = this.rate(j); if (x == null) return Infinity; r += x; p += this.ws(j); }
@@ -986,15 +1000,24 @@ class Sim {
     const served = (j) => j.cpu;
     if (src) {
       if (this.firstPressure == null) this.firstPressure = t;
-      // Warm-up: the active set fits and is still faulting its pages back in. Wait.
-      const warming = this.fits(act) && this.growth(act) >= c.setGrow;
-      this.emit({ kind: 'pressure', src, active: act.length, parked: par.length, warming });
+      // Warm-up: the active set fits and is still growing, reloading, or waiting
+      // for room. Halving more jobs can't bring the survivors' pages back faster.
+      let hold = null;
+      if (act.length && this.fits(act)) {
+        if (this.growth(act) >= c.setGrow) hold = 'growing';
+        else if (this.missing(act) >= c.reload * sum(act, (j) => this.ws(j))) hold = 'reloading';
+        else if (this.makingRoom) hold = 'making-room';
+      }
+      const warming = hold != null;
+      this.emit({ kind: 'pressure', src, active: act.length, parked: par.length, warming, hold });
       if (!warming) {
         this.lastPressure = t;
         if (t - this.lastHalve >= c.cooldown && act.length > 1) {
           const keep = Math.max(1, Math.floor(act.length / 2));
           const rate = this.policy === 'full' ? (j) => j.pffNow : (j) => j.f || 0;
-          act.slice().sort((x, y) => rate(y) - rate(x)).slice(0, act.length - keep).forEach((j) => this.park(j, 'pressure-' + src));
+          const worst = act.slice().sort((x, y) => rate(y) - rate(x));
+          worst.slice(0, act.length - keep).forEach((j) => this.park(j, 'pressure-' + src));
+          worst.slice(act.length - keep).forEach((j) => { j.hist = []; });   // the survivors' growth starts over
           this.lastHalve = t;
           this.lastRotate = t;                   // the rotation clock starts when jobs park
           for (const j of act) j.hot = 0;
@@ -1006,8 +1029,8 @@ class Sim {
       this.wake(j, 'admit');
       this.lastPressure = t;
     } else if (par.length && act.length && t - this.lastRotate >= c.quantum) {
-      // quantum = CPU time since the last thaw, so refaulting doesn't eat it
-      const ready = act.filter((j) => j.cpu - (j.cpu0 || 0) >= c.quantum);
+      // quantum = user CPU since the last thaw, so refaulting doesn't eat it
+      const ready = act.filter((j) => (j.ucpu || 0) - (j.ucpu0 || 0) >= c.quantum);
       if (ready.length) {
         const out = ready.reduce((m, x) => (served(x) > served(m) ? x : m));
         const inn = par.reduce((m, x) => (served(x) < served(m) ? x : m));
@@ -1702,6 +1725,11 @@ function groupEvents(evs) {
     if (e.kind === 'pressure') continue;
     if (e.kind === 'pff') { pff = e; continue; }
     if (e.kind === 'start') { out.push({ t: e.t, kind: 'start', e }); continue; }
+    if (e.kind === 'reclaim') {
+      if (prev && prev.kind === 'reclaim' && e.t - prev.t < 1.5) { prev.jobs.push(e.job); prev.bytes += e.bytes || 0; continue; }
+      out.push({ t: e.t, kind: 'reclaim', jobs: [e.job], bytes: e.bytes || 0 });
+      continue;
+    }
     if (e.kind === 'park' && (e.why || '').startsWith('pressure')) {
       if (prev && prev.kind === 'halve' && e.t - prev.t < 1) { prev.jobs.push(e.job); continue; }
       out.push({ t: e.t, kind: 'halve', jobs: [e.job], why: e.why, pff: pff && e.t - pff.t < 1.5 ? pff : null });
@@ -1726,12 +1754,13 @@ function renderEvents() {
   const fr = S.frames, end = S.end;
   const evs = [];
   let psiN = 0, pffN = 0, warmN = 0, firstSrc = null;
+  const holdN = { growing: 0, reloading: 0, 'making-room': 0 };
   const from = Math.max(0, bsearchT(fr, firstT()));
   for (let i = from; i <= end; i++) for (const e of fr[i].ev || []) {
     evs.push(e);
     if (e.kind === 'pressure') {
       if (e.src === 'pff') pffN++; else psiN++;
-      if (e.warming) warmN++;
+      if (e.warming) { warmN++; if (e.hold in holdN) holdN[e.hold]++; }
       if (!firstSrc) firstSrc = e.src;
     }
   }
@@ -1765,6 +1794,9 @@ function renderEvents() {
       tag = ['wake', 'Admit']; title = `Thawed ${g.jobs.join(', ')}`; text = WHY[g.why] || g.why;
     } else if (g.kind === 'stop') {
       tag = ['stop', 'Stop']; title = `Thawed ${g.jobs.length} job${g.jobs.length > 1 ? 's' : ''}`; text = WHY.shutdown;
+    } else if (g.kind === 'reclaim') {
+      tag = ['park', 'Page out']; title = `Paging out ${g.jobs.join(', ')} (${fmtBytes(g.bytes)})`;
+      text = 'Swapping out parked memory so the running jobs have room';
     } else if (g.kind === 'start') {
       tag = ['start', 'Start']; title = `stasisd started, ${g.e.signal || 'memstat'} signal`;
       text = g.e.signal === 'bpf' ? `PSI trigger plus PFF early warning (PFF_HI ${g.e.pff_hi ?? '?'})` : 'PSI trigger only';
@@ -1781,7 +1813,10 @@ function renderEvents() {
   if (psiN + pffN) {
     sumEl.hidden = false;
     sumEl.innerHTML = `Pressure signals: <b>${psiN}</b> from PSI, <b>${pffN}</b> from PFF. First signal came from <b>${firstSrc === 'pff' ? 'PFF' : 'PSI'}</b>.` +
-      (warmN ? ` <b>${warmN}</b> arrived while jobs were still faulting their pages back in, so nothing was halved.` : '');
+      (warmN ? ` <b>${warmN}</b> were warm-up, not thrashing, so nothing was halved` +
+        (holdN.growing + holdN.reloading + holdN['making-room']
+          ? ` (${[[holdN.growing, 'memory still growing'], [holdN.reloading, 'pages still reloading'], [holdN['making-room'], 'room still being made']]
+              .filter((x) => x[0]).map((x) => `<b>${x[0]}</b> ${x[1]}`).join(', ')})` : '') + '.' : '');
   } else sumEl.hidden = true;
 }
 
@@ -1907,13 +1942,18 @@ function drawResults(rows, score, scoreErr, simulated) {
     for (const l of drawOrder) {
       const pts = Ns.filter((n) => cells.has(l + '|' + n)).map((n) => ({ n, ...cells.get(l + '|' + n) }));
       if (!pts.length) continue;
-      if (pts.length > 1) {
-        const band = pts.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.max)).join('') + pts.slice().reverse().map((p) => 'L' + X(p.n) + ' ' + Y(p.min)).join('') + 'Z';
+      // Lines join measured N at most 2 apart (the campaign's grids step by 1
+      // or 2); a wider gap stays open rather than inventing the cells between.
+      const segs = [];
+      for (const p of pts) { const s = segs[segs.length - 1]; if (s && p.n - s[s.length - 1].n <= 2) s.push(p); else segs.push([p]); }
+      for (const seg of segs.filter((s) => s.length > 1)) {
+        const band = seg.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.max)).join('') + seg.slice().reverse().map((p) => 'L' + X(p.n) + ' ' + Y(p.min)).join('') + 'Z';
         svg.append(svgEl('path', { d: band, fill: color(l), 'fill-opacity': 0.1, stroke: 'none' }));
-        svg.append(svgEl('path', { d: pts.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.med)).join(''), fill: 'none', stroke: color(l), 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
+        svg.append(svgEl('path', { d: seg.map((p, i) => (i ? 'L' : 'M') + X(p.n) + ' ' + Y(p.med)).join(''), fill: 'none', stroke: color(l), 'stroke-width': 2, 'stroke-linejoin': 'round', 'stroke-linecap': 'round' }));
       }
       for (const p of pts) svg.append(svgEl('circle', { cx: X(p.n), cy: Y(p.med), r: 4, fill: color(l), stroke: 'var(--panel)', 'stroke-width': 2 }));
-      if (l === 'stasis' || l === 'eevdf') { const p = pts[pts.length - 1]; ends.push({ l, x: X(p.n), y: Y(p.med) }); }
+      // label every line end when there are few; otherwise only the two that tell the story
+      if (drawOrder.length <= 4 || l === 'stasis' || l === 'eevdf') { const p = pts[pts.length - 1]; ends.push({ l, x: X(p.n), y: Y(p.med) }); }
     }
     ends.sort((a, b) => a.y - b.y);
     for (let i = 1; i < ends.length; i++) if (ends[i].y - ends[i - 1].y < 16) ends[i].ly = ends[i - 1].y + 16;
@@ -2030,7 +2070,9 @@ function wire() {
   document.addEventListener('visibilitychange', () => { if (S.view === 'sim') { if (document.hidden) simStop(); else simRun(); } });
 }
 async function probeServer() {
-  if (location.protocol === 'file:') return null;
+  // Only server.py marks the pages it serves; anywhere else (a file, the
+  // published preview) there is no API to ask, so don't log a failed request.
+  if (!document.querySelector('meta[name="stasis-server"]')) return null;
   try {
     const ac = new AbortController();
     const to = setTimeout(() => ac.abort(), 2500);

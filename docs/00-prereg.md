@@ -23,12 +23,16 @@ changed later is reported as a deviation, with the reason.
 |---|---|
 | PSI trigger | `full 100000 1000000` (100 ms full stall per 1 s window) |
 | CALM / COOLDOWN / RESERVE | 5 s / 2 s / 10 % of MemTotal |
-| QUANTUM | 15 s of the job's own CPU time since it was last thawed (rotations at most every 15 s) |
+| QUANTUM | 15 s of the job's own user CPU time since it was last thawed (rotations at most every 15 s) |
 | PFF_HI (faults per CPU-ms) | `____` from `eval/analyze.py calibrate` |
 | PFF streak / grace | 3 consecutive 100 ms samples / 2 s after a job starts or is thawed |
 | Working-set estimate | `memory.current + memory.swap.current − swapcached`, at least `memory.peak` |
-| PFF growth filter | the job's resident memory grew < 0.5% of its working set in the last second (`GROW_FRAC`) |
-| Warm-up guard | pressure is warm-up when the active set's working sets fit and its resident memory grows ≥ 0.1% of them per second (`SET_GROW_FRAC`) |
+| Growth window | every growth figure is measured over the last 5 s (`GROW_WINDOW`); a halving restarts the survivors' windows |
+| PFF growth filter | the job's resident memory grew < 0.5% of its working set per second (`GROW_FRAC`) |
+| Warm-up guard | pressure is warm-up when the active set's working sets fit and it is growing ≥ 0.1% of them per second (`SET_GROW_FRAC`), or ≥ 2% of them is swapped out (`RELOAD_FRAC`), or parked jobs are still being paged out to make its room |
+| Proactive reclaim | page parked jobs out through `memory.reclaim` when the active set's missing pages exceed free memory beyond RESERVE (whole bytes, 32 MiB chunks, background thread) |
+| Protected tasks | the probe and demo shell go on a priority queue, and a waking one preempts a batch job (`SCX_KICK_PREEMPT`) |
+| Run start | each run waits (up to 3 min) for PSI `full avg10` to read 0 |
 | Admission test | active set settled (growing < 0.1%/s), and Σ working sets of the active jobs + the candidate ≤ MemTotal − other − RESERVE; a candidate parked while still growing counts as the largest settled working set |
 
 ## Deviations from the build guide (decided before any Phase 5 run)
@@ -53,15 +57,16 @@ changed later is reported as a deviation, with the reason.
    and its resident memory is still growing. After a halving, the surviving
    jobs fault their evicted pages back in, which keeps PSI's full stall high
    for as long as that takes. The guide's 2 s cooldown is far shorter, so its
-   rule cascades. On the rehearsal VM (Ubuntu 26.04, kernel 7.0) the guide's
-   law halved 7 → 3 at 16.6 s, rotated 2.3 s later, halved again to 1 job at
-   20.3 s, then kept rotating that single job out before it could warm up:
-   **1 pass completed across 7 jobs in 300 s**, with 181 pressure events. A
-   first version of the guard used a 1%/s growth threshold, tuned on the
-   simulator; it failed on the VM, whose swap device refaults at about
-   0.6%/s. The threshold is now 0.1%/s: a slow device makes warm-up slow,
-   not absent. The rotation clock also restarts when jobs are parked, so a
-   job isn't rotated in seconds after a halving.
+   rule cascades. A first version of the guard used a 1%/s growth threshold,
+   tuned on the simulator. On the rehearsal VM (Ubuntu 26.04, kernel 7.0),
+   whose swap refaults at only about 0.6%/s, that made it behave like the
+   guide's law: it halved 7 → 3 at 16.6 s, rotated 2.3 s later, halved again
+   to 1 job at 20.3 s, then kept rotating that single job out before it
+   could warm up: **1 pass completed across 7 jobs in 300 s**, with 181
+   pressure events (`docs/rehearsal/history/1-first-warm-up-guard`). The
+   threshold is now 0.1%/s: a slow device makes warm-up slow, not absent.
+   The rotation clock also restarts when jobs are parked, so a job isn't
+   rotated in seconds after a halving.
 5. Admission uses Denning's rule: admit the least-served parked job when the
    working sets of the active jobs plus its own fit in the memory jobs can
    use, counting parked jobs' memory as reclaimable. The guide's test compared
@@ -76,24 +81,83 @@ changed later is reported as a deviation, with the reason.
    memory has stopped growing, and a job parked while it was still growing
    (for example, mid-way through allocating its memory) is assumed to be as
    large as the largest settled job. Without this, the VM run admitted two
-   half-allocated jobs in a row and had to halve again (3 → 5 → 2 active).
-6. The rotation quantum is counted in the outgoing job's own CPU time since
-   it was last thawed, not in wall-clock time. A thawed job spends its first
-   seconds faulting its pages back in, using almost no CPU. On the rehearsal
-   VM that took about a minute per job, so a 15 s wall-clock quantum rotated
-   jobs out before they did any work: with that version, 7 jobs completed 78
-   of 420 passes in 600 s. Counting CPU time gives every job 15 s of real
-   work per turn however slow the swap device is.
-7. Pressure onset for Jain's index is the earlier of the first PSI
+   half-allocated jobs in a row and had to halve again (3 → 5 → 2 active;
+   `docs/rehearsal/history/3-denning-admission`).
+6. The rotation quantum is counted in the outgoing job's own user CPU time
+   since it was last thawed, not in wall-clock time. A thawed job spends its
+   first seconds faulting its pages back in. On the rehearsal VM that took
+   about a minute per job, so a 15 s wall-clock quantum rotated jobs out
+   before they did any work: with that version, 7 jobs completed 78 of 420
+   passes in 600 s (`history/2-wall-clock-quantum`). Total CPU time
+   (`usage_usec`) wasn't enough either, because handling those faults is
+   kernel CPU time: each job was rotated out about 26 s after its thaw,
+   still faulting, so the active set never settled, nothing was admitted,
+   and one job ran at a time: 6 of 420 passes in 665 s, with 23 rotations
+   and no admissions (`history/5-total-cpu-quantum`). User CPU time
+   (`user_usec`) gives every job 15 s of real work per turn however slow
+   the swap device is.
+7. Proactive reclaim of parked jobs. When the active jobs' working sets need
+   more memory than is free, stasisd writes to the parked jobs' cgroup v2
+   `memory.reclaim` from a background thread, largest parked job first, so
+   pages are swapped out of jobs nobody is running. On the rehearsal VM,
+   Linux's own reclaim didn't prefer frozen pages: over 24 s the four parked
+   jobs gave up only about 280 MB (one of them kept 500 MB the whole time)
+   while a running job was squeezed from 577 to 511 MB
+   (`history/4-settled-admission`). The running jobs were
+   evicting each other, so the active set never warmed up and was halved
+   again. This implements the proposal's "batch memory movement" with the
+   kernel's own interface. `--no-reclaim` turns it off. Sizes are written as
+   whole bytes: the first version wrote `20971520.0` whenever more than
+   RESERVE of memory was free, which `memory.reclaim` rejects.
+8. Pressure onset for Jain's index is the earlier of the first PSI
    `full avg10 > 0` sample and the controller's first pressure event, so that
    every configuration uses the same definition.
+9. Growth is measured over 5 s, not 1 s. On the rehearsal VM's swap a single
+   flat second read as "not growing": with a 1 s window the set was halved
+   3 → 1 at 50.9 s while the survivors were still faulting their pages in
+   (`history/5-total-cpu-quantum`).
+   Deviations 6 and 9 together are the law that completed every pass on the
+   rehearsal VM (see `docs/rehearsal/`).
+10. Transitions are not thrashing. Both completed rehearsal runs still halved
+    sets whose working sets fit: the controller-only run 3 times after its
+    first halving, full STASIS 4 times. Every one of those pressure events
+    had `fits: true` and growth below 0.1%/s. In 5 of the 7, 10–59% of the
+    active set was still swapped out: a job admitted or rotated in was
+    reloading at the device's ~3 MB/s, which is only 0.3–0.5% of its working
+    set per second. The other 2 came 3.5–5 s after a halving, with the growth
+    window spanning it. Each one parked a job mid-reload, which then had to
+    reload again later. If the working sets fit, halving more jobs can't
+    bring the survivors' pages back any faster, so pressure is now also
+    warm-up while ≥ 2% of the active set is swapped out (reloading) or parked
+    jobs are still being paged out to make its room, and a halving restarts
+    the survivors' growth windows. Pressure while the set fits, is resident,
+    has room and isn't growing still halves it: that means an estimate is
+    wrong. Checked by fake-cgroup tests and the simulator (which gives the
+    same results as before at three swap speeds, because its idealized
+    reclaim never produces these halvings); **not yet run on the VM**.
+11. Protected tasks preempt. The rehearsal's probe p99 was 16.0 ms under full
+    STASIS against 8.1 ms (controller only) and 11.0 ms (EEVDF). Queueing
+    protected tasks first isn't enough: with the active jobs resident and
+    CPU-bound, which is what STASIS achieves, every CPU is usually running a
+    batch job with up to `SCX_SLICE_DFL` (20 ms) left. `scx_stasis` now kicks
+    the task's CPU with `SCX_KICK_PREEMPT` when it enqueues a protected task,
+    and that CPU's dispatch takes the priority queue first. Compiled against
+    the pinned scx-c-examples; **not yet run on a kernel**. Gate 3's
+    contention rung checks it.
+12. Each run starts from a quiet machine: `run_mix.sh` waits up to 3 min for
+    PSI `full avg10` to decay to 0, and records the wait in `quiesce_s`. On
+    the rehearsal VM the full-STASIS run started 22 s after the previous run
+    ended, with `full avg10` still at 0.10. Its onset was therefore its first
+    sample, and its time-to-first-park read 24.7 s. Measured from PSI's
+    cumulative stall counter, stalls began at 23.4 s and the first park
+    followed 1.0 s later.
 
-Deviations 2–6 change the control law. All were found before any Phase 5
-measurement: 3 by a fake-cgroup test; 2, 4 and 5 by the dashboard's simulator,
-which runs the same law on a model of the lab VM, then confirmed and refined on
-the rehearsal VM; 6 on the rehearsal VM. Each fix is in both
-`controller/stasisd.py` and the simulator, and `tests/test_controller.sh`
-checks them.
+Deviations 2–7 and 9–11 change the control law or the scheduler. All were
+found before any Phase 5 measurement: 3 by a fake-cgroup test; 2, 4 and 5 by
+the dashboard's simulator, which runs the same law on a model of the lab VM,
+then confirmed and refined on the rehearsal VM; 6, 7 and 9–11 on the
+rehearsal VM. Each controller fix is in both `controller/stasisd.py` and the
+simulator, and `tests/test_controller.sh` checks them.
 
 ## Metrics
 

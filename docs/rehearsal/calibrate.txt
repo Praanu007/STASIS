@@ -1,0 +1,6 @@
+  N  samples       p50       p90       p99   faults per CPU-ms
+  2       30     0.000     0.000     0.000
+  7     1377     0.853     1.331     1.669
+
+fitting (N<=4) p99 = 0.000; thrashing (N>=7) p50 = 0.853
+suggested PFF_HI ~ 0.029 (geometric midpoint). Freeze it in docs/00-prereg.md.

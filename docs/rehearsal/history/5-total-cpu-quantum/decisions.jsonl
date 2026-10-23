@@ -1,0 +1,198 @@
+{"t": 1792756325.5934446, "event": "start", "signal": "memstat", "trigger_ms": 100, "window_ms": 1000, "quantum": 15.0, "pff_hi": null, "grace": 2.0, "grow_frac": 0.005, "set_grow_frac": 0.001, "reserve": 0.1, "reclaim": true}
+{"t": 1792756349.9042377, "event": "pressure", "src": "psi", "active": 7, "parked": 0, "warming": false, "fits": false, "growth": 0.0142}
+{"t": 1792756350.046423, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756350.109039, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756350.2061913, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756350.422519, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756353.2188406, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 26791936}
+{"t": 1792756357.2237782, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0076}
+{"t": 1792756361.065801, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0032}
+{"t": 1792756361.5634606, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 85610496}
+{"t": 1792756363.6520123, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0051}
+{"t": 1792756365.7159495, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0039}
+{"t": 1792756370.1699586, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0066}
+{"t": 1792756370.8309095, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.004}
+{"t": 1792756371.6469, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 156073984}
+{"t": 1792756372.839555, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0044}
+{"t": 1792756373.9137244, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 173907968}
+{"t": 1792756374.5858796, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0053}
+{"t": 1792756376.3939385, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": -0.0}
+{"t": 1792756376.4763632, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756376.5354218, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792756377.089282, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 48152576}
+{"t": 1792756377.782844, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0196}
+{"t": 1792756379.6411273, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0326}
+{"t": 1792756379.7803898, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0054}
+{"t": 1792756382.6999187, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0391}
+{"t": 1792756384.5965621, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0282}
+{"t": 1792756386.3789887, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0134}
+{"t": 1792756387.9085946, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0065}
+{"t": 1792756388.3480809, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 78655488}
+{"t": 1792756389.0831878, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0025}
+{"t": 1792756389.796182, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0051}
+{"t": 1792756390.4925852, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0022}
+{"t": 1792756392.1544142, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756392.176001, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756393.0288637, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 97792000}
+{"t": 1792756393.3054404, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": null}
+{"t": 1792756395.2330153, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0727}
+{"t": 1792756397.4163797, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0311}
+{"t": 1792756400.0475612, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0214}
+{"t": 1792756403.0068855, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.018}
+{"t": 1792756403.960216, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 134332416}
+{"t": 1792756404.1467726, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0084}
+{"t": 1792756406.0542061, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0029}
+{"t": 1792756406.147035, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": 0.001}
+{"t": 1792756406.972998, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0016}
+{"t": 1792756408.2330284, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756409.1989245, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0019}
+{"t": 1792756411.2204835, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756411.2254672, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756411.624424, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 87498752}
+{"t": 1792756413.336399, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.1401}
+{"t": 1792756414.4148421, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0373}
+{"t": 1792756416.0792358, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0519}
+{"t": 1792756417.4632077, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0227}
+{"t": 1792756418.19328, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0116}
+{"t": 1792756419.9238582, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0082}
+{"t": 1792756420.3272913, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0016}
+{"t": 1792756421.248377, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.002}
+{"t": 1792756422.0741768, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 98746368}
+{"t": 1792756422.689367, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792756423.640314, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0069}
+{"t": 1792756424.1873202, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0053}
+{"t": 1792756425.3182673, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792756425.9080515, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0022}
+{"t": 1792756427.1999993, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 96481280}
+{"t": 1792756432.3035645, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 85241856}
+{"t": 1792756434.3900871, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756434.416225, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756434.8021493, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 181919744}
+{"t": 1792756445.3821263, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 160919552}
+{"t": 1792756451.8697531, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 146276352}
+{"t": 1792756456.7676754, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 135680000}
+{"t": 1792756458.6039174, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 131506176}
+{"t": 1792756460.8126733, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756460.8222942, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756461.2999787, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 149557248}
+{"t": 1792756471.544951, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 133472256}
+{"t": 1792756477.2137043, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 119537664}
+{"t": 1792756477.9524593, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 117932032}
+{"t": 1792756481.878856, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 109514752}
+{"t": 1792756485.0462422, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 102653952}
+{"t": 1792756486.436549, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756486.4732883, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756486.8672197, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 171098112}
+{"t": 1792756497.0413868, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 150671360}
+{"t": 1792756504.275592, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 123548467}
+{"t": 1792756506.5161176, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 89150259}
+{"t": 1792756509.0471816, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 45626163}
+{"t": 1792756510.8489728, "job": "stasis-job-6.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756510.8511636, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756511.1560907, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 169378611}
+{"t": 1792756521.245353, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 75092787}
+{"t": 1792756531.2386544, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 21906227}
+{"t": 1792756536.7911315, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756536.794793, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756537.0828874, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 194728755}
+{"t": 1792756547.3599997, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 66888499}
+{"t": 1792756553.4440117, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 59446067}
+{"t": 1792756556.9172933, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 25658163}
+{"t": 1792756562.6149125, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756562.6229472, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756562.928275, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 72414003}
+{"t": 1792756573.0804355, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 36995891}
+{"t": 1792756579.1697466, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 49091379}
+{"t": 1792756581.2008543, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 35345203}
+{"t": 1792756592.1482687, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756592.1510377, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756592.429407, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 82256691}
+{"t": 1792756602.5472898, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 35361587}
+{"t": 1792756612.7728505, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 17052467}
+{"t": 1792756618.7196908, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756618.7224736, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756618.9944606, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 92721971}
+{"t": 1792756623.494294, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 58270515}
+{"t": 1792756629.097287, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 6329139}
+{"t": 1792756645.9998968, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756646.0022397, "job": "stasis-job-7.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756646.2774928, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 129254195}
+{"t": 1792756656.5082483, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 24265523}
+{"t": 1792756666.545498, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 20149043}
+{"t": 1792756671.9183335, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756671.9216528, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756672.2063565, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 126284595}
+{"t": 1792756678.0532694, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 69440307}
+{"t": 1792756681.092216, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 31146803}
+{"t": 1792756691.0601788, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 8438579}
+{"t": 1792756697.9473295, "job": "stasis-job-6.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756697.953208, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756698.2382674, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 115471155}
+{"t": 1792756708.4160185, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 48661299}
+{"t": 1792756709.9347272, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 39936819}
+{"t": 1792756719.9712555, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 14635827}
+{"t": 1792756724.3143365, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756724.321429, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756724.655885, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 118833971}
+{"t": 1792756734.923046, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 39441203}
+{"t": 1792756737.505928, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 25973555}
+{"t": 1792756747.709297, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 10158899}
+{"t": 1792756750.3554645, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756750.3589666, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756750.6349797, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 119526195}
+{"t": 1792756760.743685, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 48046899}
+{"t": 1792756763.1113205, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 29131571}
+{"t": 1792756773.1562862, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 18584371}
+{"t": 1792756776.7270014, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756776.7297652, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756777.0218625, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 101782323}
+{"t": 1792756787.1670516, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 62976819}
+{"t": 1792756788.1399167, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 59945779}
+{"t": 1792756788.4651778, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 59822899}
+{"t": 1792756804.6351879, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756804.6392498, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756804.917257, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 103367475}
+{"t": 1792756815.1360793, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 39547699}
+{"t": 1792756825.2331755, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 3253043}
+{"t": 1792756832.732133, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756832.7367032, "job": "stasis-job-7.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756833.0259252, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 112251699}
+{"t": 1792756843.185864, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 46199603}
+{"t": 1792756853.4607022, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 5161779}
+{"t": 1792756859.0940206, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756859.106737, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756859.3998947, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 107340595}
+{"t": 1792756869.4979212, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 38290227}
+{"t": 1792756871.6895337, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 15508275}
+{"t": 1792756881.8239348, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 5956403}
+{"t": 1792756885.6972845, "job": "stasis-job-6.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756885.700523, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756885.981953, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 114758451}
+{"t": 1792756896.249022, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 50619187}
+{"t": 1792756898.8204677, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 29311795}
+{"t": 1792756909.0205154, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 10887987}
+{"t": 1792756912.3643823, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756912.3678048, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756912.6568992, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 160932659}
+{"t": 1792756922.833477, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 103875379}
+{"t": 1792756924.72692, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 97706803}
+{"t": 1792756927.5046105, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 63247155}
+{"t": 1792756929.2710893, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 9442099}
+{"t": 1792756941.7941794, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756941.800053, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756942.0770829, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 30847795}
+{"t": 1792756952.1568444, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 32011059}
+{"t": 1792756962.3843772, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 19591987}
+{"t": 1792756968.8853078, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792756968.8874342, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792756969.1993482, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 177394483}
+{"t": 1792756975.7066913, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 116982579}
+{"t": 1792756979.5619688, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 72258355}
+{"t": 1792756985.4309247, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 25174835}
+{"t": 1792756990.1077578, "job": "stasis-job-1.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.1099102, "job": "stasis-job-2.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.124805, "job": "stasis-job-3.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.142429, "job": "stasis-job-4.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.1711233, "job": "stasis-job-5.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.1989365, "job": "stasis-job-6.service", "frozen": false, "why": "shutdown"}
+{"t": 1792756990.211776, "job": "stasis-job-7.service", "frozen": false, "why": "shutdown"}

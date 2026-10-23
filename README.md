@@ -36,8 +36,10 @@ eval/campaign.sh           Phase 5 randomized run matrix (resumable)
 eval/analyze.py            metrics.csv, PFF calibration, figures F1-F5, score.md
 dashboard/server.py        Control Room server (stdlib only, read-only, mlocked)
 dashboard/index.html       Control Room UI (Live, Replay, Results, Simulator)
+tests/test_controller.sh   stasisd regression tests on fake cgroups (11 checks)
 docs/00-prereg.md          thresholds, hypotheses and deviations, frozen at Gate 1
 docs/demo.md               Phase 6 demo script and defence questions
+docs/rehearsal/            the kernel 7.0 rehearsal: runs, logs, what changed (not results)
 MANIFEST                   one line per run
 ```
 
@@ -45,31 +47,64 @@ MANIFEST                   one line per run
 
 Everything below ran on a rehearsal VM built from the official **Ubuntu 26.04
 cloud image, kernel 7.0.0-38-generic**, with 4 vCPUs and 4 GB of RAM (the
-same shape as the lab VM). It was emulated, so it was several times slower
-than real hardware.
+same shape as the lab VM). It was emulated in software, so it was much slower
+than real hardware, above all its swap (about 3 MB/s in). The numbers are a
+dress rehearsal, not results: `docs/rehearsal/README.md` has the details, the
+caveats, and the logs.
 
 | Check | Result |
 |---|---|
 | `setup_vm.sh`, unmodified | ✅ ran end to end in 3 min 41 s: swap, zswap, toolchain, pinned scx clone, both schedulers built and installed |
 | Gate 0 (`check_gate0.sh`) | ✅ all checks pass; scx_simple attaches and Ctrl-C returns to EEVDF |
+| Phase 1: EEVDF | ✅ N=2 finishes 120/120 passes in 19 s; N=7 collapses to 4/420 in 300 s |
+| Phase 2: controller only, N=7 | ✅ 420/420 passes in 608 s, 0 kills (EEVDF: 4 passes in 300 s) |
 | Phase 3 rung 1: verifier | ✅ the 7.0 verifier accepts scx_stasis: `sched_ext: BPF scheduler "stasis" enabled` |
 | Rung 2: fault counts | ✅ BPF and `/proc` agree exactly (17,645 = 17,645 major faults) |
 | Rung 3: priority path | ✅ 133 priority dispatches/s for the protected cyclictest under 8 CPU hogs |
 | Rung 4: survives load | ✅ 90 s of stress-ng, no ejection |
-| Dashboard live | ✅ followed a real EEVDF thrash run from the host browser, no console errors |
+| Phase 4: full STASIS, N=7 | ✅ 420/420 passes in 284 s, 0 kills, no ejection |
+| Dashboard | ✅ live, replay and results views against these runs, no console errors |
 
-The rehearsal also found problems that are now fixed. The control-law ones
-are listed in `docs/00-prereg.md` as deviations 2–5:
+**Changed after the rehearsal, not yet run on a kernel.** Reading the final
+runs' logs turned up three more problems. Their fixes are checked by
+`tests/test_controller.sh` and the simulator, and `scx_stasis` still compiles
+against the pinned scx-c-examples. The first real Phase 2–4 runs are their
+first test on a kernel:
+
+- **Sets that fit were halved while reloading** (deviation 10). Both runs
+  halved again after the first halving, 7 times in all, each time with the
+  set's working sets fitting and a job mid-reload.
+- **The probe waited for a batch job's slice** (deviation 11). Its p99 was
+  16.0 ms under full STASIS against 8.1 ms controller-only, because nothing
+  preempted the batch jobs. `scx_stasis` now kicks the CPU.
+- **Runs inherited the last run's PSI** (deviation 12). `run_mix.sh` now
+  waits for it to settle.
+- **Fractional byte counts** went to `memory.reclaim` whenever more than 10%
+  of memory was free. The kernel rejects those, so nothing was paged out in
+  that case.
+
+The rehearsal found problems before these too. The control-law ones are
+deviations 2–9 in `docs/00-prereg.md`, each with the rehearsal run that showed
+it (`docs/rehearsal/history/`):
 
 - **Admission blocked rotation.** In the guide's controller code, admission
   and rotation are an `if/elif` chain, so rotation stopped for good after 5 s
   of calm.
 - **Halvings cascaded.** Jobs refaulting after a halving keep PSI high for a
-  few seconds, so the guide's rule kept halving: 8 → 4 → 2 → 1.
-- **Admission deadlocked.** The guide's admission test counted frozen jobs'
-  memory as unavailable, so nothing was admitted once anything was parked.
+  few seconds, so the guide's rule kept halving: 7 → 3 → 1 within 4 s, and 1
+  pass out of 420 in 300 s.
+- **Admission deadlocked, then over-admitted.** The guide's admission test
+  counted frozen jobs' memory as unavailable, so nothing was admitted once
+  anything was parked. Denning's test fixed that, but it admitted jobs
+  before their working sets were known.
+- **Rotation ran out the quantum during reload.** A wall-clock quantum, and
+  then total CPU time, both expired while a thawed job was still faulting
+  its pages back in. The quantum is now the job's user CPU time.
+- **Parked jobs kept their memory.** Linux evicted running jobs' pages
+  instead, so stasisd now pages parked jobs out through `memory.reclaim`.
 - **Warm-up looked like thrashing.** A thawed job refaulting its pages looked
-  like thrashing to the PFF early warning.
+  like thrashing to the PFF early warning, and on slow swap a 1 s growth
+  window read a flat second as thrashing.
 - **No watchdog knob.** Kernel 7.0 has no `/sys/kernel/sched_ext/watchdog_timeout_ms`.
   The loader takes `-w MS` instead.
 - **Priority path needs contention.** On an idle machine, protected tasks
@@ -92,12 +127,16 @@ Phases 1–2 alone already make a reportable result.
    off**, 4096 MB, 4 vCPU, 40 GB, "Microsoft UEFI Certificate Authority"
    template) or VirtualBox with fixed memory. Don't use WSL2. Install Ubuntu
    26.04 LTS Server, which ships kernel 7.0 with sched_ext built in.
-2. Inside the guest:
+2. Copy the project in (from Windows PowerShell; OpenSSH is built in), then
+   provision the guest:
    ```bash
-   git clone <this repo> ~/stasis && cd ~/stasis
-   sudo scripts/setup_vm.sh       # packages, 8 GB swap, zswap off, toolchain, scx build
+   scp stasis.tar.gz <user>@<vm-ip>:~        # on the host
+   tar xzf stasis.tar.gz && cd ~/stasis      # in the guest
+   sudo scripts/setup_vm.sh                  # packages, 8 GB swap, zswap off, toolchain, scx build
    sudo scripts/check_gate0.sh
+   sudo tests/test_controller.sh             # stasisd's control law, 11 checks, ~2 min
    ```
+   The tarball includes the git history, so `git log` works inside it.
    On 26.04 the distro's libbpf (1.6) and bpftool (7.7) are new enough. On
    older releases, `setup_vm.sh` builds both from source: scx-c-examples needs
    libbpf ≥ 1.5 and bpftool ≥ 7.5.
@@ -160,7 +199,16 @@ Climb the verification ladder one rung at a time:
    `sudo /opt/stasis/scx_stasis -p $(pgrep cyclictest)`. The `prio=` counter
    should rise at about cyclictest's wake-up rate. On an idle machine it stays
    at 0, because protected tasks go straight to idle CPUs. Also check
-   `sudo bpftool map dump name prio_tgid`.
+   `sudo bpftool map dump name prio_tgid`. Then check that a protected task
+   preempts (deviation 11). Under the same load, run cyclictest once under
+   EEVDF and once protected:
+   ```bash
+   sudo cyclictest --policy=other -i 10000 -D 60 -q             # EEVDF: note Max
+   sudo cyclictest --policy=other -i 10000 -D 60 -q & sleep 1
+   sudo /opt/stasis/scx_stasis -p $(pgrep -n cyclictest)        # Ctrl-C after cyclictest prints
+   ```
+   Under scx_stasis, Max (µs) must stay well below the 20 ms slice. If it
+   sits near 20,000, the preempt kick isn't working.
 4. **Survives load:** run `stress-ng --cpu 8 --vm 4 --timeout 600`, then
    `sudo journalctl -k | grep -i sched_ext` should show no ejection. Debug
    output goes to `/sys/kernel/tracing/trace_pipe`, and SysRq-S falls back to
@@ -249,6 +297,8 @@ it can't perturb measurements; use Replay afterwards.
 | Jobs stay frozen after a crash | `for f in /sys/fs/cgroup/stasis.slice/*/cgroup.freeze; do echo 0 > $f; done` |
 | Controller slow under thrash | Confirm mlockall succeeded. Run it outside stasis.slice with `nice -n -10`. |
 | Probe latency perfect even under EEVDF thrashing | Check it isn't real-time (`chrt -a -p`) and isn't mlocked. |
+| Probe Max near 20 ms under scx_stasis | Protected tasks aren't preempting batch jobs. Check `prio=` rises in `scx.log` and the loader is the rebuilt one (`setup_vm.sh` again). |
+| A run waits before starting | It is waiting for PSI from the previous run to settle (up to 3 min; `quiesce_s` records how long). |
 | stasisd: `OSError: [Errno 22]` on the PSI trigger | Not running as real root. 1 s windows need privilege. |
 | `watchdog_timeout_ms: Permission denied` | That file doesn't exist on kernel 7.0. Use `scx_stasis -w 5000`. |
 | Dashboard shows "Live needs the STASIS server" | Open it through the server's address, not as a file. |

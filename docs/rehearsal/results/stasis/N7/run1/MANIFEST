@@ -1,0 +1,13 @@
+date:          2026-10-23T12:20:48+00:00
+config:        stasis
+kernel:        7.0.0-38-generic
+stasis commit: 8e2329b-dirty
+scx commit:    370b1cea
+zswap:         N
+mglru:         0x0007
+thp:           always [madvise] never
+swappiness:    60
+swap:          /swapfile 8G
+mem total:     4002848 kB
+cpus:          4
+sched_ext:     disabled

@@ -1,0 +1,132 @@
+{"t": 1792757433.4310622, "event": "start", "signal": "memstat", "trigger_ms": 100, "window_ms": 1000, "quantum": 15.0, "pff_hi": null, "grace": 2.0, "grow_frac": 0.005, "set_grow_frac": 0.001, "reserve": 0.1, "reclaim": true}
+{"t": 1792757456.488943, "event": "pressure", "src": "psi", "active": 7, "parked": 0, "warming": false, "fits": false, "growth": 0.0433}
+{"t": 1792757456.888085, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757456.8964477, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757456.9002702, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757456.9035678, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757457.4728916, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 40181760}
+{"t": 1792757457.8470783, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0106}
+{"t": 1792757460.5584543, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": 0.0006}
+{"t": 1792757460.644007, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757460.6732156, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757461.1965451, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0002}
+{"t": 1792757461.528876, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0011}
+{"t": 1792757462.6334832, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.011}
+{"t": 1792757464.1772726, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0184}
+{"t": 1792757465.6115596, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0172}
+{"t": 1792757466.2099407, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0148}
+{"t": 1792757467.0762517, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0155}
+{"t": 1792757467.6024313, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 65794048}
+{"t": 1792757467.9981287, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0101}
+{"t": 1792757468.6602316, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0076}
+{"t": 1792757470.717426, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0148}
+{"t": 1792757471.6630046, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0192}
+{"t": 1792757471.9344704, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0199}
+{"t": 1792757472.9741027, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0263}
+{"t": 1792757474.1397607, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0271}
+{"t": 1792757476.3025868, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0244}
+{"t": 1792757476.9587398, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.023}
+{"t": 1792757477.0135114, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0223}
+{"t": 1792757478.4882355, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 76357632}
+{"t": 1792757478.802569, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0146}
+{"t": 1792757479.3209991, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0117}
+{"t": 1792757480.080897, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0058}
+{"t": 1792757481.3463469, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0039}
+{"t": 1792757482.857598, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0028}
+{"t": 1792757483.307263, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.0026}
+{"t": 1792757484.2324743, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792757485.3755662, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": true, "fits": true, "growth": 0.003}
+{"t": 1792757486.8021462, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 56958976}
+{"t": 1792757488.4829884, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 51556352}
+{"t": 1792757498.250769, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 22859776}
+{"t": 1792757500.614773, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 16605184}
+{"t": 1792757501.2953737, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 14913536}
+{"t": 1792757508.4498217, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 372736}
+{"t": 1792757510.071465, "job": "stasis-job-4.service", "frozen": false, "why": "admit"}
+{"t": 1792757510.9110541, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 93884416}
+{"t": 1792757514.630688, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 92258304}
+{"t": 1792757519.070354, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757519.0817366, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757519.4820964, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 203145216}
+{"t": 1792757524.3162742, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0255}
+{"t": 1792757525.4552212, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0221}
+{"t": 1792757525.857915, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0138}
+{"t": 1792757528.1825595, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0047}
+{"t": 1792757529.731439, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": false, "fits": true, "growth": 0.0009}
+{"t": 1792757529.733554, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757529.7624192, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 80850944}
+{"t": 1792757529.816454, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0006}
+{"t": 1792757529.899945, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0004}
+{"t": 1792757538.8825405, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 54288384}
+{"t": 1792757549.2172673, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 26210304}
+{"t": 1792757553.823607, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 16556032}
+{"t": 1792757563.8852944, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 36864}
+{"t": 1792757563.9676824, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792757564.8222919, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 180097024}
+{"t": 1792757572.3517365, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757572.3542018, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757572.7252018, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 237547520}
+{"t": 1792757576.4192383, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0427}
+{"t": 1792757578.8777983, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0339}
+{"t": 1792757579.2375236, "event": "pressure", "src": "psi", "active": 2, "parked": 5, "warming": true, "fits": true, "growth": 0.0185}
+{"t": 1792757581.6494787, "job": "stasis-job-5.service", "frozen": false, "why": "admit"}
+{"t": 1792757584.2081118, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 334352384}
+{"t": 1792757585.4558146, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0123}
+{"t": 1792757587.63344, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0113}
+{"t": 1792757589.1687005, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0057}
+{"t": 1792757592.8789294, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0034}
+{"t": 1792757597.8644128, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0036}
+{"t": 1792757598.3576171, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 419393536}
+{"t": 1792757599.1284764, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": true, "fits": true, "growth": 0.0012}
+{"t": 1792757601.910342, "event": "pressure", "src": "psi", "active": 3, "parked": 4, "warming": false, "fits": true, "growth": -0.0008}
+{"t": 1792757601.9873147, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757602.0201705, "job": "stasis-job-2.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792757602.4884877, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0011}
+{"t": 1792757602.866201, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.001}
+{"t": 1792757604.3191257, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0024}
+{"t": 1792757605.1096525, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.003}
+{"t": 1792757605.9194539, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0023}
+{"t": 1792757607.2925994, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0015}
+{"t": 1792757608.42207, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0002}
+{"t": 1792757608.9784682, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 156856320}
+{"t": 1792757609.3449225, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0023}
+{"t": 1792757609.8933158, "event": "pressure", "src": "psi", "active": 1, "parked": 6, "warming": false, "fits": true, "growth": -0.0024}
+{"t": 1792757612.390143, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 148242432}
+{"t": 1792757618.5101922, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 136110080}
+{"t": 1792757622.462468, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 127275008}
+{"t": 1792757628.09304, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 112979968}
+{"t": 1792757630.0933347, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 106766336}
+{"t": 1792757634.740604, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 97914880}
+{"t": 1792757638.2293873, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 88817664}
+{"t": 1792757640.373423, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 83124224}
+{"t": 1792757644.9103942, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 37499699}
+{"t": 1792757648.2311296, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 16503603}
+{"t": 1792757658.2421908, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 7807795}
+{"t": 1792757667.731498, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792757668.3819537, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 335151104}
+{"t": 1792757669.652534, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 334364672}
+{"t": 1792757675.203207, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757675.2099094, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757675.63266, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 584733491}
+{"t": 1792757784.8384817, "job": "stasis-job-6.service", "frozen": false, "why": "admit"}
+{"t": 1792757785.2581592, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 222909235}
+{"t": 1792757786.623093, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 221393715}
+{"t": 1792757786.6849976, "event": "pressure", "src": "psi", "active": 3, "parked": 3, "warming": true, "fits": true, "growth": 0.0011}
+{"t": 1792757790.8310494, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792757791.3533845, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 423358464}
+{"t": 1792757792.4216197, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757792.4491498, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757792.8223119, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 735596544}
+{"t": 1792757802.1507666, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 79385395}
+{"t": 1792757803.3372345, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 686817280}
+{"t": 1792757918.1695015, "job": "stasis-job-6.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757918.1860683, "job": "stasis-job-7.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757918.893375, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 107361075}
+{"t": 1792757928.993427, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 96473907}
+{"t": 1792757940.5946047, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 16610099}
+{"t": 1792757941.362282, "job": "stasis-job-1.service", "frozen": false, "why": "admit"}
+{"t": 1792757945.1921384, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792757945.2491832, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in"}
+{"t": 1792757949.1915305, "job": "stasis-job-2.service", "frozen": false, "why": "admit"}
+{"t": 1792758006.3849247, "event": "pressure", "src": "psi", "active": 2, "parked": 0, "warming": true, "fits": true, "growth": 0.0035}
+{"t": 1792758007.1144354, "event": "pressure", "src": "psi", "active": 2, "parked": 0, "warming": true, "fits": true, "growth": 0.0036}

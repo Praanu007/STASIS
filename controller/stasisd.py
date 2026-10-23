@@ -7,7 +7,7 @@ Control law (build guide, Phase 2, with the fixes in docs/00-prereg.md):
   calm      -> after CALM s with no thrashing, admit the least-served parked
                job if the working sets of the active jobs plus its own fit
   rotation  -> while any job is parked, swap the most-served active job that
-               has had QUANTUM s of CPU since it was last thawed for the
+               has had QUANTUM s of user CPU since it was last thawed for the
                least-served parked one (at most once per QUANTUM s)
   exit      -> SIGTERM/SIGINT thaws every job
 
@@ -32,31 +32,50 @@ known once they have settled, so admission waits until the active set's
 resident memory has stopped growing, and a job parked while it was still
 growing is assumed to be as large as the largest settled job.
 
+Making room. Linux's reclaim doesn't strongly prefer a frozen job's pages to a
+running job's, so without help the running jobs evict each other while parked
+jobs keep their memory (seen on the rehearsal VM: a parked job held 500 MB for
+30 s while a running one was squeezed). When the active set needs room,
+stasisd writes to the parked jobs' memory.reclaim (cgroup v2) from a
+background thread, so every page swapped out is one nobody is using. --no-reclaim
+turns this off.
+
 Warm-up is not thrashing. A job that was just thawed, or that survived a
 halving, has to fault its pages back in from swap, which takes seconds.
 Meanwhile its PFF is high and, if every running job is doing it, PSI's full
-stall is high too. But its resident set is growing. Thrashing is faulting that
-doesn't grow the resident set. So:
-  - a pressure event is warm-up, and halves nothing, while the active set's
-    working sets fit and their resident memory is still growing (by at least
-    SET_GROW_FRAC of their working sets per second). Warm-up pressure doesn't
-    restart the calm period either.
-  - the PFF early warning only counts a job whose resident memory grew by less
-    than GROW_FRAC of its working set over the last second.
-Without the first rule, halvings cascade (8 -> 4 -> 2 -> 1) while the
-survivors are still faulting their pages back in. The thresholds are small
-on purpose: a slow swap device makes warm-up slow, not absent.
+stall is high too. If the active set's working sets fit, that pressure is a
+transition, not thrashing: halving more jobs can't make the survivors' pages
+come back any faster. So a pressure event is warm-up, and halves nothing,
+while the active set's working sets fit and any of these holds:
+  - growing:     their resident memory grew by at least SET_GROW_FRAC of their
+                 working sets per second over the last GROW_WINDOW seconds;
+  - reloading:   at least RELOAD_FRAC of their working sets is swapped out,
+                 so they are still faulting it back in;
+  - making room: parked jobs are still being paged out to make that room.
+Warm-up pressure doesn't restart the calm period either. Pressure while the
+set fits, is resident, has room and isn't growing means an estimate is wrong,
+and the set is halved anyway. A halving restarts the survivors' growth
+windows: growth measured across a halving mixes two different sets. The PFF
+early warning only counts a job whose resident memory grew by less than
+GROW_FRAC of its working set over the last GROW_WINDOW seconds.
+Without these rules, halvings cascade (8 -> 4 -> 2 -> 1) while the survivors
+are still faulting their pages back in. Growth alone wasn't enough on the
+rehearsal VM's slow swap (about 3 MB/s in): a reloading job grew by only 0.3%
+of its working set per second, and sets that fit were halved again.
 Stdlib only.
 """
-import argparse, collections, ctypes, errno, json, os, select, signal, sys, time, traceback
+import argparse, collections, ctypes, errno, json, os, select, signal, sys, threading, time, traceback
 
 CG = os.environ.get("STASIS_CG", "/sys/fs/cgroup/stasis.slice")
 PFF_FILE = os.environ.get("STASIS_PFF", "/run/stasis/pff")
 PSI_FILE = os.environ.get("STASIS_PSI", "/proc/pressure/memory")   # tests use a plain file
+MEMINFO = os.environ.get("STASIS_MEMINFO", "/proc/meminfo")        # tests use a fake one
 CALM, COOLDOWN, RESERVE = 5.0, 2.0, 0.10
 PFF_STREAK = 3                       # consecutive 100 ms samples above PFF_HI
 GROW_FRAC = 0.005                    # one job's resident growth per s, fraction of its working set
 SET_GROW_FRAC = 0.001                # the active set's growth per s, fraction of its working sets
+GROW_WINDOW = 5.0                    # s of history behind every growth figure (smooths noise)
+RELOAD_FRAC = 0.02                   # swapped-out share of the active set's working sets that counts as reloading
 
 LOG = None
 
@@ -72,7 +91,7 @@ def field(path, key):
     return 0
 
 def meminfo(key):
-    for line in rd("/proc/meminfo").splitlines():
+    for line in rd(MEMINFO).splitlines():
         if line.startswith(key + ":"):
             return int(line.split()[1]) * 1024
     raise KeyError(key)
@@ -85,6 +104,7 @@ def jobs():
 
 def frozen(j):  return rd(f"{CG}/{j}/cgroup.freeze").strip() == "1"
 def served(j):  return field(f"{CG}/{j}/cpu.stat", "usage_usec")
+def worked(j):  return field(f"{CG}/{j}/cpu.stat", "user_usec")   # excludes fault handling
 def peak(j):    return int(rd(f"{CG}/{j}/memory.peak"))
 def current(j): return int(rd(f"{CG}/{j}/memory.current"))
 
@@ -129,12 +149,14 @@ def pff_snapshot():
 
 _res = {}
 def track(j, now):
-    """Record memory.current; return its growth (bytes/s) over the last second,
-    or None while there is less than half a second of history."""
+    """Record memory.current; return its growth (bytes/s) over the last
+    GROW_WINDOW seconds, or None while there is less than half a second of
+    history. One second was too noisy on a slow swap device: a single flat
+    reading looked like thrashing."""
     h = _res.setdefault(j, collections.deque())
     h.append((now, current(j)))
-    while len(h) > 2 and now - h[1][0] >= 1.0:
-        h.popleft()                   # keep the oldest sample at least 1 s old
+    while len(h) > 2 and now - h[1][0] >= GROW_WINDOW:
+        h.popleft()                   # keep the oldest sample at least GROW_WINDOW old
     (t0, c0), (t1, c1) = h[0], h[-1]
     return (c1 - c0) / (t1 - t0) if t1 - t0 >= 0.5 else None
 
@@ -157,6 +179,78 @@ def fault_rate_bpf(j, snap):
     f0, n0 = _prev.get(j, (flt, ns))
     _prev[j] = (flt, ns)
     return (flt - f0) / max(1e-3, (ns - n0) / 1e6)   # faults per CPU-ms
+
+# ---- making room: page parked jobs out ahead of need -------------------------
+
+class Reclaimer(threading.Thread):
+    """Swaps parked jobs' memory out in the background, through memory.reclaim,
+    in chunks so a job that is thawed meanwhile stops being reclaimed quickly.
+    The control loop never blocks on it."""
+    CHUNK = 32 << 20
+
+    BACKOFF = 5.0                          # s before retrying a job the kernel refused
+
+    def __init__(self):
+        super().__init__(daemon=True)
+        self.lock = threading.Lock()
+        self.want = {}                     # job -> bytes still wanted out
+        self.refused = {}                  # job -> monotonic time it may be retried
+        self.wake = threading.Event()
+
+    def set(self, want):
+        """Replace the request: {job: bytes}. True if there is work it can do."""
+        now = time.monotonic()
+        with self.lock:
+            self.want = {j: int(b) for j, b in want.items()
+                         if b >= self.CHUNK // 4 and self.refused.get(j, 0) <= now}
+            if self.want:
+                self.wake.set()
+            return bool(self.want)
+
+    def run(self):
+        while True:
+            self.wake.wait()
+            with self.lock:
+                if not self.want:
+                    self.wake.clear()
+                    continue
+                j, b = max(self.want.items(), key=lambda kv: kv[1])
+            n = min(b, self.CHUNK)
+            try:
+                if rd(f"{CG}/{j}/cgroup.freeze").strip() != "1":
+                    raise FileNotFoundError(j)          # thawed meanwhile: leave it
+                with open(f"{CG}/{j}/memory.reclaim", "w") as f:
+                    f.write(str(int(n)))           # "123.0" is EINVAL
+                with self.lock:
+                    if j in self.want:
+                        self.want[j] -= n
+                        if self.want[j] < self.CHUNK // 4:
+                            del self.want[j]
+            except OSError:                            # EAGAIN: nothing left; gone; thawed
+                with self.lock:
+                    self.want.pop(j, None)
+                    self.refused[j] = time.monotonic() + self.BACKOFF
+
+def missing(js):
+    """Bytes of these jobs' working sets that are swapped out."""
+    return sum(max(0, ws(j) - current(j)) for j in js)
+
+def room_wanted(active, parked):
+    """How much of each parked job to page out so the active jobs' working sets
+    fit: the active jobs' missing pages minus what is free beyond the reserve,
+    taken from the parked jobs holding the most memory first. Whole bytes:
+    memory.reclaim rejects "123.0"."""
+    spare = meminfo("MemAvailable") - int(RESERVE * meminfo("MemTotal"))
+    room = missing(active) - max(0, spare)
+    want = {}
+    for j in sorted(parked, key=current, reverse=True):
+        if room <= 0:
+            break
+        take = min(room, current(j))
+        if take > 0:
+            want[j] = take
+            room -= take
+    return want
 
 # ---- control loop ----------------------------------------------------------
 
@@ -199,11 +293,13 @@ def parse_args():
                     help="PSI trigger window. Below 2000 ms needs CAP_SYS_RESOURCE; "
                          "tests/test_controller.sh uses 2000 to run without root")
     ap.add_argument("--quantum", type=float, default=15.0,
-                    help="rotation quantum: CPU seconds a job runs after a thaw before it can be rotated out")
+                    help="rotation quantum: user CPU seconds a job runs after a thaw before it can be rotated out")
     ap.add_argument("--pff-hi", type=float, default=None,
                     help="faults per CPU-ms; frozen in docs/00-prereg.md (bpf mode)")
     ap.add_argument("--grace", type=float, default=2.0,
                     help="ignore a job's PFF for this long after it starts or is thawed")
+    ap.add_argument("--no-reclaim", dest="reclaim", action="store_false",
+                    help="don't page parked jobs out ahead of need")
     return ap.parse_args()
 
 def main():
@@ -230,12 +326,17 @@ def main():
     poll_ms = 100 if bpf else 250
     log(event="start", signal=a.signal, trigger_ms=a.trigger_ms, window_ms=a.window_ms,
         quantum=a.quantum, pff_hi=a.pff_hi, grace=a.grace, grow_frac=GROW_FRAC,
-        set_grow_frac=SET_GROW_FRAC, reserve=RESERVE)
+        set_grow_frac=SET_GROW_FRAC, grow_window=GROW_WINDOW, reload_frac=RELOAD_FRAC,
+        reserve=RESERVE, reclaim=a.reclaim)
+    reclaimer = Reclaimer()
+    if a.reclaim:
+        reclaimer.start()
 
     last_pressure = last_halve = last_rotate = time.monotonic()
     since = {}             # job -> monotonic time it started or was last thawed
-    cpu0 = {}              # job -> its CPU time (us) when it started or was last thawed
+    cpu0 = {}              # job -> its user CPU time (us) when it started or was last thawed
     settled = {}           # job -> its resident memory had stopped growing (last seen)
+    reclaim_logged = {}    # job -> when its paging-out was last logged
     hot = {}               # job -> consecutive PFF samples above PFF_HI
     rates = {}
     snap_mtime = None
@@ -249,7 +350,7 @@ def main():
                 parked = [j for j in js if j not in active]
                 for j in active:
                     since.setdefault(j, now)
-                    cpu0.setdefault(j, served(j))
+                    cpu0.setdefault(j, worked(j))
 
                 # Fault rates. In bpf mode only take a new sample when the
                 # scheduler has exported a fresh snapshot.
@@ -267,6 +368,14 @@ def main():
                 if fresh:
                     rates = {j: rate_fn(j, snap) for j in active}
 
+                making_room = False
+                if a.reclaim:
+                    want = room_wanted(active, parked)
+                    making_room = reclaimer.set(want)
+                    for j, b in want.items():     # log each job at most every 10 s
+                        if now - reclaim_logged.get(j, -1e9) >= 10:
+                            reclaim_logged[j] = now
+                            log(event="reclaim", job=j, bytes=int(b))
                 grow_b = {j: track(j, now) for j in active}   # every loop: continuous history
                 for j in active:                  # parked jobs keep their last value
                     settled[j] = growth(grow_b, [j]) < GROW_FRAC
@@ -285,9 +394,18 @@ def main():
                 if src:
                     fit = fits(active)
                     g = growth(grow_b, active)
-                    warming = fit and g >= SET_GROW_FRAC
+                    short = missing(active)
+                    hold = None                   # why this pressure is warm-up, if it is
+                    if fit and active:
+                        if g >= SET_GROW_FRAC:
+                            hold = "growing"
+                        elif short >= RELOAD_FRAC * sum(ws(j) for j in active):
+                            hold = "reloading"
+                        elif making_room:
+                            hold = "making-room"
+                    warming = hold is not None
                     log(event="pressure", src=src, active=len(active), parked=len(parked),
-                        warming=warming, fits=fit, growth=finite(g))
+                        warming=warming, hold=hold, fits=fit, growth=finite(g), missing=short)
                     if not warming:
                         last_pressure = now
                         if now - last_halve >= COOLDOWN and len(active) > 1:
@@ -295,6 +413,8 @@ def main():
                             worst = sorted(active, key=lambda j: rates.get(j, 0), reverse=True)
                             for j in worst[:len(active) - keep]:
                                 freeze(j, True, f"pressure-{src}")
+                            for j in worst[len(active) - keep:]:
+                                _res.pop(j, None)  # the survivors' growth starts over
                             last_halve = now
                             last_rotate = now     # the rotation clock starts when jobs park
                             hot.clear()
@@ -309,21 +429,21 @@ def main():
                     j = min(parked, key=served)
                     freeze(j, False, "admit")
                     since[j] = now
-                    cpu0[j] = served(j)
+                    cpu0[j] = worked(j)
                     _res.pop(j, None)
                     last_pressure = now           # wait a full calm period again
-                # The quantum is counted in the job's own CPU time since it was
-                # last thawed. Faulting its pages back in takes little CPU, so a
-                # slow swap device can't eat the quantum before any work is done.
+                # The quantum is counted in the job's own user CPU time since it
+                # was last thawed. Faulting its pages back in is kernel time, so
+                # a slow swap device can't eat the quantum before any work is done.
                 elif parked and active and now - last_rotate >= a.quantum:
-                    ready = [j for j in active if served(j) - cpu0.get(j, 0) >= a.quantum * 1e6]
+                    ready = [j for j in active if worked(j) - cpu0.get(j, 0) >= a.quantum * 1e6]
                     if ready:
                         act, par = max(ready, key=served), min(parked, key=served)
                         if served(par) < served(act):
                             freeze(act, True, "rotate-out")
                             freeze(par, False, "rotate-in")
                             since[par] = now
-                            cpu0[par] = served(par)
+                            cpu0[par] = worked(par)
                             hot.pop(par, None)
                             _res.pop(par, None)
                         last_rotate = now

@@ -258,16 +258,28 @@ def cmd_figures(root):
     labels = [l for l in ORDER if any(r["label"] == l for r in rows)]
     run_dir = lambda r: f"{root}/{r['label']}/N{r['N']}/run{r['run']}"
 
-    # F1: throughput vs N, median with min-max range
+    # F1: throughput vs N, median with min-max range. Lines join measured N at
+    # most 2 apart (the campaign's grids step by 1 or 2); a wider gap stays
+    # open rather than drawing cells that weren't measured.
     fig, ax = plt.subplots(figsize=(7, 4.2))
     for l in labels:
         ns = sorted({r["N"] for r in rows if r["label"] == l and r["N"] > 0})
-        med, lo, hi = [], [], []
+        segs = []
         for n in ns:
-            v = [r["throughput"] for r in rows if r["label"] == l and r["N"] == n and r["throughput"]]
-            m = statistics.median(v) if v else float("nan")
-            med.append(m); lo.append(m - min(v) if v else 0); hi.append(max(v) - m if v else 0)
-        ax.errorbar(ns, med, yerr=[lo, hi], marker="o", capsize=3, label=NAMES.get(l, l))
+            if segs and n - segs[-1][-1] <= 2:
+                segs[-1].append(n)
+            else:
+                segs.append([n])
+        color = None
+        for i, seg in enumerate(segs):
+            med, lo, hi = [], [], []
+            for n in seg:
+                v = [r["throughput"] for r in rows if r["label"] == l and r["N"] == n and r["throughput"]]
+                m = statistics.median(v) if v else float("nan")
+                med.append(m); lo.append(m - min(v) if v else 0); hi.append(max(v) - m if v else 0)
+            eb = ax.errorbar(seg, med, yerr=[lo, hi], marker="o", capsize=3, color=color,
+                             label=NAMES.get(l, l) if i == 0 else "_nolegend_")
+            color = eb.lines[0].get_color()
     ax.set_xlabel("concurrent jobs N"); ax.set_ylabel("throughput (passes / s)")
     ax.set_title("F1  Throughput vs load: the thrashing curve"); ax.legend(fontsize=8)
     ax.grid(alpha=.3); fig.tight_layout(); fig.savefig(f"{out}/F1_throughput.png", dpi=150)
