@@ -14,6 +14,7 @@ Phase 1 uses to calibrate PFF_HI.
 import ctypes, json, os, sys, time
 
 CG = os.environ.get("STASIS_CG", "/sys/fs/cgroup/stasis.slice")
+JOB_PREFIX = os.environ.get("STASIS_JOB_PREFIX", "stasis-job-")   # must match stasisd
 RUN = os.environ.get("STASIS_RUN", "/run/stasis")
 SCX = "/sys/kernel/sched_ext"
 ctypes.CDLL("libc.so.6").mlockall(3)          # MCL_CURRENT | MCL_FUTURE
@@ -72,12 +73,42 @@ def sched():
 
 def job(d):
     ms = kv(f"{d}/memory.stat")
-    return {"cur": int(read(f"{d}/memory.current")),
-            "peak": int(read(f"{d}/memory.peak")),
-            "cpu_us": kv(f"{d}/cpu.stat")["usage_usec"],
-            "refault_anon": ms.get("workingset_refault_anon", 0),
-            "pgmajfault": ms.get("pgmajfault", 0),
-            "frozen": read(f"{d}/cgroup.freeze") == "1"}
+    out = {"cur": int(read(f"{d}/memory.current")),
+           "peak": int(read(f"{d}/memory.peak")),
+           "cpu_us": kv(f"{d}/cpu.stat")["usage_usec"],
+           "refault_anon": ms.get("workingset_refault_anon", 0),
+           "pgmajfault": ms.get("pgmajfault", 0),
+           "frozen": read(f"{d}/cgroup.freeze") == "1"}
+    # Cumulative frozen time, the natural currency for a fairness metric over
+    # the thing STASIS actually rations (added 2026-10-24). cgroup.stat.local
+    # is recent; absent on older kernels, and analyze.py falls back to counting
+    # frozen samples when it is missing.
+    try:
+        out["frozen_usec"] = kv(f"{d}/cgroup.stat.local").get("frozen_usec", 0)
+    except (FileNotFoundError, KeyError, ValueError):
+        pass
+    # thrash-protect parks with SIGSTOP, which cgroup.freeze never sees. Without
+    # this, fairness over parked time could not be measured for the one baseline
+    # it matters most against. A job counts as stopped when any of its tasks is
+    # in state T (stopped) or t (traced-stop).
+    out["stopped"] = stopped(d)
+    return out
+
+def stopped(d):
+    try:
+        pids = read(f"{d}/cgroup.procs").split()
+    except FileNotFoundError:
+        return False
+    for p in pids:
+        try:
+            # The state is the field after the parenthesised comm, which may
+            # itself contain spaces or ')', so split on the last ')'.
+            st = read(f"/proc/{p}/stat").rsplit(")", 1)[1].split()[0]
+        except (FileNotFoundError, IndexError, ProcessLookupError):
+            continue
+        if st in ("T", "t"):
+            return True
+    return False
 
 def record():
     vm = kv("/proc/vmstat")
@@ -86,7 +117,7 @@ def record():
            "oom_kill": vm.get("oom_kill", 0), "mem": meminfo(),
            "sched": sched(), "jobs": {}}
     names = os.listdir(CG) if os.path.isdir(CG) else []
-    for j in sorted(n for n in names if n.startswith("stasis-job-")):
+    for j in sorted(n for n in names if n.startswith(JOB_PREFIX)):
         try:
             rec["jobs"][j] = job(f"{CG}/{j}")
         except (FileNotFoundError, KeyError, ValueError):

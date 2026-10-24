@@ -1,0 +1,69 @@
+# stasisd as a Kubernetes DaemonSet (arm 10, 2026-10-24).
+#
+# Read deploy/k8s/README.md first. This is integration, not research: the
+# report rates it near-zero novelty, and it cannot be evaluated on the single
+# lab VM. It exists so the thesis can say the controller is deployable where
+# overcommitted memory is actually managed today, and to make concrete the one
+# real contrast with the status quo: Kubernetes' memory policy is limit-then-kill
+# (a January 2025 RFC notes the community "hesitates to use memory.high, and
+# instead uses only memory.max"), and stasisd pauses instead.
+#
+# Scope it narrowly. stasisd parks whatever it finds under STASIS_CG whose
+# cgroup name starts with STASIS_JOB_PREFIX. Point it at the Burstable QoS tier
+# and NEVER at Guaranteed pods or at the node's system services: freezing a
+# kubelet-managed pod pauses it, and a pod that is frozen long enough will fail
+# its liveness probe and be restarted by the kubelet - which is a kill with
+# extra steps. Give batch pods that may be parked long or no liveness probes.
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: stasisd
+  namespace: kube-system
+  labels: {app: stasisd}
+spec:
+  selector:
+    matchLabels: {app: stasisd}
+  template:
+    metadata:
+      labels: {app: stasisd}
+    spec:
+      # Only on nodes an operator has opted in. Never on control-plane nodes.
+      nodeSelector:
+        stasis.io/enabled: "true"
+      hostPID: true
+      priorityClassName: system-node-critical    # it must outlive what it parks
+      containers:
+      - name: stasisd
+        image: REPLACE_WITH_YOUR_REGISTRY/stasisd:pinned   # build from controller/
+        command: ["python3", "/opt/stasis/stasisd.py",
+                  "--signal=memstat",
+                  "--log=/var/log/stasis/decisions.jsonl"]
+        env:
+        # systemd cgroup driver, Burstable tier. Check the path on your nodes:
+        # it differs between the systemd and cgroupfs drivers.
+        - {name: STASIS_CG, value: /sys/fs/cgroup/kubepods.slice/kubepods-burstable.slice}
+        - {name: STASIS_JOB_PREFIX, value: kubepods-burstable-pod}
+        securityContext:
+          privileged: true          # writes cgroup.freeze and memory.reclaim; mlockall
+        # Guaranteed QoS (requests == limits for both CPU and memory) is a
+        # SAFETY requirement, not tuning. stasisd manages the Burstable tier
+        # (STASIS_CG and STASIS_JOB_PREFIX above). If this pod were Burstable
+        # too, its own cgroup would carry that prefix, and stasisd could
+        # freeze itself, leaving every pod it had parked frozen. Its "never
+        # touch a cgroup that contains me" check can't catch that here: under
+        # cgroup v2 a pod's processes live in per-container child cgroups, so
+        # the pod-level cgroup.procs it reads is empty. A Guaranteed pod lives
+        # under kubepods.slice directly, outside the tier stasisd manages.
+        # Do not drop the CPU limit or make it differ from the request. The
+        # limit is generous because a throttled controller acts late.
+        resources:
+          requests: {cpu: 500m, memory: 128Mi}
+          limits: {cpu: 500m, memory: 128Mi}   # mlockall'd: small and bounded
+        volumeMounts:
+        - {name: cgroup, mountPath: /sys/fs/cgroup}
+        - {name: psi, mountPath: /proc/pressure, readOnly: true}
+        - {name: log, mountPath: /var/log/stasis}
+      volumes:
+      - {name: cgroup, hostPath: {path: /sys/fs/cgroup}}
+      - {name: psi, hostPath: {path: /proc/pressure}}
+      - {name: log, hostPath: {path: /var/log/stasis, type: DirectoryOrCreate}}

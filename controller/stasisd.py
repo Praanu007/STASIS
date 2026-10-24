@@ -109,23 +109,66 @@ with fast reloads it is MAX_WAIT plus a few seconds per job ahead of it.
 --no-rotation turns rotation and the bound off (the fairness ablation):
 parked jobs then wait until memory frees up.
 
-Safety. stasisd only ever freezes cgroups named stasis-job-* directly under
-STASIS_CG, refuses any that contain itself, never sends a signal, and thaws
-everything on exit. Frozen tasks aren't runnable, so parking can't trip
-sched_ext's watchdog, which aborts a BPF scheduler that leaves a runnable task
-waiting longer than its timeout (30 s at most). STASIS never kills; the kernel's
-OOM killer still can, and the evaluation counts it.
+Options added 2026-10-24 (arms registered in docs/01-prereg-arms.md). Every
+one is off by default, so with none given the control law above runs
+unchanged. docs/06-added-features.md gives what each claims and the evidence
+for and against it.
+
+--derivative-hi R  (arm 4) D-term: pressure when PSI full avg10 rises at R
+                   percentage points per second over --derivative-window s,
+                   for 3 consecutive samples, even below the PSI trigger. A
+                   lead term on the signal already being read, not a forecast.
+--ws damon         (arm 5) a third working-set estimate beside refs and
+                   footprint: DAMON's monitored access footprint, written to
+                   /run/stasis/damon/<job> by scripts/damon_wss.sh, capped at the
+                   footprint like the refs estimate. A job with no fresh reading
+                   falls back to its footprint. Refuses to start without DAMON
+                   sysfs: Ubuntu 26.04's kernel is built without DAMON, and
+                   silently falling back for every job would turn the arm into a
+                   footprint run that looks like a DAMON one.
+--predict MODEL    (arm 6) logistic model over (PSI slope, mean PFF, missing
+                   share, fit margin) from eval/train_predictor.py. Pressure when
+                   p(thrash) exceeds its threshold for 3 consecutive samples.
+                   Refuses a model that failed the trainer's sign check. The
+                   nearest published work predicts fragmentation, not pressure,
+                   and --derivative-hi supports the same claim more cheaply.
+--actuator criu    (arm 7) checkpoint a parked job with CRIU and kill it,
+                   restoring it on resume, instead of freezing it in place. The
+                   evidence is against this (HFSP: suspend/resume traffic at disk
+                   raw speed; CRIU's cost is the memory image). Any CRIU error
+                   falls back to the freezer for that job. NOT YET RUNNABLE: jobs
+                   are systemd transient units, and killing a job's processes
+                   ends its unit and removes its cgroup, so run_mix.sh would count
+                   the job as finished. The harness needs RemainAfterExit and
+                   CRIU's --manage-cgroups validated on the lab VM first; see
+                   docs/06-added-features.md.
+
+Safety. stasisd only ever freezes cgroups named JOB_PREFIX* (stasis-job-* unless
+STASIS_JOB_PREFIX says otherwise, for Kubernetes) directly under STASIS_CG,
+refuses any that contain itself, never sends a signal, and thaws everything on
+exit. Frozen tasks aren't runnable, so parking can't trip sched_ext's watchdog,
+which aborts a BPF scheduler that leaves a runnable task waiting longer than
+its timeout (30 s at most). STASIS never kills; the kernel's OOM killer still
+can, and the evaluation counts it. The one exception is --actuator=criu, which
+sends SIGKILL to a job it has checkpointed: that arm alone gives up both
+"never sends a signal" and "never kills", which is part of what it measures.
 Stdlib only.
 """
-import argparse, collections, ctypes, errno, json, os, select, signal, sys, threading, time, traceback
+import argparse, collections, ctypes, errno, json, math, os, select, shutil, signal, subprocess, sys, threading, time, traceback
 
 CG = os.environ.get("STASIS_CG", "/sys/fs/cgroup/stasis.slice")
 PFF_FILE = os.environ.get("STASIS_PFF", "/run/stasis/pff")
 PSI_FILE = os.environ.get("STASIS_PSI", "/proc/pressure/memory")   # tests use a plain file
 MEMINFO = os.environ.get("STASIS_MEMINFO", "/proc/meminfo")        # tests use a fake one
 PROC = os.environ.get("STASIS_PROC", "/proc")                      # tests use a fake one
+JOB_PREFIX = os.environ.get("STASIS_JOB_PREFIX", "stasis-job-")    # arm 10: Kubernetes pod cgroups
+DAMON_DIR = os.environ.get("STASIS_DAMON", "/run/stasis/damon")    # arm 5
+DAMON_SYSFS = "/sys/kernel/mm/damon"                               # arm 5: absent without CONFIG_DAMON
+CRIU_DIR = os.environ.get("STASIS_CRIU", "/var/lib/stasis/criu")   # arm 7
 CALM, COOLDOWN, RESERVE = 5.0, 2.0, 0.10
 PFF_STREAK = 3                       # consecutive 100 ms samples above PFF_HI
+DERIV_WINDOW = 3.0                   # s of PSI history behind the D-term (arm 4)
+DAMON_STALE = 5.0                    # s after which a DAMON reading is ignored (arm 5)
 GROW_FRAC = 0.005                    # one job's resident growth per s, fraction of its working set
 SET_GROW_FRAC = 0.001                # the active set's growth per s, fraction of its working sets
 GROW_WINDOW = 5.0                    # s of history behind every growth figure (smooths noise)
@@ -160,11 +203,16 @@ def meminfo(key):
 
 def jobs():
     try:
-        return sorted(d for d in os.listdir(CG) if d.startswith("stasis-job-"))
+        return sorted(d for d in os.listdir(CG) if d.startswith(JOB_PREFIX))
     except FileNotFoundError:
         return []
 
-def frozen(j):  return rd(f"{CG}/{j}/cgroup.freeze").strip() == "1"
+def frozen(j):
+    # A CRIU-parked job (arm 7) has no tasks left to freeze, so the freezer
+    # cannot answer for it; stasisd's own record is the only truth.
+    if j in _criu_parked:
+        return True
+    return rd(f"{CG}/{j}/cgroup.freeze").strip() == "1"
 def served(j):  return field(f"{CG}/{j}/cpu.stat", "usage_usec")
 def worked(j):  return field(f"{CG}/{j}/cpu.stat", "user_usec")   # excludes fault handling
 def peak(j):    return int(rd(f"{CG}/{j}/memory.peak"))
@@ -383,6 +431,159 @@ def estimate(j, fp, sampler):
     m = sampler.measured(j) if sampler else None
     return fp if m is None else min(fp, int(WS_MARGIN * m))
 
+# ---- arm 5: DAMON working-set estimate (--ws damon) -------------------------
+
+_damon_warned = set()
+
+def estimate_damon(j, fp, cur):
+    """Working set from DAMON's access footprint, read from the file
+    scripts/damon_wss.sh writes ("<bytes> <unix_time>"). Like the refs
+    estimate it never exceeds the footprint; it is also never below what is
+    resident now. A reading older than DAMON_STALE s, or none, falls back to
+    the footprint, as the refs estimate does before its first trusted sample.
+
+    Known accuracy caveat: DAMON reads Accessed bits without a TLB flush, so a
+    working set small enough to sit in the TLB can read as idle."""
+    try:
+        b, t = rd(f"{DAMON_DIR}/{j}").split()[:2]
+        if time.time() - float(t) <= DAMON_STALE:
+            return min(fp, max(int(b), cur))
+    except (OSError, ValueError, IndexError):
+        pass
+    if j not in _damon_warned:
+        _damon_warned.add(j)
+        log(event="damon_stale", job=j, fallback="footprint")
+    return fp
+
+# ---- arm 6: predictive trigger (--predict) ----------------------------------
+
+class Predictor:
+    """Logistic model over four features, from eval/train_predictor.py.
+
+    Stdlib only and tiny: the controller is mlockall'd and must not grow a
+    numerical stack. The model file is JSON:
+        {"w": {feature: weight}, "b": bias, "threshold": p, "features": [...]}"""
+
+    def __init__(self, path):
+        m = json.load(open(path))
+        if m.get("sign_check", {}).get("passed") is False:
+            sys.exit(f"{path} failed train_predictor.py's sign check "
+                     f"({', '.join(m['sign_check'].get('wrong', []))}): it has not "
+                     f"learned pressure. Refusing to run with it.")
+        self.w = m["w"]
+        self.b = m.get("b", 0.0)
+        self.threshold = m.get("threshold", 0.5)
+        self.names = m.get("features", sorted(self.w))
+
+    def p(self, feats):
+        z = self.b + sum(self.w.get(k, 0.0) * feats.get(k, 0.0) for k in self.names)
+        z = max(-60.0, min(60.0, z))          # no overflow on a wild feature
+        return 1.0 / (1.0 + math.exp(-z))
+
+def predict_features(active, rates, slope, W, cur):
+    """The four features, defined once so training and inference agree."""
+    sets = sum(W[j] for j in active) or 1
+    total = meminfo("MemTotal")
+    return {"psi_slope": slope if slope is not None else 0.0,
+            "pff_mean": (sum(rates.get(j, 0) for j in active) / len(active)) if active else 0.0,
+            "missing_frac": missing(active, W, cur) / sets,
+            "fit_margin": (total - RESERVE * total - sets) / total}
+
+# ---- arm 7: actuator, freeze in place or checkpoint out (--actuator) ---------
+#
+# actuate() is what main()'s park() and thaw() call. The freezer is arm 1's
+# actuator and the default. CRIU fails safe: any error falls back to freezing
+# that job and logs why. See the module docstring: arm 7 is not yet runnable
+# under run_mix.sh's systemd transient units.
+
+ACTUATOR = "freeze"
+_criu_parked = set()
+
+def _criu(args, j, phase):
+    d = f"{CRIU_DIR}/{j}"
+    os.makedirs(d, mode=0o700, exist_ok=True)
+    r = subprocess.run(["criu", *args, "-D", d, "--shell-job", "--tcp-established",
+                        "--file-locks", "-v0"],
+                       capture_output=True, text=True, timeout=120)
+    if r.returncode != 0:
+        log(event="criu_failed", job=j, phase=phase, rc=r.returncode,
+            err=r.stderr.strip()[-400:])
+        return False
+    return True
+
+def criu_park(j, on, why, **extra):
+    """Checkpoint the job out, or restore it; the freezer if CRIU fails."""
+    if on:
+        pids = rd(f"{CG}/{j}/cgroup.procs").split()
+        if not pids or not _criu(["dump", "--tree", pids[0], "--leave-stopped"], j, "dump"):
+            freeze(j, True, why + "-criu-fallback", **extra)
+            return
+        # --leave-stopped leaves the tree stopped rather than gone, so a failed
+        # dump is recoverable. Killing it is what frees the memory: the point
+        # of the arm, and the one place stasisd sends a signal.
+        for p in pids:
+            try:
+                os.kill(int(p), signal.SIGKILL)
+            except (ProcessLookupError, ValueError):
+                pass
+        _criu_parked.add(j)
+        _epoch[j] += 1                    # the working-set sampler checks this
+        log(job=j, frozen=True, why=why, actuator="criu", **extra)
+    else:
+        if j not in _criu_parked:          # frozen by the fallback, or never parked
+            freeze(j, False, why, **extra)
+            return
+        _criu_parked.discard(j)
+        if _criu(["restore", "--restore-detached"], j, "restore"):
+            _epoch[j] += 1
+            log(job=j, frozen=False, why=why, actuator="criu", **extra)
+        else:                              # the dump killed it: nothing left to thaw
+            log(event="criu_lost", job=j, why=why)
+
+def actuate(j, on, why, **extra):
+    if ACTUATOR == "criu":
+        criu_park(j, on, why, **extra)
+    else:
+        freeze(j, on, why, **extra)
+
+# ---- arm 4: PSI level and slope (the D-term) --------------------------------
+
+def psi_full_avg10():
+    """PSI 'full' avg10, in percent. None when the file has no such line (the
+    regression tests write a plain file with only a trigger-shaped first line)."""
+    try:
+        for line in rd(PSI_FILE).splitlines():
+            if line.startswith("full"):
+                for part in line.split()[1:]:
+                    k, _, v = part.partition("=")
+                    if k == "avg10":
+                        return float(v)
+    except (OSError, ValueError):
+        pass
+    return None
+
+_psi_hist = collections.deque()
+def psi_slope(now):
+    """Rise of PSI full avg10 in percentage points per second over the last
+    DERIV_WINDOW s, or None while there is too little history."""
+    v = psi_full_avg10()
+    if v is None:
+        return None
+    _psi_hist.append((now, v))
+    while len(_psi_hist) > 2 and now - _psi_hist[1][0] >= DERIV_WINDOW:
+        _psi_hist.popleft()
+    (t0, v0), (t1, v1) = _psi_hist[0], _psi_hist[-1]
+    return (v1 - v0) / (t1 - t0) if t1 - t0 >= 0.5 else None
+
+# ---- arm 8: the controller's own cost ---------------------------------------
+
+def self_rss_kb():
+    """This process's resident size, for the energy proxy."""
+    try:
+        return int(rd("/proc/self/statm").split()[1]) * (os.sysconf("SC_PAGE_SIZE") // 1024)
+    except (OSError, IndexError, ValueError):
+        return None
+
 # ---- layer 3: making room: page parked jobs out ahead of need ---------------
 
 class Reclaimer(threading.Thread):
@@ -480,8 +681,8 @@ def thaw_all(*_, code=0):
     _thawed = True
     for j in jobs():
         try:
-            freeze(j, False, "shutdown")
-        except OSError:
+            actuate(j, False, "shutdown")
+        except (OSError, subprocess.SubprocessError):
             pass
     sys.exit(code)
 
@@ -500,14 +701,24 @@ def parse_args():
                     help="starvation bound: seconds a parked job may wait before it is resumed anyway")
     ap.add_argument("--no-rotation", dest="rotation", action="store_false",
                     help="no rotation and no starvation bound (the fairness ablation)")
-    ap.add_argument("--ws", choices=["refs", "footprint"], default="refs",
-                    help="working-set estimate: measured from referenced bits, or the footprint upper bound")
+    ap.add_argument("--ws", choices=["refs", "footprint", "damon"], default="refs",
+                    help="working-set estimate: measured from referenced bits, the footprint "
+                         "upper bound, or DAMON (arm 5; needs a DAMON-enabled kernel)")
     ap.add_argument("--pff-hi", type=float, default=None,
                     help="faults per CPU-ms; frozen in docs/00-prereg.md (bpf mode)")
     ap.add_argument("--grace", type=float, default=2.0,
                     help="ignore a job's PFF for this long after it starts or is thawed")
     ap.add_argument("--no-reclaim", dest="reclaim", action="store_false",
                     help="don't page parked jobs out ahead of need")
+    # Added 2026-10-24; all off by default (docs/01-prereg-arms.md).
+    ap.add_argument("--derivative-hi", type=float, default=None,
+                    help="arm 4: pressure when PSI full avg10 rises this many percentage points per second")
+    ap.add_argument("--derivative-window", type=float, default=DERIV_WINDOW,
+                    help="arm 4: seconds of PSI history behind the slope")
+    ap.add_argument("--predict", default=None, metavar="MODEL.json",
+                    help="arm 6: predictive trigger; a model from eval/train_predictor.py")
+    ap.add_argument("--actuator", choices=["freeze", "criu"], default="freeze",
+                    help="arm 7: how a parked job is stopped (criu is not yet runnable; see the docstring)")
     return ap.parse_args()
 
 def refs_supported():
@@ -519,7 +730,7 @@ def refs_supported():
         return False
 
 def main():
-    global LOG
+    global LOG, ACTUATOR, DERIV_WINDOW
     a = parse_args()
     os.makedirs(os.path.dirname(os.path.abspath(a.log)), exist_ok=True)
     LOG = open(a.log, "a", buffering=1)
@@ -532,6 +743,15 @@ def main():
         print("warning: no /proc/PID/clear_refs or smaps_rollup Referenced; "
               "using footprints as working sets", file=sys.stderr)
         ws_mode = "footprint"
+    # Arm 5 must not degrade silently: without DAMON every job would fall back
+    # to its footprint, and the run would be a footprint run labelled DAMON.
+    if ws_mode == "damon" and not os.path.isdir(DAMON_SYSFS):
+        sys.exit(f"--ws=damon needs a DAMON-enabled kernel ({DAMON_SYSFS} is missing; "
+                 f"Ubuntu 26.04's stock kernel is built without CONFIG_DAMON)")
+    ACTUATOR, DERIV_WINDOW = a.actuator, a.derivative_window
+    if ACTUATOR == "criu" and not shutil.which("criu"):
+        sys.exit("--actuator=criu needs criu on PATH")
+    predictor = Predictor(a.predict) if a.predict else None
 
     libc = ctypes.CDLL("libc.so.6", use_errno=True)
     if libc.mlockall(3) != 0:                 # never let the controller swap
@@ -551,7 +771,10 @@ def main():
         ws=ws_mode, ws_tau_cpu=WS_TAU_CPU, ws_margin=WS_MARGIN,
         pff_hi=a.pff_hi, grace=a.grace, grow_frac=GROW_FRAC,
         set_grow_frac=SET_GROW_FRAC, grow_window=GROW_WINDOW, reload_frac=RELOAD_FRAC,
-        reserve=RESERVE, reclaim=a.reclaim)
+        reserve=RESERVE, reclaim=a.reclaim,
+        # arms 4, 6, 7: all null/"freeze" means none of them is in use
+        derivative_hi=a.derivative_hi, derivative_window=a.derivative_window,
+        predict=a.predict, actuator=a.actuator)
     reclaimer = Reclaimer()
     if a.reclaim:
         reclaimer.start()
@@ -560,8 +783,9 @@ def main():
         sampler.start()
 
     me = os.getpid()
-    last_pressure = last_halve = last_rotate = last_rescue = time.monotonic()
+    last_pressure = last_halve = last_rotate = last_rescue = last_self = time.monotonic()
     last_ws_log = 0.0
+    hot_d = hot_ml = 0     # consecutive samples over the D-term / model threshold (arms 4, 6)
     min_turn = min(10.0, a.max_wait / 4, a.quantum)
     since = {}             # job -> monotonic time it started or was last thawed
     cpu0 = {}              # job -> its user CPU time (us) when it started or was last thawed
@@ -587,11 +811,11 @@ def main():
         return any(not had_turn(j, now) and now - since[j] < a.max_wait for j in js)
 
     def park(j, why, now, **extra):
-        freeze(j, True, why, **extra)
+        actuate(j, True, why, **extra)    # the freezer unless --actuator=criu
         parked_at[j] = now
 
     def thaw(j, why, now):
-        freeze(j, False, why, waited=round(now - parked_at.pop(j, now), 1))
+        actuate(j, False, why, waited=round(now - parked_at.pop(j, now), 1))
         since[j] = now
         cpu0[j] = worked(j)
         stall0[j] = stalled_s(j)
@@ -602,6 +826,11 @@ def main():
         while True:
             events = poller.poll(poll_ms)
             now = time.monotonic()
+            # The controller's own cost, every 10 s: the honest part of the
+            # energy question on a VM where RAPL is unavailable (arm 8).
+            if now - last_self >= 10:
+                last_self = now
+                log(event="self", cpu_s=round(time.process_time(), 3), rss_kb=self_rss_kb())
             try:
                 js = [j for j in jobs() if j not in unsafe]
                 for j in js:
@@ -623,7 +852,10 @@ def main():
 
                 cur = {j: current(j) for j in js}
                 fp = {j: footprint(j, cur[j]) for j in js}
-                W = {j: estimate(j, fp[j], sampler) for j in js}
+                if ws_mode == "damon":
+                    W = {j: estimate_damon(j, fp[j], cur[j]) for j in js}
+                else:
+                    W = {j: estimate(j, fp[j], sampler) for j in js}
                 if now - last_ws_log >= 5:        # m: the measured sample, if any
                     last_ws_log = now
                     log(event="ws", jobs={j: {"fp": fp[j], "est": W[j],
@@ -669,6 +901,26 @@ def main():
                             log(event="pff_hi", job=j, pff=round(rates[j], 3), growth=finite(g))
                             break
 
+                # Arms 4 and 6. The slope is tracked every loop, whatever the
+                # arm, so its history is continuous; PSI and PFF keep priority
+                # as the recorded source when they fire in the same loop.
+                slope = psi_slope(now)
+                if a.derivative_hi is not None and active and slope is not None:
+                    hot_d = hot_d + 1 if slope >= a.derivative_hi else 0
+                    if hot_d >= PFF_STREAK and not src:
+                        src = "dpsi"
+                        log(event="dpsi_hi", slope=finite(slope), hi=a.derivative_hi)
+                else:
+                    hot_d = 0
+                if predictor and active:
+                    feats = predict_features(active, rates, slope, W, cur)
+                    p = predictor.p(feats)
+                    hot_ml = hot_ml + 1 if p >= predictor.threshold else 0
+                    if hot_ml >= PFF_STREAK and not src:
+                        src = "ml"
+                        log(event="ml_hi", p=round(p, 4),
+                            feats={k: finite(v) for k, v in feats.items()})
+
                 halved = False
                 if src:
                     fit = fits(active, W, cur)
@@ -684,7 +936,8 @@ def main():
                             hold = "making-room"
                     warming = hold is not None
                     log(event="pressure", src=src, active=len(active), parked=len(parked),
-                        warming=warming, hold=hold, fits=fit, growth=finite(g), missing=short)
+                        warming=warming, hold=hold, fits=fit, growth=finite(g), missing=short,
+                        slope=finite(slope) if slope is not None else None)
                     if not warming:
                         last_pressure = now
                         if now - last_halve >= COOLDOWN and len(active) > 1:
@@ -701,6 +954,7 @@ def main():
                             last_halve = now
                             last_rotate = now     # the rotation clock starts when jobs park
                             hot.clear()
+                            hot_d = hot_ml = 0    # the new set gets a fresh streak
                             halved = True
                 # Admission and rotation are independent: when the next parked
                 # job doesn't fit, calm must fall through to rotation, or parked
