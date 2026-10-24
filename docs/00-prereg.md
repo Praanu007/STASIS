@@ -12,11 +12,49 @@ changed later is reported as a deviation, with the reason.
 | Parameter | Value | How it was chosen |
 |---|---|---|
 | SIZE (MB per job) | `700` | 4 jobs (2.8 GB) fit in 4 GB RAM; 8 don't |
-| PASSES | `__` | `scripts/calibrate.sh 700` → one job alone runs ~60 s |
+| PASSES | `5874` | one job alone runs ~60 s: `calibrate.sh`'s formula on a 600-pass sample, median of 5 runs (see "PASSES calibration" below) |
 | HOT (share of each job's memory it keeps touching) | experiment A: 100 %; experiment B: 60 %; experiment C: 40 %, and 100 % for jobs 1–4 after 60 % of PASSES | B: 8 hot sets (3.4 GB) overcommit 4 GB, 6 (2.5 GB) don't; 8 footprints are 5.6 GB. C: 8 × 280 MB (2.2 GB) fit, 4 × 700 + 4 × 280 MB (3.9 GB) don't |
 | N range | A: 1–8; B: 4, 6, 8; C: 8 | |
 | Timeout per run | 1200 s | |
 | Runs per cell | 5 | |
+
+### PASSES calibration (frozen 2026-10-24)
+
+**Machine.** A VirtualBox 7.2.22 VM, `stasis-lab`: Ubuntu 26.04, kernel
+7.0.0-38-generic, 4 GB fixed memory, 4 vCPUs, 8 GB swap file, zswap off,
+Gate 0 passed. Host: Windows 11 Home on an Intel Core Ultra 7 155U, where
+VirtualBox runs on top of Hyper-V (WSL2 is enabled). PASSES holds only on
+this machine and these conditions; the campaign must run on it.
+
+**Host conditions, which must stay the same for every run.** AC power,
+Windows power mode *Best performance*, other applications closed. This
+matters more than it sounds: the same job ran about 40 % faster in this mode
+(10–12 ms per pass) than without these conditions (14–20 ms). The per-run
+MANIFEST does not record the Windows power mode.
+
+**Why not `calibrate.sh` as written.** It times 3 passes. On this VM that is
+about 60 ms, which millisecond timestamps and scheduling noise swamp: three
+calls returned 3673, 1935 and 3158. The same formula (per pass = elapsed /
+passes; PASSES = 60 s / per pass) was applied instead to `wss 700 600`, about
+6–7 s of timing per sample, with caches dropped before each sample and one
+warm-up sample discarded.
+
+| Sample | 600 passes in | per pass | PASSES |
+|---|---|---|---|
+| warm-up, discarded | | 12.9 ms | 4658 |
+| 1 | 6.96 s | 11.6 ms | 5170 |
+| 2 | 6.96 s | 11.6 ms | 5169 |
+| 3 | 6.10 s | 10.2 ms | 5903 |
+| 4 | 6.03 s | 10.1 ms | 5972 |
+| 5 | 6.13 s | 10.2 ms | 5874 |
+
+Median **5874** (min 5169, max 5972, mean 5618, sd 411; spread 13.7 % of the
+median, coefficient of variation 7.3 %). The median rather than the mean,
+because the samples fell into two clusters (11.6 ms, then 10.1–10.2 ms) and
+the mean sits between them. The clusters suggest the host settling into a
+faster state, so a batch should start after the machine has run for a few
+minutes. A run-to-run variation of about 7 % on this host is a limit on how
+small an effect the strict decision rule can resolve, and is reported as one.
 
 ## Controller parameters
 
