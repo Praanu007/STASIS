@@ -69,6 +69,8 @@ install -d /opt/stasis /var/log/stasis /run/stasis
 install -m 755 "$REPO/workloads/wss" "$SCX_DIR/build/scheds/c/scx_simple" \
   "$SCX_DIR/build/scheds/c/scx_stasis" /opt/stasis/
 install -m 755 "$REPO/scripts/sample.py" "$REPO/controller/stasisd.py" /opt/stasis/
+# run_mix.sh runs arm 3's jobs from /opt/stasis (added 2026-10-24); arm 1 never calls it
+install -m 755 "$REPO/scripts/workload.sh" /opt/stasis/
 
 echo "== baselines: systemd-oomd running, thrash-protect $TP_VERSION in its own venv"
 systemctl enable --now systemd-oomd

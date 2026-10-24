@@ -17,7 +17,14 @@ rd() { cat "$1" 2>/dev/null || echo n/a; }
   echo "thrash-prot:   $(/opt/thrash-protect/bin/pip show thrash-protect 2>/dev/null | sed -n 's/^Version: //p' || echo n/a)"
   echo "thp:           $(rd /sys/kernel/mm/transparent_hugepage/enabled)"
   echo "swappiness:    $(rd /proc/sys/vm/swappiness)"
-  echo "swap:          $(swapon --show=NAME,SIZE --noheadings | paste -sd' ')"
+  echo "swap:          $(swapon --show=NAME,SIZE,PRIO --noheadings | paste -sd' ')"
+  # Arm 10 (2026-10-24): a zram tier changes the memory configuration, so a
+  # run must say whether one was present. Arm-1 runs must read "off".
+  if swapon --show=NAME --noheadings 2>/dev/null | grep -q zram; then
+    echo "zram tier:     on $(rd /sys/block/zram0/disksize) bytes, $(sed 's/.*\[\(.*\)\].*/\1/' /sys/block/zram0/comp_algorithm 2>/dev/null)"
+  else
+    echo "zram tier:     off"
+  fi
   echo "mem total:     $(awk '/MemTotal/ {print $2" kB"}' /proc/meminfo)"
   echo "cpus:          $(nproc)"
   echo "sched_ext:     $(rd /sys/kernel/sched_ext/state)"

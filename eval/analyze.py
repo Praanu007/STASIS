@@ -11,9 +11,10 @@ ROOT holds LABEL/N<n>/run<k>/ directories written by run_mix.sh.
 Metric definitions (build guide, Phase 5, plus the revised design's):
   throughput    total passes / (time until the last job finishes); a run that
                 timed out is scored with the passes completed by the timeout
-  kills         workload processes killed by the kernel's OOM killer or by
-                systemd-oomd (kills.txt + oomd_kills.txt). STASIS itself never
-                kills; this counts what the system did anyway.
+  kills         workload processes killed by the kernel's OOM killer, by
+                systemd-oomd or by earlyoom (kills.txt + oomd_kills.txt +
+                earlyoom_kills.txt). STASIS itself never kills; this counts
+                what the system did anyway.
   jain          Jain's index (sum x)^2 / (n * sum x^2) over each job's progress
                 rate, x_i = passes job i completed / time from the run's start
                 until it finished (or the run ended): fairness of slowdowns over
@@ -46,14 +47,32 @@ Metric definitions (build guide, Phase 5, plus the revised design's):
                 that stasisd acted on (not warm-up): psi or pff
 Pressure onset is the earlier of the first PSI full avg10 > 0 sample and the
 controller's first logged pressure event, so every config uses one definition.
+
+Added 2026-10-24 (arm 8; these only read what the run already wrote, so they
+can be computed over runs recorded before that date wherever the field
+exists):
+  jain_frozen  Jain's index over per-job parked time. jain measures fairness
+               in work done; this measures fairness in the thing a load
+               controller actually rations. Uses cgroup.stat.local:frozen_usec
+               when the kernel has it and any job was frozen; otherwise counts
+               the samples each job spent parked, by cgroup.freeze (STASIS) or
+               SIGSTOP (thrash-protect). None for configs that never park.
+  ctrl_cpu_s   the controller's own CPU seconds, from its periodic "self" log
+  ctrl_rss_kb  the controller's resident size, same source
+               Together these are the honest energy proxy: RAPL is unavailable
+               or meaningless in a VM, so the cost of running the controller is
+               reported directly instead of being converted into joules.
 """
 import csv, glob, json, math, os, re, statistics, sys
+
+PAGE = 4096                      # for swap_pages -> bytes in the energy proxy
 
 FIELDS = ["label", "config", "N", "run", "status", "throughput", "passes",
           "kills", "jain", "jain_window", "p99_us", "max_us", "ttfp_s", "first_src",
           "swap_pages", "duration_s", "max_wait_s", "parked_pct", "max_gap_s",
           "psi_full_pct", "majflt", "jobs_done_600", "makespan_s", "hot", "ws",
-          "jump_s", "detect_s", "jump_src"]
+          "jump_s", "detect_s", "jump_src",
+          "jain_frozen", "ctrl_cpu_s", "ctrl_rss_kb"]     # arm 8, all numeric
 TEXT = ("label", "config", "status", "first_src", "ws", "jump_src")
 
 # ---- loading ----------------------------------------------------------------
@@ -180,7 +199,7 @@ def run_metrics(label, n, k, d):
     throughput = passes / (finish - t0) if (t0 and finish and finish > t0 and n) else None
 
     kills = 0
-    for f in ("kills.txt", "oomd_kills.txt"):
+    for f in ("kills.txt", "oomd_kills.txt", "earlyoom_kills.txt"):
         try:
             kills += sum(1 for line in open(f"{d}/{f}") if line.strip())
         except FileNotFoundError:
@@ -238,6 +257,26 @@ def run_metrics(label, n, k, d):
         jump_src = acted.get("src") if acted else None
     hot = int(next((c.split("=")[1] for c in cfg if c.startswith("HOT=")), 100))
 
+    # Fairness over parked time (arm 8). Prefer the kernel's cumulative
+    # frozen_usec when it shows any freezing. Otherwise count, per job, the
+    # samples in which it was parked by either mechanism: cgroup.freeze
+    # (STASIS) or SIGSTOP (thrash-protect, which frozen_usec never sees). Each
+    # such sample stands for one sampling interval.
+    JF = None
+    if samples:
+        last = samples[-1]["jobs"]
+        fu = [v.get("frozen_usec") for v in last.values()] if last else []
+        if fu and all(x is not None for x in fu) and any(fu):
+            JF = jain(fu)
+        else:
+            held = {}
+            for s in samples:
+                for j, v in s["jobs"].items():
+                    held[j] = held.get(j, 0) + (1 if v.get("frozen") or v.get("stopped") else 0)
+            JF = jain(list(held.values())) if held else None
+
+    selfs = [e for e in decisions if e.get("event") == "self"]
+
     return {"label": label, "config": cfg[0], "N": n, "run": k, "status": status,
             "throughput": throughput, "passes": passes, "kills": kills, "jain": J, "jain_window": Jw,
             "p99_us": percentile(hist, 0.99), "max_us": mx, "ttfp_s": ttfp,
@@ -248,7 +287,10 @@ def run_metrics(label, n, k, d):
             "jobs_done_600": sum(1 for t in done.values() if t0 and t - t0 <= 600) if jobs else None,
             "makespan_s": (finish - t0) if (t0 and len(done) == len(jobs) and jobs) else None,
             "hot": hot, "ws": start.get("ws", "footprint" if start else None),
-            "jump_s": jump_s, "detect_s": detect, "jump_src": jump_src}
+            "jump_s": jump_s, "detect_s": detect, "jump_src": jump_src,
+            "jain_frozen": JF,
+            "ctrl_cpu_s": selfs[-1].get("cpu_s") if selfs else None,
+            "ctrl_rss_kb": selfs[-1].get("rss_kb") if selfs else None}
 
 def parking(decisions, t_end):
     """(longest single parked stretch, share of job-time parked) from the
@@ -343,11 +385,14 @@ def cmd_calibrate(root, config="eevdf"):
 # ---- figures ----------------------------------------------------------------
 
 ORDER = ["eevdf", "stasis", "ctrl", "stasis-norot", "stasis-fp", "mglru", "oomd",
-         "thrashprotect", "scxonly", "simple"]
+         "thrashprotect", "earlyoom", "scxonly", "simple"]
 NAMES = {"eevdf": "EEVDF", "stasis": "Full STASIS", "ctrl": "STASIS controller-only",
          "stasis-norot": "STASIS, no rotation", "stasis-fp": "STASIS, footprint estimate",
          "mglru": "EEVDF + MGLRU min_ttl", "oomd": "EEVDF + systemd-oomd",
-         "thrashprotect": "thrash-protect", "simple": "scx_simple", "scxonly": "scx_stasis alone"}
+         "thrashprotect": "thrash-protect", "earlyoom": "earlyoom (arm 2)",
+         "simple": "scx_simple", "scxonly": "scx_stasis alone"}
+# Arm 1's baselines, used to score sensitivity (H10). earlyoom (arm 2) is
+# deliberately not added: that would change how arm 1's H10 is scored.
 BASELINES = ("eevdf", "mglru", "oomd", "thrashprotect")
 
 def median_run(rows, label, n, key="throughput"):
