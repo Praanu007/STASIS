@@ -218,7 +218,26 @@ first jump.
 | `1/` | 6 × 700 MB, 50 % hot, jobs 1–3 jump after pass 50 of 100 | The first halving (24 s, PSI, during allocation) parked jobs 4–6; jobs 1–3 jumped at 81–105 s while running nearly alone, fitted, and finished. No park for pressure after the jumps (only warm-up): the design jumped too early. |
 | `2/` | 6 × 800 MB, 40 % hot, jobs 1–4 jump after pass 250 of 400 | Slow reloads kept full STASIS at 2 of 6 jobs for most of the run, and the first two jumps (451 s, 566 s) came then. At 778.6 s job 1, rotated back in after its jump, reloaded far more than its stale pre-jump estimate; PFF fired and stasisd parked job 2 although the two-job set fitted, and reset the estimates. By 809 s all six were admitted; job 3 jumped at 808.7 s, its PFF crossed PFF_HI at 810.5 s (1.04 faults per CPU-ms) and stasisd halved the set (`pressure-pff`). PSI `full avg10` was 0.0 then; the PSI trigger didn't fire again until 842.4 s. Stopped at about 874 s, once that was seen; this copy was taken while it ran, so `status` reads RUNNING. |
 
-One race, won by 32 s, on emulated hardware with an uncalibrated threshold:
-evidence that the mechanism can work, not a measurement. Experiment C on the
-lab VM measures it.
+| `3/` | The VM cut to 1.5 GB so reloads take seconds: 8 × 250 MB, 30 % hot (600 MB fit), jobs 1–4 jump after pass 480 of 800 (1.3 GB don't). Full STASIS and controller-only, run 1 with PFF_HI 0.029, run 2 with 1.0 | Neither controller settled: both halved to 2–4 jobs in the first 35 s (footprint estimates; the sampler got no clean windows) and rotated from then on. Controller-only finished in 228 s and 174 s and never parked for pressure after the jumps. Full STASIS took 409 s with PFF_HI 0.029: PFF halved the set at 36 s, and at 244 s, when the three running jobs were all jumpers thrashing at 3,178 major faults/s while PSI `full avg10` read 0.0, it parked two of them. With PFF_HI 1.0 it took 328 s, PFF never fired, and nothing was parked for pressure after the jumps. |
+
+`gate3-mini/` is Gate 3 in miniature on the same 1.5 GB VM: 3 jobs that fit,
+EEVDF against scx_stasis alone, two runs each. Jobs took 22.6–31.2 s under
+EEVDF and 27.3–30.7 s under scx_stasis, the same within noise: the scheduler
+alone doesn't slow the jobs.
+
+What the pilots show:
+
+- The early warning can see refault-driven thrashing before PSI does
+  (pilot 2, 810.5 s: 32 s ahead; pilot 3, 244 s). It has not been shown to
+  help: in pilot 3, full STASIS was slower than controller-only (328–409 s
+  against 174–228 s). Its running jobs made fewer passes per second (6.4–6.5
+  against 10.8–16.0) with about as many running (2.4–3.0 against 2.3–2.6),
+  and `gate3-mini` rules out the scheduler alone, so the difference is in how
+  the runs went under pressure. One or two runs per configuration, with
+  controller-only alone spreading from 174 s to 228 s, make this a question
+  for the campaign, not a result.
+- At the rehearsal's PFF_HI (0.029) the warning fires on every reload and
+  parks when it needn't (pilot 2 at 778.6 s, pilot 3 at 36 s); at 1.0 it
+  stayed quiet. PFF_HI has to come from the lab VM's calibration (Phase 1),
+  and H5d checks whether the warning pays for itself.
 

@@ -294,8 +294,14 @@ changed later is reported as a deviation, with the reason.
     after its jump and stasisd halved the set, while PSI `full` stayed at 0
     and its trigger didn't fire until 32 s later. That is one event, on
     emulated hardware, with an uncalibrated PFF_HI (0.029): it shows the race
-    can be won, not that it is. Experiment C, on the lab VM and after a pilot
-    there (Phase 5), measures it.
+    can be won, not that it is. A third pilot, on the VM cut to 1.5 GB so that
+    reloads take seconds, saw PFF park jobs during the post-jump overload
+    while PSI `full` read 0, but full STASIS was slower than controller-only
+    there (328–409 s against 174–228 s, one or two runs each), the rehearsal's
+    PFF_HI made the warning park on reloads too, and with PFF_HI 1.0 it stayed
+    quiet (`docs/rehearsal/README.md`). Whether the warning pays for itself is
+    open: H5d decides it. Experiment C, on the lab VM and after a pilot there
+    (Phase 5), measures it.
 
 Deviations 2–7, 9–11, 13, 14, 18 and 19 change the control law or the
 scheduler. All were found before any Phase 5 measurement: 3 by a fake-cgroup

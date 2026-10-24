@@ -1,0 +1,571 @@
+{"t": 1792786333.2318656, "event": "start", "signal": "bpf", "trigger_ms": 100, "window_ms": 1000, "quantum": 15.0, "max_wait": 120.0, "rotation": true, "ws": "refs", "ws_tau_cpu": 1.0, "ws_margin": 1.1, "pff_hi": 0.029, "grace": 2.0, "grow_frac": 0.005, "set_grow_frac": 0.001, "grow_window": 5.0, "reload_frac": 0.02, "reserve": 0.1, "reclaim": true}
+{"t": 1792786333.693774, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 40665088, "est": 40665088, "m": null}, "stasis-job-2.service": {"fp": 2224128, "est": 2224128, "m": null}, "stasis-job-3.service": {"fp": 2097152, "est": 2097152, "m": null}, "stasis-job-4.service": {"fp": 786432, "est": 786432, "m": null}}}
+{"t": 1792786338.8179116, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 173793280, "est": 173793280, "m": null}, "stasis-job-2.service": {"fp": 119808000, "est": 119808000, "m": null}, "stasis-job-3.service": {"fp": 152522752, "est": 152522752, "m": null}, "stasis-job-4.service": {"fp": 120217600, "est": 120217600, "m": null}, "stasis-job-5.service": {"fp": 113176576, "est": 113176576, "m": null}, "stasis-job-6.service": {"fp": 63922176, "est": 63922176, "m": null}, "stasis-job-7.service": {"fp": 46084096, "est": 46084096, "m": null}, "stasis-job-8.service": {"fp": 49852416, "est": 49852416, "m": null}}}
+{"t": 1792786340.5544794, "event": "pressure", "src": "psi", "active": 8, "parked": 0, "warming": false, "hold": null, "fits": false, "growth": 0.1635, "missing": 4919296}
+{"t": 1792786340.645904, "job": "stasis-job-5.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792786340.647873, "job": "stasis-job-6.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792786340.6497061, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792786340.6508029, "job": "stasis-job-8.service", "frozen": true, "why": "pressure-psi"}
+{"t": 1792786340.9411252, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 122880}
+{"t": 1792786341.3690734, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": null, "missing": 749568}
+{"t": 1792786342.5258183, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0116, "missing": 4816896}
+{"t": 1792786343.67486, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0087, "missing": 16302080}
+{"t": 1792786343.999941, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 215056384, "est": 215056384, "m": null}, "stasis-job-2.service": {"fp": 156459008, "est": 156459008, "m": null}, "stasis-job-3.service": {"fp": 198647808, "est": 198647808, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 99364864, "est": 99364864, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786345.0260134, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0076, "missing": 26058752}
+{"t": 1792786346.153218, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0043, "missing": 42029056}
+{"t": 1792786346.9819336, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0037, "missing": 49233920}
+{"t": 1792786347.4817426, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 53723136}
+{"t": 1792786347.9008245, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0044, "missing": 55533568}
+{"t": 1792786349.214984, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0065, "missing": 63737856}
+{"t": 1792786349.664628, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 231833600, "est": 231833600, "m": null}, "stasis-job-2.service": {"fp": 177098752, "est": 177098752, "m": null}, "stasis-job-3.service": {"fp": 223313920, "est": 223313920, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 120483840, "est": 120483840, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786350.1259408, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0079, "missing": 71180288}
+{"t": 1792786351.2899718, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0102, "missing": 81715200}
+{"t": 1792786352.1775763, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0119, "missing": 92270592}
+{"t": 1792786353.5542233, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0114, "missing": 102686720}
+{"t": 1792786354.5013444, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0099, "missing": 112480256}
+{"t": 1792786354.8965728, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 256942080, "est": 256942080, "m": null}, "stasis-job-2.service": {"fp": 198098944, "est": 198098944, "m": null}, "stasis-job-3.service": {"fp": 246521856, "est": 246521856, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 141451264, "est": 141451264, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786355.3435128, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0093, "missing": 122048512}
+{"t": 1792786355.7132797, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 1609728}
+{"t": 1792786356.409549, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0099, "missing": 131547136}
+{"t": 1792786357.446173, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 121384960}
+{"t": 1792786357.4849603, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0087, "missing": 144166912}
+{"t": 1792786358.3614197, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.008, "missing": 151437312}
+{"t": 1792786358.7791903, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.486, "growth": -0.0051}
+{"t": 1792786358.867944, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0076, "missing": 153456640}
+{"t": 1792786359.4187033, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.744, "growth": -0.0056}
+{"t": 1792786359.43409, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0082, "missing": 156119040}
+{"t": 1792786359.71602, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0083, "missing": 159989760}
+{"t": 1792786360.0441587, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263409664, "est": 263409664, "m": null}, "stasis-job-2.service": {"fp": 225628160, "est": 225628160, "m": null}, "stasis-job-3.service": {"fp": 263348224, "est": 263348224, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 175230976, "est": 175230976, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786360.0640726, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.766, "growth": -0.0073}
+{"t": 1792786360.0686944, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0081, "missing": 163098624}
+{"t": 1792786360.4315763, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0079, "missing": 164827136}
+{"t": 1792786360.9268322, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.356, "growth": -0.0097}
+{"t": 1792786360.9950767, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.008, "missing": 168296448}
+{"t": 1792786361.3087642, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0069, "missing": 171732992}
+{"t": 1792786361.7000356, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.794, "growth": -0.0116}
+{"t": 1792786361.726045, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0068, "missing": 174260224}
+{"t": 1792786362.0326254, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.722, "growth": -0.0112}
+{"t": 1792786362.0388224, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0073, "missing": 178311168}
+{"t": 1792786362.452963, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 4546560}
+{"t": 1792786362.4560049, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.791, "growth": -0.0107}
+{"t": 1792786362.4882615, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0077, "missing": 179535872}
+{"t": 1792786362.8627267, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0083, "missing": 180953088}
+{"t": 1792786363.2978497, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.877, "growth": -0.0083}
+{"t": 1792786363.3285916, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0081, "missing": 185012224}
+{"t": 1792786363.7036312, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0074, "missing": 188252160}
+{"t": 1792786363.9991255, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.29, "growth": -0.0073}
+{"t": 1792786364.0633278, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0075, "missing": 190550016}
+{"t": 1792786364.3658826, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.299, "growth": -0.0081}
+{"t": 1792786364.3747253, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0068, "missing": 194441216}
+{"t": 1792786364.7560256, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0077, "missing": 194928640}
+{"t": 1792786365.0432913, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263344128, "est": 263344128, "m": null}, "stasis-job-2.service": {"fp": 263200768, "est": 263200768, "m": null}, "stasis-job-3.service": {"fp": 263503872, "est": 263503872, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104230912, "est": 104230912, "m": null}, "stasis-job-7.service": {"fp": 210767872, "est": 210767872, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786365.068068, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.646, "growth": -0.008}
+{"t": 1792786365.0891511, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0081, "missing": 195821568}
+{"t": 1792786365.6169815, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.697, "growth": -0.0077}
+{"t": 1792786365.630608, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0079, "missing": 196755456}
+{"t": 1792786365.947589, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 81174528}
+{"t": 1792786365.9542453, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0072, "missing": 197943296}
+{"t": 1792786366.2465637, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.713, "growth": -0.0067}
+{"t": 1792786366.2513843, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0075, "missing": 199376896}
+{"t": 1792786366.6388898, "event": "pressure", "src": "psi", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0077, "missing": 201535488}
+{"t": 1792786367.0430727, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.599, "growth": -0.002}
+{"t": 1792786367.087276, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0072, "missing": 203829248}
+{"t": 1792786367.4260194, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.797, "growth": -0.0017}
+{"t": 1792786367.4931011, "event": "pressure", "src": "pff", "active": 4, "parked": 4, "warming": false, "hold": null, "fits": false, "growth": 0.0072, "missing": 205860864}
+{"t": 1792786367.5340314, "job": "stasis-job-3.service", "frozen": true, "why": "pressure-pff"}
+{"t": 1792786367.5474548, "job": "stasis-job-7.service", "frozen": true, "why": "pressure-pff"}
+{"t": 1792786367.6752932, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 113598464}
+{"t": 1792786367.6893003, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": null, "missing": 113598464}
+{"t": 1792786368.7378845, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0039, "missing": 111673344}
+{"t": 1792786368.9887137, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.666, "growth": 0.0027}
+{"t": 1792786369.002064, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0036, "missing": 110796800}
+{"t": 1792786369.3740182, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.62, "growth": 0.0029}
+{"t": 1792786369.3861625, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.004, "missing": 110194688}
+{"t": 1792786369.5846312, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.76, "growth": 0.0028}
+{"t": 1792786369.595249, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0031, "missing": 110473216}
+{"t": 1792786369.7701104, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 110747648}
+{"t": 1792786370.03517, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.699, "growth": 0.0028}
+{"t": 1792786370.0564406, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 112091136}
+{"t": 1792786370.3592904, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263479296, "est": 263479296, "m": null}, "stasis-job-2.service": {"fp": 263200768, "est": 263200768, "m": null}, "stasis-job-3.service": {"fp": 263073792, "est": 263073792, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235868160, "est": 235868160, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786370.4195902, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.462, "growth": -0.003}
+{"t": 1792786370.4427571, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0001, "missing": 113602560}
+{"t": 1792786370.7240212, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.54, "growth": -0.005}
+{"t": 1792786370.7413814, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0008, "missing": 115138560}
+{"t": 1792786370.8891652, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0011, "missing": 115482624}
+{"t": 1792786371.0769799, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.586, "growth": -0.005}
+{"t": 1792786371.0915236, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.001, "missing": 115122176}
+{"t": 1792786371.3110425, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.647, "growth": -0.0042}
+{"t": 1792786371.328293, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0004, "missing": 114343936}
+{"t": 1792786371.6034138, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.711, "growth": -0.0034}
+{"t": 1792786371.6088636, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0001, "missing": 113528832}
+{"t": 1792786371.7500854, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0001, "missing": 113352704}
+{"t": 1792786372.002408, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.729, "growth": -0.0029}
+{"t": 1792786372.0133965, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0004, "missing": 112746496}
+{"t": 1792786372.295755, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.678, "growth": -0.0025}
+{"t": 1792786372.3029609, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0006, "missing": 112062464}
+{"t": 1792786372.5642157, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.621, "growth": -0.0023}
+{"t": 1792786372.5799582, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0006, "missing": 111591424}
+{"t": 1792786372.8882244, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0009, "missing": 111247360}
+{"t": 1792786373.1871111, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.582, "growth": -0.0016}
+{"t": 1792786373.2062078, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0005, "missing": 112734208}
+{"t": 1792786373.4877927, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.805, "growth": -0.002}
+{"t": 1792786373.4919965, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0004, "missing": 113463296}
+{"t": 1792786373.762411, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.751, "growth": -0.0024}
+{"t": 1792786373.7739258, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0014, "missing": 115040256}
+{"t": 1792786373.9692004, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0015, "missing": 115724288}
+{"t": 1792786374.1897206, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.811, "growth": -0.0018}
+{"t": 1792786374.1960127, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0019, "missing": 116494336}
+{"t": 1792786374.510214, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 109811712}
+{"t": 1792786374.5153239, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 1.048, "growth": -0.002}
+{"t": 1792786374.5270417, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0021, "missing": 115589120}
+{"t": 1792786374.8822978, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.625, "growth": -0.0011}
+{"t": 1792786374.893264, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0014, "missing": 114958336}
+{"t": 1792786375.0788257, "event": "pressure", "src": "psi", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.001, "missing": 114409472}
+{"t": 1792786375.2680776, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263196672, "est": 263196672, "m": null}, "stasis-job-2.service": {"fp": 263356416, "est": 263356416, "m": null}, "stasis-job-3.service": {"fp": 263036928, "est": 263036928, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235864064, "est": 235864064, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786375.3074112, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.795, "growth": 0.0017}
+{"t": 1792786375.3161077, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": -0.0001, "missing": 113844224}
+{"t": 1792786375.7011247, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.765, "growth": 0.0022}
+{"t": 1792786375.7078164, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.0003, "missing": 113070080}
+{"t": 1792786375.9636958, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.747, "growth": 0.0041}
+{"t": 1792786375.9714842, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "reloading", "fits": true, "growth": 0.001, "missing": 112361472}
+{"t": 1792786376.2651596, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.905, "growth": 0.0045}
+{"t": 1792786376.2714937, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0014, "missing": 111497216}
+{"t": 1792786376.465704, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 1.257, "growth": 0.0044}
+{"t": 1792786376.4692369, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0014, "missing": 110387200}
+{"t": 1792786376.6537187, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 1.576, "growth": 0.0045}
+{"t": 1792786376.658877, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 109060096}
+{"t": 1792786376.8899205, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.533, "growth": -0.001}
+{"t": 1792786376.8972268, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 107966464}
+{"t": 1792786377.1516314, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.498, "growth": -0.0009}
+{"t": 1792786377.1736112, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0022, "missing": 106684416}
+{"t": 1792786377.3681874, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.643, "growth": -0.0003}
+{"t": 1792786377.37592, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 105082880}
+{"t": 1792786377.5901005, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.43, "growth": 0.0001}
+{"t": 1792786377.5946321, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0031, "missing": 103821312}
+{"t": 1792786377.77072, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 87599104}
+{"t": 1792786377.7721016, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.466, "growth": 0.0005}
+{"t": 1792786377.7757866, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0032, "missing": 102772736}
+{"t": 1792786377.981918, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.603, "growth": 0.0007}
+{"t": 1792786377.9920528, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0033, "missing": 101720064}
+{"t": 1792786378.3218446, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.277, "growth": 0.0024}
+{"t": 1792786378.3313098, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0044, "missing": 100691968}
+{"t": 1792786378.5384746, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.869, "growth": 0.0035}
+{"t": 1792786378.5447495, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0052, "missing": 99729408}
+{"t": 1792786378.7279544, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.928, "growth": 0.005}
+{"t": 1792786378.731333, "event": "pressure", "src": "pff", "active": 2, "parked": 6, "warming": true, "hold": "growing", "fits": true, "growth": 0.0059, "missing": 99205120}
+{"t": 1792786380.4166665, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263360512, "est": 263360512, "m": null}, "stasis-job-2.service": {"fp": 263286784, "est": 263286784, "m": null}, "stasis-job-3.service": {"fp": 263368704, "est": 263368704, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235524096, "est": 235524096, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786385.4655564, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263413760, "est": 263413760, "m": null}, "stasis-job-2.service": {"fp": 263487488, "est": 263487488, "m": null}, "stasis-job-3.service": {"fp": 263348224, "est": 263348224, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235778048, "est": 235778048, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786385.7383022, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 19490816}
+{"t": 1792786390.5599103, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263053312, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263434240, "est": 263434240, "m": null}, "stasis-job-3.service": {"fp": 263864320, "est": 263864320, "m": null}, "stasis-job-4.service": {"fp": 162775040, "est": 162775040, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235778048, "est": 235778048, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786394.1477368, "job": "stasis-job-4.service", "frozen": false, "why": "admit", "waited": 53.8}
+{"t": 1792786395.809294, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262926336, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263323648, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263864320, "est": 263864320, "m": null}, "stasis-job-4.service": {"fp": 248225792, "est": 248225792, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235507712, "est": 235507712, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786395.833873, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 98197504}
+{"t": 1792786395.8476417, "event": "reclaim", "job": "stasis-job-7.service", "bytes": 7571456}
+{"t": 1792786400.0012224, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 38737920}
+{"t": 1792786400.85672, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263188480, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263467008, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263340032, "est": 263340032, "m": null}, "stasis-job-4.service": {"fp": 263303168, "est": 263303168, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235630592, "est": 235630592, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786401.573876, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 21862400}
+{"t": 1792786402.1102595, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.239, "growth": 0.0041}
+{"t": 1792786402.1262271, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 111489024}
+{"t": 1792786402.382671, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.032, "growth": 0.0043}
+{"t": 1792786402.3878484, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0028, "missing": 111079424}
+{"t": 1792786402.573912, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.068, "growth": 0.0041}
+{"t": 1792786402.5851681, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0027, "missing": 110821376}
+{"t": 1792786402.834164, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.786, "growth": 0.0041}
+{"t": 1792786402.8370888, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0027, "missing": 110764032}
+{"t": 1792786403.1718981, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.842, "growth": 0.0041}
+{"t": 1792786403.1799119, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0027, "missing": 110284800}
+{"t": 1792786403.4055998, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.121, "growth": 0.0044}
+{"t": 1792786403.4101372, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0029, "missing": 109940736}
+{"t": 1792786403.618221, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.911, "growth": 0.0046}
+{"t": 1792786403.6282618, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0029, "missing": 109658112}
+{"t": 1792786403.8677502, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.98, "growth": 0.0045}
+{"t": 1792786403.8821132, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0029, "missing": 109658112}
+{"t": 1792786404.1602376, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.868, "growth": 0.0044}
+{"t": 1792786404.1641567, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0028, "missing": 109277184}
+{"t": 1792786404.3371348, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.921, "growth": 0.0041}
+{"t": 1792786404.342431, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 109277184}
+{"t": 1792786404.6042645, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.173, "growth": 0.0044}
+{"t": 1792786404.6127284, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0027, "missing": 108765184}
+{"t": 1792786404.9439435, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.863, "growth": 0.0043}
+{"t": 1792786404.957222, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 108421120}
+{"t": 1792786405.1471987, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.324, "growth": 0.0043}
+{"t": 1792786405.1513264, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0027, "missing": 108081152}
+{"t": 1792786405.4179742, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.143, "growth": 0.0045}
+{"t": 1792786405.425635, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0028, "missing": 107794432}
+{"t": 1792786405.596045, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.808, "growth": 0.0041}
+{"t": 1792786405.6062887, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 107560960}
+{"t": 1792786405.9419482, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.969, "growth": 0.0042}
+{"t": 1792786405.954226, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 107249664}
+{"t": 1792786406.1502333, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263188480, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263348224, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263086080, "est": 263086080, "m": null}, "stasis-job-4.service": {"fp": 263507968, "est": 263507968, "m": null}, "stasis-job-5.service": {"fp": 147718144, "est": 147718144, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235524096, "est": 235524096, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786406.1842358, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.979, "growth": 0.0039}
+{"t": 1792786406.1963913, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0023, "missing": 106889216}
+{"t": 1792786406.429107, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 0.938, "growth": 0.0038}
+{"t": 1792786406.4358063, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0022, "missing": 106622976}
+{"t": 1792786406.6405125, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.134, "growth": 0.0038}
+{"t": 1792786406.64589, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0022, "missing": 106418176}
+{"t": 1792786406.8500283, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.079, "growth": 0.0041}
+{"t": 1792786406.8568444, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 106303488}
+{"t": 1792786407.0758586, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.135, "growth": 0.0044}
+{"t": 1792786407.0792282, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 106033152}
+{"t": 1792786407.3409312, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 28039168}
+{"t": 1792786407.343991, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.087, "growth": 0.0042}
+{"t": 1792786407.3472857, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 105697280}
+{"t": 1792786407.5452914, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.105, "growth": 0.0042}
+{"t": 1792786407.5514216, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 105353216}
+{"t": 1792786407.7299597, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.434, "growth": 0.0044}
+{"t": 1792786407.739004, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 105021440}
+{"t": 1792786407.9285986, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.35, "growth": 0.0043}
+{"t": 1792786407.9371207, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 104710144}
+{"t": 1792786408.0941005, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.299, "growth": 0.0045}
+{"t": 1792786408.097, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 104386560}
+{"t": 1792786408.30861, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.23, "growth": 0.0046}
+{"t": 1792786408.3421476, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 104095744}
+{"t": 1792786408.5625777, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.077, "growth": 0.0044}
+{"t": 1792786408.5672107, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 103694336}
+{"t": 1792786408.768642, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.141, "growth": 0.0044}
+{"t": 1792786408.7742715, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 103444480}
+{"t": 1792786408.9721372, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.024, "growth": 0.0045}
+{"t": 1792786408.979031, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 103395328}
+{"t": 1792786409.2087917, "event": "pff_hi", "job": "stasis-job-4.service", "pff": 1.059, "growth": 0.0049}
+{"t": 1792786409.2116175, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0029, "missing": 102944768}
+{"t": 1792786409.3811028, "job": "stasis-job-1.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786409.3849792, "job": "stasis-job-5.service", "frozen": false, "why": "rotate-in", "waited": 69.1}
+{"t": 1792786409.5527894, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 119277568}
+{"t": 1792786410.8811438, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.98, "growth": 0.0025}
+{"t": 1792786410.893779, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0978, "missing": 212058112}
+{"t": 1792786411.0732312, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 1.127, "growth": 0.0029}
+{"t": 1792786411.0789673, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0922, "missing": 211554304}
+{"t": 1792786411.2487893, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263561216, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263262208, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 262836224, "est": 262836224, "m": null}, "stasis-job-4.service": {"fp": 263802880, "est": 263802880, "m": null}, "stasis-job-5.service": {"fp": 252981248, "est": 252981248, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235515904, "est": 235515904, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786411.2875853, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.891, "growth": 0.0036}
+{"t": 1792786411.2968903, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0907, "missing": 211554304}
+{"t": 1792786411.5027976, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.722, "growth": 0.0042}
+{"t": 1792786411.5115476, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0885, "missing": 211144704}
+{"t": 1792786411.7358072, "event": "pff_hi", "job": "stasis-job-2.service", "pff": 0.725, "growth": 0.0043}
+{"t": 1792786411.741737, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0797, "missing": 210350080}
+{"t": 1792786416.6405709, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263348224, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263090176, "est": 263090176, "m": null}, "stasis-job-4.service": {"fp": 263348224, "est": 263348224, "m": null}, "stasis-job-5.service": {"fp": 263651328, "est": 263651328, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235778048, "est": 235778048, "m": null}, "stasis-job-8.service": {"fp": 74964992, "est": 74964992, "m": null}}}
+{"t": 1792786419.3048368, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 1271808}
+{"t": 1792786419.7779472, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 124706816}
+{"t": 1792786421.7454913, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263069696, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263454720, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263598080, "est": 263598080, "m": null}, "stasis-job-4.service": {"fp": 263122944, "est": 263122944, "m": null}, "stasis-job-5.service": {"fp": 263286784, "est": 263286784, "m": null}, "stasis-job-6.service": {"fp": 104194048, "est": 104194048, "m": null}, "stasis-job-7.service": {"fp": 235515904, "est": 235515904, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786424.5753872, "job": "stasis-job-2.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786424.5780904, "job": "stasis-job-6.service", "frozen": false, "why": "rotate-in", "waited": 84.3}
+{"t": 1792786424.772297, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 149116928}
+{"t": 1792786426.8460987, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262852608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263606272, "est": 263606272, "m": null}, "stasis-job-4.service": {"fp": 263413760, "est": 263413760, "m": null}, "stasis-job-5.service": {"fp": 263344128, "est": 263344128, "m": null}, "stasis-job-6.service": {"fp": 198279168, "est": 198279168, "m": null}, "stasis-job-7.service": {"fp": 235515904, "est": 235515904, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786430.5975962, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 970752}
+{"t": 1792786431.9766753, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263618560, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263081984, "est": 263081984, "m": null}, "stasis-job-4.service": {"fp": 263225344, "est": 263225344, "m": null}, "stasis-job-5.service": {"fp": 263393280, "est": 263393280, "m": null}, "stasis-job-6.service": {"fp": 263118848, "est": 263118848, "m": null}, "stasis-job-7.service": {"fp": 236027904, "est": 236027904, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786434.9009585, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 157958144}
+{"t": 1792786437.127744, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262852608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263888896, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263356416, "est": 263356416, "m": null}, "stasis-job-4.service": {"fp": 263139328, "est": 263139328, "m": null}, "stasis-job-5.service": {"fp": 263634944, "est": 263634944, "m": null}, "stasis-job-6.service": {"fp": 263434240, "est": 263434240, "m": null}, "stasis-job-7.service": {"fp": 235769856, "est": 235769856, "m": null}, "stasis-job-8.service": {"fp": 75210752, "est": 75210752, "m": null}}}
+{"t": 1792786442.3279042, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263364608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 264015872, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263868416, "est": 263868416, "m": null}, "stasis-job-4.service": {"fp": 263385088, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263434240, "est": 263434240, "m": null}, "stasis-job-6.service": {"fp": 263536640, "est": 263536640, "m": null}, "stasis-job-7.service": {"fp": 236027904, "est": 236027904, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786443.517514, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 49895424}
+{"t": 1792786444.2972474, "event": "reclaim", "job": "stasis-job-3.service", "bytes": 40925184}
+{"t": 1792786446.5641172, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.701, "growth": 0.0049}
+{"t": 1792786446.5737119, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.003, "missing": 96247808}
+{"t": 1792786446.8318207, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.754, "growth": 0.0043}
+{"t": 1792786446.8357728, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 95825920}
+{"t": 1792786447.0623772, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.864, "growth": 0.0047}
+{"t": 1792786447.074188, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0026, "missing": 95526912}
+{"t": 1792786447.2579446, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.768, "growth": 0.0045}
+{"t": 1792786447.2706184, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 95526912}
+{"t": 1792786447.4630694, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263249920, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263352320, "est": 263352320, "m": null}, "stasis-job-4.service": {"fp": 263385088, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263168000, "est": 263168000, "m": null}, "stasis-job-6.service": {"fp": 263741440, "est": 263741440, "m": null}, "stasis-job-7.service": {"fp": 235769856, "est": 235769856, "m": null}, "stasis-job-8.service": {"fp": 74960896, "est": 74960896, "m": null}}}
+{"t": 1792786447.4747562, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.177, "growth": 0.0046}
+{"t": 1792786447.4799075, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 94961664}
+{"t": 1792786447.7461317, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.739, "growth": 0.0045}
+{"t": 1792786447.7617106, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0023, "missing": 94961664}
+{"t": 1792786447.9632492, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.829, "growth": 0.0043}
+{"t": 1792786447.9801712, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 94527488}
+{"t": 1792786448.1858902, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 5371904}
+{"t": 1792786448.187532, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 0.76, "growth": 0.0041}
+{"t": 1792786448.1900506, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 94527488}
+{"t": 1792786448.4022276, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.036, "growth": 0.0039}
+{"t": 1792786448.4127016, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 94314496}
+{"t": 1792786448.6179183, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.064, "growth": 0.0039}
+{"t": 1792786448.6268585, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 93794304}
+{"t": 1792786448.7989829, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.128, "growth": 0.0039}
+{"t": 1792786448.8012745, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 93470720}
+{"t": 1792786448.9885273, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.074, "growth": 0.0038}
+{"t": 1792786448.9938295, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 93233152}
+{"t": 1792786449.1588488, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 2.237, "growth": 0.0044}
+{"t": 1792786449.1658764, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 92663808}
+{"t": 1792786449.3516393, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.346, "growth": 0.0043}
+{"t": 1792786449.3570197, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0017, "missing": 92282880}
+{"t": 1792786449.572722, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.486, "growth": 0.0045}
+{"t": 1792786449.5758412, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 91586560}
+{"t": 1792786449.728159, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.943, "growth": 0.005}
+{"t": 1792786449.7317617, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 90951680}
+{"t": 1792786449.938727, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786449.9423728, "job": "stasis-job-8.service", "frozen": false, "why": "rotate-in", "waited": 109.7}
+{"t": 1792786450.119679, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 17135616}
+{"t": 1792786452.4523652, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262852608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263090176, "est": 263090176, "m": null}, "stasis-job-4.service": {"fp": 263118848, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 262963200, "est": 262963200, "m": null}, "stasis-job-6.service": {"fp": 263385088, "est": 263385088, "m": null}, "stasis-job-7.service": {"fp": 236027904, "est": 236027904, "m": null}, "stasis-job-8.service": {"fp": 203677696, "est": 203677696, "m": null}}}
+{"t": 1792786455.3783205, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.017, "growth": 0.0042}
+{"t": 1792786455.3838284, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0551, "missing": 43859968}
+{"t": 1792786455.5877635, "event": "pff_hi", "job": "stasis-job-6.service", "pff": 1.236, "growth": 0.0048}
+{"t": 1792786455.591309, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0515, "missing": 42897408}
+{"t": 1792786457.6602573, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263118848, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263630848, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263372800, "est": 263372800, "m": null}, "stasis-job-4.service": {"fp": 263081984, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263122944, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263229440, "est": 263229440, "m": null}, "stasis-job-7.service": {"fp": 235782144, "est": 235782144, "m": null}, "stasis-job-8.service": {"fp": 263303168, "est": 263303168, "m": null}}}
+{"t": 1792786460.233172, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 26869760}
+{"t": 1792786462.9040542, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263897088, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263618560, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263331840, "est": 263331840, "m": null}, "stasis-job-4.service": {"fp": 264204288, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263385088, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263647232, "est": 263647232, "m": null}, "stasis-job-7.service": {"fp": 235532288, "est": 235532288, "m": null}, "stasis-job-8.service": {"fp": 263503872, "est": 263503872, "m": null}}}
+{"t": 1792786463.155279, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 4569088}
+{"t": 1792786465.0528524, "job": "stasis-job-5.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786465.05511, "job": "stasis-job-3.service", "frozen": false, "why": "rotate-in", "waited": 97.8}
+{"t": 1792786465.2114913, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 204697600}
+{"t": 1792786467.9698057, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263200768, "est": 263200768, "m": null}, "stasis-job-4.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263307264, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 236281856, "est": 236281856, "m": null}, "stasis-job-8.service": {"fp": 263286784, "est": 263286784, "m": null}}}
+{"t": 1792786468.1885414, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.845, "growth": 0.0048}
+{"t": 1792786468.192473, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0039, "missing": 208687104}
+{"t": 1792786468.4277275, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.809, "growth": 0.0047}
+{"t": 1792786468.4418952, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0038, "missing": 208482304}
+{"t": 1792786468.6471417, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.888, "growth": 0.0047}
+{"t": 1792786468.6556053, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0036, "missing": 208015360}
+{"t": 1792786468.8389337, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.016, "growth": 0.0047}
+{"t": 1792786468.8431768, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0033, "missing": 208015360}
+{"t": 1792786469.0212214, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.396, "growth": 0.0047}
+{"t": 1792786469.0250764, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0031, "missing": 207491072}
+{"t": 1792786469.2371159, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.918, "growth": 0.0045}
+{"t": 1792786469.2540329, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.003, "missing": 207491072}
+{"t": 1792786469.7954593, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.069, "growth": 0.0047}
+{"t": 1792786469.8178062, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 207126528}
+{"t": 1792786470.0205255, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.944, "growth": 0.0046}
+{"t": 1792786470.0257652, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0022, "missing": 207036416}
+{"t": 1792786470.1983051, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.087, "growth": 0.0046}
+{"t": 1792786470.2164893, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 206790656}
+{"t": 1792786470.5139878, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.825, "growth": 0.0045}
+{"t": 1792786470.5344594, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 206753792}
+{"t": 1792786470.8304229, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.828, "growth": 0.0044}
+{"t": 1792786470.8337526, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0017, "missing": 206381056}
+{"t": 1792786471.0535662, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.786, "growth": 0.0041}
+{"t": 1792786471.0597363, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 206381056}
+{"t": 1792786471.2847116, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.876, "growth": 0.0041}
+{"t": 1792786471.2879267, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 206000128}
+{"t": 1792786471.5354822, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.677, "growth": 0.0035}
+{"t": 1792786471.5408802, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0013, "missing": 206000128}
+{"t": 1792786471.8049316, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.833, "growth": 0.0037}
+{"t": 1792786471.8195856, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0014, "missing": 205651968}
+{"t": 1792786472.01994, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.774, "growth": 0.0039}
+{"t": 1792786472.0269506, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 205651968}
+{"t": 1792786472.343507, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.864, "growth": 0.0033}
+{"t": 1792786472.3502426, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0012, "missing": 205246464}
+{"t": 1792786472.5310297, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.7, "growth": 0.0033}
+{"t": 1792786472.5347908, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0011, "missing": 205246464}
+{"t": 1792786472.7518833, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.94, "growth": 0.0033}
+{"t": 1792786472.756093, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0012, "missing": 204886016}
+{"t": 1792786472.9457078, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262852608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263753728, "est": 263753728, "m": null}, "stasis-job-4.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263819264, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 262864896, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 235773952, "est": 235773952, "m": null}, "stasis-job-8.service": {"fp": 263286784, "est": 263286784, "m": null}}}
+{"t": 1792786472.967955, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.007, "growth": 0.0035}
+{"t": 1792786472.9759912, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0013, "missing": 204886016}
+{"t": 1792786473.168134, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 4270080}
+{"t": 1792786473.1694262, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.067, "growth": 0.0033}
+{"t": 1792786473.2099726, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0012, "missing": 204541952}
+{"t": 1792786473.4873185, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.892, "growth": 0.0032}
+{"t": 1792786473.4903293, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0017, "missing": 204128256}
+{"t": 1792786473.7082803, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.734, "growth": 0.003}
+{"t": 1792786473.7110522, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 203677696}
+{"t": 1792786473.9738705, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.955, "growth": 0.003}
+{"t": 1792786473.98441, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 203415552}
+{"t": 1792786474.2022378, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.701, "growth": 0.0031}
+{"t": 1792786474.2053444, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 203415552}
+{"t": 1792786474.394372, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.933, "growth": 0.0032}
+{"t": 1792786474.3986835, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 203132928}
+{"t": 1792786474.6559603, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.902, "growth": 0.0031}
+{"t": 1792786474.663557, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 202887168}
+{"t": 1792786474.9198089, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.723, "growth": 0.0028}
+{"t": 1792786474.9226313, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0014, "missing": 202657792}
+{"t": 1792786475.0829105, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.017, "growth": 0.0028}
+{"t": 1792786475.0880063, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 202657792}
+{"t": 1792786475.2931798, "event": "reclaim", "job": "stasis-job-5.service", "bytes": 105328640}
+{"t": 1792786475.294359, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.052, "growth": 0.0027}
+{"t": 1792786475.2968693, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0015, "missing": 202350592}
+{"t": 1792786475.5138872, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.0, "growth": 0.0029}
+{"t": 1792786475.5221593, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0016, "missing": 202350592}
+{"t": 1792786475.7485924, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.878, "growth": 0.0029}
+{"t": 1792786475.756304, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0017, "missing": 201949184}
+{"t": 1792786476.0068574, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.075, "growth": 0.003}
+{"t": 1792786476.0274603, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 201949184}
+{"t": 1792786476.276954, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.937, "growth": 0.0031}
+{"t": 1792786476.2833333, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 201555968}
+{"t": 1792786476.5873892, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.767, "growth": 0.0032}
+{"t": 1792786476.5903704, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 201465856}
+{"t": 1792786476.8500035, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.845, "growth": 0.0032}
+{"t": 1792786476.8597534, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 201093120}
+{"t": 1792786477.081415, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.725, "growth": 0.0033}
+{"t": 1792786477.0871317, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 201093120}
+{"t": 1792786477.2780924, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.967, "growth": 0.0034}
+{"t": 1792786477.282776, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 200732672}
+{"t": 1792786477.4963048, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.905, "growth": 0.0032}
+{"t": 1792786477.4996593, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 200732672}
+{"t": 1792786477.6687162, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.171, "growth": 0.0033}
+{"t": 1792786477.6761794, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 200396800}
+{"t": 1792786477.8827367, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.073, "growth": 0.0031}
+{"t": 1792786477.8856194, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 200396800}
+{"t": 1792786478.053022, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263356416, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263237632, "est": 263237632, "m": null}, "stasis-job-4.service": {"fp": 263102464, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 262840320, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263127040, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 235515904, "est": 235515904, "m": null}, "stasis-job-8.service": {"fp": 263286784, "est": 86723788, "m": 78839808}}}
+{"t": 1792786478.0701246, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.961, "growth": 0.0029}
+{"t": 1792786478.0741608, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 200032256}
+{"t": 1792786478.3253121, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.847, "growth": 0.0033}
+{"t": 1792786478.3378363, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 200032256}
+{"t": 1792786478.5479143, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.858, "growth": 0.0031}
+{"t": 1792786478.5511642, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 199761920}
+{"t": 1792786478.7728531, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.832, "growth": 0.0031}
+{"t": 1792786478.7782807, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 199761920}
+{"t": 1792786479.011226, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.859, "growth": 0.003}
+{"t": 1792786479.0195289, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 199323648}
+{"t": 1792786479.1827323, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.879, "growth": 0.0032}
+{"t": 1792786479.1848502, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 199323648}
+{"t": 1792786479.385046, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.046, "growth": 0.0034}
+{"t": 1792786479.3896482, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 198975488}
+{"t": 1792786479.6012068, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.059, "growth": 0.0031}
+{"t": 1792786479.6049376, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 198701056}
+{"t": 1792786479.8228078, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.898, "growth": 0.003}
+{"t": 1792786479.8287554, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 198496256}
+{"t": 1792786480.0727568, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.734, "growth": 0.0033}
+{"t": 1792786480.0769448, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 198352896}
+{"t": 1792786480.3553498, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.789, "growth": 0.0031}
+{"t": 1792786480.3619556, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 198086656}
+{"t": 1792786480.561507, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.611, "growth": 0.0033}
+{"t": 1792786480.5672576, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 197996544}
+{"t": 1792786480.8355207, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.897, "growth": 0.0033}
+{"t": 1792786480.8430383, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 197718016}
+{"t": 1792786481.0225687, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.852, "growth": 0.0031}
+{"t": 1792786481.0286183, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 197718016}
+{"t": 1792786481.319224, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.878, "growth": 0.0031}
+{"t": 1792786481.3237922, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 197283840}
+{"t": 1792786481.7178664, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.825, "growth": 0.0031}
+{"t": 1792786481.7932703, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0018, "missing": 197050368}
+{"t": 1792786482.2151425, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.891, "growth": 0.0033}
+{"t": 1792786482.2262983, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 196628480}
+{"t": 1792786483.5282784, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.629, "growth": 0.003}
+{"t": 1792786483.5405157, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0017, "missing": 195895296}
+{"t": 1792786483.8683088, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262852608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263528448, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263192576, "est": 263192576, "m": null}, "stasis-job-4.service": {"fp": 262848512, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 262840320, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 262868992, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 235515904, "est": 235515904, "m": null}, "stasis-job-8.service": {"fp": 263286784, "est": 86723788, "m": 78839808}}}
+{"t": 1792786483.919781, "event": "reclaim", "job": "stasis-job-4.service", "bytes": 31623168}
+{"t": 1792786483.924966, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.856, "growth": 0.0034}
+{"t": 1792786483.941122, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 195035136}
+{"t": 1792786484.1946542, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.972, "growth": 0.0035}
+{"t": 1792786484.1996367, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 194682880}
+{"t": 1792786484.612915, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.915, "growth": 0.0034}
+{"t": 1792786484.6157928, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 194338816}
+{"t": 1792786484.9281833, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.946, "growth": 0.0035}
+{"t": 1792786484.933148, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 193949696}
+{"t": 1792786485.185123, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.908, "growth": 0.0033}
+{"t": 1792786485.187924, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.002, "missing": 193769472}
+{"t": 1792786485.45572, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.89, "growth": 0.0035}
+{"t": 1792786485.4610927, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 193441792}
+{"t": 1792786485.6625743, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.912, "growth": 0.0031}
+{"t": 1792786485.6660907, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0019, "missing": 193441792}
+{"t": 1792786485.8665707, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.398, "growth": 0.0035}
+{"t": 1792786485.884865, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 192806912}
+{"t": 1792786486.1486597, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.993, "growth": 0.0035}
+{"t": 1792786486.1670575, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0021, "missing": 192552960}
+{"t": 1792786486.422631, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.906, "growth": 0.0039}
+{"t": 1792786486.429638, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 192266240}
+{"t": 1792786486.628656, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.111, "growth": 0.0039}
+{"t": 1792786486.632585, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 191930368}
+{"t": 1792786486.9358659, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.85, "growth": 0.0038}
+{"t": 1792786486.9498553, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 191651840}
+{"t": 1792786487.161903, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.96, "growth": 0.0039}
+{"t": 1792786487.1675825, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0025, "missing": 191365120}
+{"t": 1792786487.355191, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.815, "growth": 0.0038}
+{"t": 1792786487.358819, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0024, "missing": 191365120}
+{"t": 1792786487.453755, "job": "stasis-job-6.service", "frozen": true, "why": "starve-out"}
+{"t": 1792786487.467705, "job": "stasis-job-7.service", "frozen": false, "why": "starve-in", "waited": 120.0}
+{"t": 1792786487.6376522, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 191350784}
+{"t": 1792786487.6402452, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.264, "growth": 0.0039}
+{"t": 1792786487.6438086, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": null, "missing": 385593344}
+{"t": 1792786487.8798094, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.016, "growth": 0.0041}
+{"t": 1792786487.8849292, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": null, "missing": 385593344}
+{"t": 1792786488.0589633, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 0.916, "growth": 0.0041}
+{"t": 1792786488.0657694, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": null, "missing": 385142784}
+{"t": 1792786488.259882, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.727, "growth": 0.0043}
+{"t": 1792786488.2679799, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0609, "missing": 384266240}
+{"t": 1792786488.4967005, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.285, "growth": 0.0045}
+{"t": 1792786488.5016427, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0466, "missing": 383315968}
+{"t": 1792786488.6729748, "event": "pff_hi", "job": "stasis-job-3.service", "pff": 1.327, "growth": 0.0047}
+{"t": 1792786488.6791494, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0378, "missing": 382504960}
+{"t": 1792786488.8635883, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263114752, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263606272, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263573504, "est": 263573504, "m": null}, "stasis-job-4.service": {"fp": 263602176, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 262840320, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263753728, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263491584, "est": 263491584, "m": null}, "stasis-job-8.service": {"fp": 263286784, "est": 86723788, "m": 78839808}}}
+{"t": 1792786493.9437637, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263618560, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263262208, "est": 263262208, "m": null}, "stasis-job-4.service": {"fp": 263368704, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263098368, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 264110080, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263176192, "est": 263176192, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786497.8819125, "event": "reclaim", "job": "stasis-job-6.service", "bytes": 104392704}
+{"t": 1792786499.1642878, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263368704, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263606272, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263540736, "est": 263540736, "m": null}, "stasis-job-4.service": {"fp": 263102464, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263356416, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 262971392, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263766016, "est": 263766016, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786502.7122426, "job": "stasis-job-8.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786502.717182, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in", "waited": 93.1}
+{"t": 1792786502.939699, "event": "reclaim", "job": "stasis-job-8.service", "bytes": 109032652}
+{"t": 1792786504.3500624, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263208960, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263462912, "est": 263462912, "m": null}, "stasis-job-4.service": {"fp": 263094272, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263098368, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263368704, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263053312, "est": 263053312, "m": null}, "stasis-job-8.service": {"fp": 263823360, "est": 86723788, "m": 78839808}}}
+{"t": 1792786509.4188657, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263364608, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263589888, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263008256, "est": 263008256, "m": null}, "stasis-job-4.service": {"fp": 263589888, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263102464, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263364608, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263229440, "est": 263229440, "m": null}, "stasis-job-8.service": {"fp": 263454720, "est": 86723788, "m": 78839808}}}
+{"t": 1792786513.211887, "event": "reclaim", "job": "stasis-job-8.service", "bytes": 11269324}
+{"t": 1792786514.4897683, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263168000, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263647232, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263581696, "est": 263581696, "m": null}, "stasis-job-4.service": {"fp": 263380992, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263364608, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263376896, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263499776, "est": 263499776, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786519.7432852, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263413760, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263835648, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263561216, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263598080, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263303168, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263368704, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263344128, "est": 263344128, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786524.755035, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263475200, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263897088, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263041024, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263364608, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263614464, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263639040, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263409664, "est": 263409664, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786529.8481495, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263401472, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263847936, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263122944, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263618560, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263323648, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263098368, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263180288, "est": 263180288, "m": null}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786530.960161, "job": "stasis-job-3.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786530.9620862, "job": "stasis-job-2.service", "frozen": false, "why": "rotate-in", "waited": 106.4}
+{"t": 1792786535.047116, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263393280, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263127040, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263856128, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263340032, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263376896, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262934528, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786540.2420971, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263561216, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263598080, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263385088, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263335936, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263340032, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263098368, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263106560, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786545.2825763, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263450624, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263372800, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263127040, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263102464, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263098368, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 263110656, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786546.0806265, "job": "stasis-job-7.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786546.0847614, "job": "stasis-job-4.service", "frozen": false, "why": "rotate-in", "waited": 96.1}
+{"t": 1792786550.420075, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263270400, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263647232, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263634944, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263708672, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263327744, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263610368, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786555.4990585, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263516160, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263655424, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263655424, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263348224, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263864320, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786560.5672936, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263065600, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263536640, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263647232, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263524352, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263598080, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263106560, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786565.6712568, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263512064, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263905280, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263745536, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263561216, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786570.8731134, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263405568, "est": 86723788, "m": 78839808}, "stasis-job-2.service": {"fp": 263327744, "est": 86723788, "m": 78839808}, "stasis-job-3.service": {"fp": 263839744, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263352320, "est": 86723788, "m": 78839808}, "stasis-job-5.service": {"fp": 263843840, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263110656, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786572.0443285, "event": "pressure", "src": "psi", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0421, "missing": 0}
+{"t": 1792786573.3286467, "event": "pressure", "src": "psi", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0268, "missing": 0}
+{"t": 1792786574.4307055, "event": "pressure", "src": "psi", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0131, "missing": 0}
+{"t": 1792786574.7556922, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.825, "growth": -0.0115}
+{"t": 1792786574.7630918, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0083, "missing": 0}
+{"t": 1792786574.9748843, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 1.036, "growth": -0.0117}
+{"t": 1792786574.986428, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0045, "missing": 0}
+{"t": 1792786575.258132, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.786, "growth": -0.0123}
+{"t": 1792786575.2632236, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0029, "missing": 0}
+{"t": 1792786575.3441982, "event": "pressure", "src": "psi", "active": 3, "parked": 5, "warming": true, "hold": "growing", "fits": true, "growth": 0.0013, "missing": 0}
+{"t": 1792786575.5720258, "event": "pff_hi", "job": "stasis-job-1.service", "pff": 0.758, "growth": -0.0134}
+{"t": 1792786575.5766637, "event": "pressure", "src": "pff", "active": 3, "parked": 5, "warming": false, "hold": null, "fits": true, "growth": -0.0011, "missing": 0}
+{"t": 1792786575.5780892, "event": "ws-reset", "jobs": ["stasis-job-1.service", "stasis-job-2.service", "stasis-job-4.service"]}
+{"t": 1792786575.6072474, "job": "stasis-job-4.service", "frozen": true, "why": "pressure-pff"}
+{"t": 1792786575.613108, "job": "stasis-job-1.service", "frozen": true, "why": "pressure-pff"}
+{"t": 1792786575.8158362, "event": "reclaim", "job": "stasis-job-1.service", "bytes": 88072192}
+{"t": 1792786575.9901466, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263626752, "est": 263626752, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 262868992, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263860224, "est": 263860224, "m": null}, "stasis-job-5.service": {"fp": 263364608, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263610368, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786576.509303, "event": "pressure", "src": "psi", "active": 1, "parked": 7, "warming": true, "hold": "growing", "fits": true, "growth": 0.0079, "missing": 87031808}
+{"t": 1792786577.3642955, "event": "pressure", "src": "psi", "active": 1, "parked": 7, "warming": true, "hold": "growing", "fits": true, "growth": 0.0066, "missing": 85512192}
+{"t": 1792786578.4640353, "event": "pressure", "src": "psi", "active": 1, "parked": 7, "warming": true, "hold": "growing", "fits": true, "growth": 0.0063, "missing": 83886080}
+{"t": 1792786581.0919793, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263794688, "est": 263794688, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 263602176, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263528448, "est": 263528448, "m": null}, "stasis-job-5.service": {"fp": 263835648, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263626752, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786582.528878, "event": "reclaim", "job": "stasis-job-8.service", "bytes": 68909056}
+{"t": 1792786585.2390077, "job": "stasis-job-2.service", "frozen": true, "why": "starve-out"}
+{"t": 1792786585.2429624, "job": "stasis-job-5.service", "frozen": false, "why": "starve-in", "waited": 120.1}
+{"t": 1792786585.4208028, "event": "reclaim", "job": "stasis-job-2.service", "bytes": 35648307}
+{"t": 1792786586.4325058, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263098368, "est": 263098368, "m": null}, "stasis-job-2.service": {"fp": 263610368, "est": 263610368, "m": null}, "stasis-job-3.service": {"fp": 263819264, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263499776, "est": 263499776, "m": null}, "stasis-job-5.service": {"fp": 263553024, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263356416, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263897088, "est": 86723788, "m": 78839808}}}
+{"t": 1792786591.6337562, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263577600, "est": 263577600, "m": null}, "stasis-job-2.service": {"fp": 263479296, "est": 263479296, "m": null}, "stasis-job-3.service": {"fp": 263860224, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263598080, "est": 263598080, "m": null}, "stasis-job-5.service": {"fp": 263135232, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263364608, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786596.6165297, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263868416, "est": 263868416, "m": null}, "stasis-job-2.service": {"fp": 263622656, "est": 263622656, "m": null}, "stasis-job-3.service": {"fp": 263905280, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263880704, "est": 263880704, "m": null}, "stasis-job-5.service": {"fp": 263303168, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263405568, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786601.7446716, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263716864, "est": 263716864, "m": null}, "stasis-job-2.service": {"fp": 263598080, "est": 263598080, "m": null}, "stasis-job-3.service": {"fp": 263557120, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263716864, "est": 263716864, "m": null}, "stasis-job-5.service": {"fp": 263270400, "est": 86719283, "m": 78835712}, "stasis-job-6.service": {"fp": 263573504, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786603.7705803, "job": "stasis-job-6.service", "frozen": false, "why": "admit", "waited": 116.4}
+{"t": 1792786606.7760842, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262864896, "est": 262864896, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 263389184, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263122944, "est": 263122944, "m": null}, "stasis-job-6.service": {"fp": 262955008, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786611.8712518, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263811072, "est": 263811072, "m": null}, "stasis-job-2.service": {"fp": 263856128, "est": 263856128, "m": null}, "stasis-job-3.service": {"fp": 263618560, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263798784, "est": 263798784, "m": null}, "stasis-job-6.service": {"fp": 263172096, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786616.8958504, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263757824, "est": 263757824, "m": null}, "stasis-job-2.service": {"fp": 263606272, "est": 263606272, "m": null}, "stasis-job-3.service": {"fp": 263270400, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 263467008, "est": 263467008, "m": null}, "stasis-job-6.service": {"fp": 263323648, "est": 86723788, "m": 78839808}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786618.9580467, "job": "stasis-job-8.service", "frozen": false, "why": "admit", "waited": 116.5}
+{"t": 1792786622.0457077, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262840320, "est": 262840320, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 262856704, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 262840320, "est": 262840320, "m": null}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786627.2298186, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 262840320, "est": 262840320, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 262856704, "est": 86723788, "m": 78839808}, "stasis-job-4.service": {"fp": 262840320, "est": 262840320, "m": null}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}, "stasis-job-8.service": {"fp": 263364608, "est": 86723788, "m": 78839808}}}
+{"t": 1792786627.6660118, "job": "stasis-job-3.service", "frozen": false, "why": "admit", "waited": 96.7}
+{"t": 1792786632.383862, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263356416, "est": 263356416, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 263221248, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263335936, "est": 263335936, "m": null}, "stasis-job-7.service": {"fp": 262852608, "est": 86719283, "m": 78835712}}}
+{"t": 1792786637.4050372, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263098368, "est": 263098368, "m": null}, "stasis-job-2.service": {"fp": 263860224, "est": 263860224, "m": null}, "stasis-job-3.service": {"fp": 263331840, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263548928, "est": 263548928, "m": null}, "stasis-job-7.service": {"fp": 263368704, "est": 86719283, "m": 78835712}}}
+{"t": 1792786642.4916236, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263610368, "est": 263610368, "m": null}, "stasis-job-2.service": {"fp": 263573504, "est": 263573504, "m": null}, "stasis-job-3.service": {"fp": 263290880, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263696384, "est": 263696384, "m": null}, "stasis-job-7.service": {"fp": 263352320, "est": 86719283, "m": 78835712}}}
+{"t": 1792786647.5298183, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263860224, "est": 263860224, "m": null}, "stasis-job-2.service": {"fp": 263856128, "est": 263856128, "m": null}, "stasis-job-3.service": {"fp": 263667712, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263487488, "est": 263487488, "m": null}, "stasis-job-7.service": {"fp": 263626752, "est": 86719283, "m": 78835712}}}
+{"t": 1792786648.0166326, "event": "pressure", "src": "psi", "active": 1, "parked": 4, "warming": true, "hold": "growing", "fits": true, "growth": 0.0611, "missing": 0}
+{"t": 1792786652.529966, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263823360, "est": 263823360, "m": null}, "stasis-job-2.service": {"fp": 263786496, "est": 263786496, "m": null}, "stasis-job-3.service": {"fp": 263516160, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263380992, "est": 263380992, "m": null}, "stasis-job-7.service": {"fp": 263593984, "est": 86719283, "m": 78835712}}}
+{"t": 1792786657.609982, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263553024, "est": 263553024, "m": null}, "stasis-job-2.service": {"fp": 263520256, "est": 263520256, "m": null}, "stasis-job-3.service": {"fp": 263270400, "est": 94649139, "m": 86044672}, "stasis-job-4.service": {"fp": 263618560, "est": 263618560, "m": null}, "stasis-job-7.service": {"fp": 263585792, "est": 86719283, "m": 78835712}}}
+{"t": 1792786661.87432, "job": "stasis-job-7.service", "frozen": false, "why": "admit", "waited": 115.8}
+{"t": 1792786662.687246, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263544832, "est": 263544832, "m": null}, "stasis-job-2.service": {"fp": 263507968, "est": 263507968, "m": null}, "stasis-job-3.service": {"fp": 263270400, "est": 263270400, "m": 262340608}, "stasis-job-4.service": {"fp": 263610368, "est": 263610368, "m": null}, "stasis-job-7.service": {"fp": 263585792, "est": 86719283, "m": 78835712}}}
+{"t": 1792786666.98492, "job": "stasis-job-1.service", "frozen": false, "why": "admit", "waited": 91.4}
+{"t": 1792786667.6482918, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263262208, "est": 263262208, "m": null}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-3.service": {"fp": 263270400, "est": 263270400, "m": 262340608}, "stasis-job-4.service": {"fp": 263364608, "est": 263364608, "m": null}}}
+{"t": 1792786672.7195206, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263471104, "est": 263471104, "m": null}, "stasis-job-2.service": {"fp": 263364608, "est": 263364608, "m": null}, "stasis-job-3.service": {"fp": 263270400, "est": 263270400, "m": 262340608}, "stasis-job-4.service": {"fp": 263823360, "est": 263823360, "m": null}}}
+{"t": 1792786674.0831015, "job": "stasis-job-4.service", "frozen": false, "why": "admit", "waited": 98.5}
+{"t": 1792786677.7413452, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263303168, "est": 263303168, "m": null}, "stasis-job-2.service": {"fp": 263872512, "est": 263872512, "m": null}, "stasis-job-4.service": {"fp": 263344128, "est": 263344128, "m": null}}}
+{"t": 1792786682.8238966, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263196672, "est": 263196672, "m": null}, "stasis-job-2.service": {"fp": 263815168, "est": 263815168, "m": null}, "stasis-job-4.service": {"fp": 263335936, "est": 263335936, "m": null}}}
+{"t": 1792786687.9653666, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263241728, "est": 263241728, "m": null}, "stasis-job-2.service": {"fp": 263446528, "est": 263446528, "m": null}, "stasis-job-4.service": {"fp": 263319552, "est": 263319552, "m": null}}}
+{"t": 1792786693.0111618, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263467008, "est": 263467008, "m": null}, "stasis-job-2.service": {"fp": 263671808, "est": 263671808, "m": null}, "stasis-job-4.service": {"fp": 262983680, "est": 262983680, "m": null}}}
+{"t": 1792786698.1166863, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263380992, "est": 263380992, "m": 262340608}, "stasis-job-2.service": {"fp": 263524352, "est": 263524352, "m": null}, "stasis-job-4.service": {"fp": 263405568, "est": 263405568, "m": null}}}
+{"t": 1792786703.1286418, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263335936, "est": 263335936, "m": 262340608}, "stasis-job-2.service": {"fp": 263376896, "est": 263376896, "m": null}, "stasis-job-4.service": {"fp": 263417856, "est": 263417856, "m": null}}}
+{"t": 1792786705.290279, "job": "stasis-job-1.service", "frozen": true, "why": "starve-out"}
+{"t": 1792786705.2942536, "job": "stasis-job-2.service", "frozen": false, "why": "starve-in", "waited": 120.1}
+{"t": 1792786708.2718415, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263389184, "est": 263389184, "m": 262340608}, "stasis-job-2.service": {"fp": 263450624, "est": 263450624, "m": null}, "stasis-job-4.service": {"fp": 263475200, "est": 263475200, "m": null}}}
+{"t": 1792786713.367199, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263389184, "est": 263389184, "m": 262340608}, "stasis-job-2.service": {"fp": 263544832, "est": 263544832, "m": null}, "stasis-job-4.service": {"fp": 263475200, "est": 263475200, "m": null}}}
+{"t": 1792786718.3752244, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263344128, "est": 263344128, "m": 262340608}, "stasis-job-2.service": {"fp": 263344128, "est": 263344128, "m": null}, "stasis-job-4.service": {"fp": 263475200, "est": 263475200, "m": 262340608}}}
+{"t": 1792786720.7110846, "job": "stasis-job-4.service", "frozen": true, "why": "rotate-out"}
+{"t": 1792786720.713293, "job": "stasis-job-1.service", "frozen": false, "why": "rotate-in", "waited": 15.5}
+{"t": 1792786723.5099976, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263344128, "est": 263344128, "m": 262340608}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": null}, "stasis-job-4.service": {"fp": 263417856, "est": 263417856, "m": 262340608}}}
+{"t": 1792786727.8950894, "job": "stasis-job-4.service", "frozen": false, "why": "admit", "waited": 7.2}
+{"t": 1792786728.5872126, "event": "ws", "jobs": {"stasis-job-1.service": {"fp": 263344128, "est": 263344128, "m": 262340608}, "stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": 262340608}, "stasis-job-4.service": {"fp": 263417856, "est": 263417856, "m": 262340608}}}
+{"t": 1792786733.6330986, "event": "ws", "jobs": {"stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": 262340608}}}
+{"t": 1792786738.7537198, "event": "ws", "jobs": {"stasis-job-2.service": {"fp": 263327744, "est": 263327744, "m": 262340608}}}
+{"t": 1792786743.762097, "event": "ws", "jobs": {}}

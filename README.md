@@ -174,6 +174,10 @@ python3 eval/analyze.py figures /srv/results        # F1 (EEVDF only so far)
 python3 eval/analyze.py calibrate /srv/results      # PFF distribution -> PFF_HI
 ```
 
+Use the PFF_HI this gives; don't reuse the rehearsal's 0.029. In the
+experiment C pilot, that value fired on every reload and parked jobs that
+didn't need parking (`docs/rehearsal/README.md`).
+
 - Check `probe_policy.txt` in any run: every thread must say `SCHED_OTHER`.
   Real-time tasks bypass sched_ext.
 - Expected: throughput stays flat up to N≈4 (2.8 GB fits), then collapses.

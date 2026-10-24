@@ -1,0 +1,2 @@
+Oct 23 20:15:44 stasis-vm kernel: Sched_ext: stasis (enabled+all), task: runnable_at=-23ms
+Oct 23 20:19:07 stasis-vm kernel: sched_ext: BPF scheduler "stasis" disabled (unregistered from user space)
