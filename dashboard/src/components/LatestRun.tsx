@@ -65,11 +65,15 @@ export function LatestRun() {
   const groups = useMemo(() => groupEvents(frames.flatMap((f) => f.ev || [])), [RS.latestId, d]);
   const controllerOn = frames.some((f) => f.ctrl && f.ctrl.on);
   const last = frames[frames.length - 1];
-  const nDone = last ? last.jobs.filter((j) => j.state === 'done').length : 0;
   const m = d?.metrics ?? {}, meta = d?.meta;
   const t0 = meta?.t0 ?? frames[0]?.t ?? 0;
   const ordered = runs.slice().sort((a, b) => (b.t ?? 0) - (a.t ?? 0));
   const total = meta && meta.n && meta.passes ? meta.n * meta.passes : null;
+  // The last sample can come a moment before the final job's last pass, so a run whose
+  // passes add up to the target is complete whatever that sample says.
+  const complete = total != null && m.passes != null && m.passes >= total;
+  const nSeen = last ? last.jobs.filter((j) => j.state === 'done').length : 0;
+  const nDone = complete && last ? last.jobs.length : nSeen;
   const finishedAt = listed?.t ? new Date(listed.t * 1000).toLocaleTimeString() : '';
 
   return (
