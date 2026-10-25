@@ -36,6 +36,21 @@ root through `sudo`, and the VM is reachable only from the host, by key.
 | `stop-dashboard.sh` | stops the dashboard for the rest of the campaign and writes `/srv/results/NOTE-dashboard-during-runs.txt`. It had been left on from the demo into the first two EEVDF runs, against the README's rule. |
 | `rerun-two.sh` | after the sweep, deletes and re-runs those two runs with the dashboard off, then recalibrates `PFF_HI` on all 45. |
 
+## Diagnosing the missing collapse (deviation 23)
+
+The first 45 EEVDF runs of experiment A never thrashed. These scripts found
+why, all writing to `/srv/diag` on the VM, never to the campaign's
+`/srv/results`. Every setting they change is undone on exit.
+
+| File | What it does |
+|---|---|
+| `diag-thrash.py`, `diag-run.py`, `diag-overlap.py` | read the 45 runs: no swapping in 4 of 5 N=8 runs, the sampler's gaps, and that only 4–5 of 8 jobs were ever past their fill at once (the waves) |
+| `diag-swap.sh` | every limit between a job and swap: none set, so not a cap |
+| `preflight-io.sh` | proves a 3 MB/s cap on `stasis.slice` throttles (30 MB at 3.0 MB/s) before the slow-swap runs rely on it |
+| `diag-eevdf.sh` | N=8 under control, MGLRU off, and the jobs' I/O capped at 3 MB/s: waves in all three |
+| `diag-barrier.sh` | N=4 and N=8 with a copy of wss that waits after its fill: N=8 collapses (26 % and 7 % of peak). It self-tests the binary first, after a first version deadlocked by waiting before flushing its start marker. |
+| `diag-compare.py` | the comparison table quoted in deviation 23 |
+
 ## Conditions every run depends on
 
 `PASSES = 5874` holds only on this VM with the host on AC power, in Windows'

@@ -7,7 +7,10 @@
 # /srv/results and /srv/results-skew); 'plan' records the experiment in
 # RESULTS_ROOT/experiment, which 'analyze.py score' uses to pick hypotheses.
 #
-# Experiment A, the thrashing curve (every page hot, HOT = 100):
+# Experiment A, the thrashing curve (every page hot, HOT = 100). Its runs use
+# run_mix.sh's start barrier (deviation 23): every job fills its memory with
+# nothing else running, then the configuration starts and all jobs are
+# released together, so every configuration begins from the same overload:
 #   eevdf          N=1..8          stasis (full)   N=1..8
 #   ctrl           N=4,6,8         mglru           N=4,6,8
 #   oomd           N=4,6,8         thrashprotect   N=4,6,8
@@ -152,6 +155,10 @@ run)
   [[ -f $ROOT/plan.txt ]] || { echo "run '$0 plan $ROOT' first" >&2; exit 1; }
   JUMP=
   [[ $(cat "$ROOT/experiment" 2>/dev/null) == C ]] && JUMP="$((PASSES * 6 / 10)):4"   # jobs 1-4 jump
+  # Experiment A's jobs fill first and start together (deviation 23); B and C,
+  # and the real-workload arm, start as they always have.
+  BAR=
+  [[ $(cat "$ROOT/experiment" 2>/dev/null) == A ]] && BAR=1
   [[ ${STASISD_EXTRA:-} == *--pff-hi=* ]] || {
     echo "set STASISD_EXTRA=--pff-hi=<value frozen in docs/00-prereg.md>" >&2; exit 1; }
   done_now=0
@@ -168,7 +175,8 @@ run)
     sync; echo 3 > /proc/sys/vm/drop_caches
     # </dev/null: nothing inside a run may read (and swallow) lines of plan.txt
     "$HERE/../scripts/manifest.sh" "$out" "$label $args $wl" < /dev/null
-    STASIS_HOT=$hot STASIS_JUMP=$JUMP STASISD_ARGS="$args" STASIS_WORKLOAD="$wl" \
+    bar=; [[ -n $BAR && $wl == wss ]] && bar=1
+    STASIS_HOT=$hot STASIS_JUMP=$JUMP STASISD_ARGS="$args" STASIS_WORKLOAD="$wl" STASIS_BARRIER=$bar \
       "$HERE/../scripts/run_mix.sh" "$n" "$SIZE" "$PASSES" "$out" "$config" < /dev/null || true
     done_now=$((done_now + 1))
   done < "$ROOT/plan.txt"
