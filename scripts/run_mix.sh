@@ -205,7 +205,9 @@ else
   launch_jobs
   filled=0
   for _ in $(seq "$FILL_TIMEOUT"); do
-    filled=$(grep -l '^0 ' "$OUT"/job-*.log 2>/dev/null | wc -l)
+    # grep exits 1 while no job has filled yet; under set -e and pipefail that
+    # would end the run, so "none yet" must count as an answer.
+    filled=$({ grep -l '^0 ' "$OUT"/job-*.log 2>/dev/null || true; } | wc -l)
     (( filled >= N )) && break
     sleep 1
   done
