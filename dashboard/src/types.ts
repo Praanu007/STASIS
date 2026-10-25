@@ -70,7 +70,7 @@ export interface EFrame extends Frame {
 
 export interface ServerInfo { server: 'stasis'; host?: string; kernel?: string; results?: boolean }
 
-export interface RunListing { id: string; label: string; n: number; run: number; status: string }
+export interface RunListing { id: string; label: string; n: number; run: number; status: string; t?: number }  // t: when it finished (epoch s)
 
 export interface RunMeta extends RunInfo { t_end?: number | null }
 
@@ -82,6 +82,11 @@ export interface RunMetrics {
   swap_pages?: number | null;
   max_wait_s?: number | null;
   ws?: string | null;
+  passes?: number | null;
+  duration_s?: number | null;
+  psi_full_pct?: number | null;
+  max_gap_s?: number | null;
+  status?: string | null;
 }
 
 export interface ProbeSummary { p50?: number | null; p99?: number | null; max?: number | null }

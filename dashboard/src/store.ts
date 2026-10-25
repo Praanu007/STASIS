@@ -7,7 +7,7 @@ import { useSyncExternalStore, type ReactNode } from 'react';
 import type { Colors } from './lib/theme';
 import type { Sim } from './sim/sim';
 import type {
-  EFrame, Policy, ProbeSummary, ResultRow, ResultsData, RunListing, RunMeta, RunMetrics, ServerInfo, View, WsMode,
+  EFrame, Policy, ProbeSummary, ResultRow, ResultsData, RunData, RunListing, RunMeta, RunMetrics, ServerInfo, View, WsMode,
 } from './types';
 
 export type Conn = 'idle' | 'connecting' | 'ok' | 'retry' | 'closed';
@@ -42,7 +42,17 @@ export interface AppState {
     eng: Sim | null; frames: EFrame[]; timer: number | null; speed: number;
     policy: Policy; n: number; hot: number; ws: WsMode;
   };
-  results: { data: ResultsData | null; loading: boolean; simRows: ResultRow[] | null; status: ReactNode };
+  results: {
+    data: ResultsData | null; loading: boolean; simRows: ResultRow[] | null; status: ReactNode;
+    runs: RunListing[] | null;     // finished runs, as the server lists them
+    sig: string;                   // signature of `runs`: what the poll compares
+    sel: string | null;            // run picked in the card; null = follow the latest
+    latest: RunData | null;        // the run shown in the "Latest run" card
+    latestId: string | null;
+    latestLoading: boolean;
+    timer: number | null;          // the 4 s poll while the tab is open
+    checkedAt: number | null;      // when the poll last looked (ms)
+  };
   version: number;
   hoverVersion: number;
 }
@@ -63,7 +73,10 @@ export const S: AppState = {
     timer: null, speed: 4, loading: false, pos: null,
   },
   sim: { eng: null, frames: [], timer: null, speed: 4, policy: 'full', n: 8, hot: 1, ws: 'refs' },
-  results: { data: null, loading: false, simRows: null, status: 'Loading results' },
+  results: {
+    data: null, loading: false, simRows: null, status: 'Loading results',
+    runs: null, sig: '', sel: null, latest: null, latestId: null, latestLoading: false, timer: null, checkedAt: null,
+  },
   version: 0, hoverVersion: 0,
 };
 

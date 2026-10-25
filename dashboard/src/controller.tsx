@@ -6,6 +6,7 @@ import { S, schedule, scheduleHover } from './store';
 import { Sim, simResults } from './sim/sim';
 import { bsearchT, clamp, enrich } from './lib/format';
 import { readColors } from './lib/theme';
+import { latestRun, runsSignature } from './lib/results';
 import { viewWindow } from './view';
 import type { Frame, Policy, ResultsData, RunData, RunListing, ServerInfo, View, WsMode } from './types';
 
@@ -38,6 +39,7 @@ export function setView(want: string): void {
   if (v !== 'live') stopLive();
   if (v !== 'sim') simStop();
   if (v !== 'replay') stopPlay();
+  if (v !== 'results') stopResultsPoll();
   if (needsServer(v)) { schedule(); return; }
   if (v === 'live') {
     S.frames = S.live.frames; S.end = S.frames.length - 1;
@@ -202,10 +204,70 @@ export function simStop(): void {
 export function setSimSpeed(v: number): void { S.sim.speed = v; if (S.view === 'sim') simRun(); schedule(); }
 export function setSimPolicy(p: Policy): void { S.sim.policy = p; S.sim.eng?.setPolicy(p); schedule(); }
 export function setSimHot(v: number): void { S.sim.hot = v; simStart(); }
+// ---- results: the "Latest run" card and the 4 s refresh while the tab is open
+
+let polling = false;
+
+/** Looks at the server's run list; reloads the results and the card only when a run
+ *  appeared or changed (or when forced), so an idle tab costs one small request. */
+async function refreshLatest(force = false): Promise<void> {
+  const RS = S.results;
+  if (polling) return;
+  polling = true;
+  try {
+    const runs = (await getJSON<{ runs: RunListing[] }>('api/runs')).runs;
+    RS.checkedAt = Date.now();
+    const sig = runsSignature(runs);
+    const changed = sig !== RS.sig;
+    RS.runs = runs; RS.sig = sig;
+    if (changed && !force) {
+      try { RS.data = await getJSON<ResultsData>('api/results'); } catch { /* keep what is shown */ }
+    }
+    RS.status = resultsStatus();
+    const want = RS.sel && runs.some((r) => r.id === RS.sel) ? RS.sel : (latestRun(runs)?.id ?? null);
+    if (!want) { RS.latest = null; RS.latestId = null; }
+    else if (force || changed || RS.latestId !== want) await loadLatest(want);
+  } catch { /* the server is busy or restarting: try again at the next tick */ }
+  polling = false;
+  schedule();
+}
+
+async function loadLatest(id: string): Promise<void> {
+  const RS = S.results;
+  RS.latestLoading = true;
+  schedule();
+  try { RS.latest = await getJSON<RunData>('api/run?id=' + encodeURIComponent(id)); RS.latestId = id; }
+  catch { RS.latest = null; RS.latestId = null; }
+  RS.latestLoading = false;
+}
+
+function startResultsPoll(): void {
+  const RS = S.results;
+  if (RS.timer != null) return;
+  RS.timer = window.setInterval(() => { if (S.view === 'results' && !document.hidden) void refreshLatest(); }, 4000);
+}
+export function stopResultsPoll(): void {
+  const RS = S.results;
+  if (RS.timer != null) { clearInterval(RS.timer); RS.timer = null; }
+}
+
+/** The card's run picker: a run id, or 'latest' to follow the newest finished run. */
+export function selectResultRun(id: string): void {
+  S.results.sel = id === 'latest' ? null : id;
+  void refreshLatest(true);
+}
+
 export function setSimWs(v: WsMode): void { S.sim.ws = v; simStart(); }
 export function setSimJobs(n: number): void { S.sim.n = clamp(n, 1, 12); simStart(); }
 
 // ---- results
+
+function resultsStatus(): ReactNode {
+  const RS = S.results;
+  const at = RS.checkedAt ? new Date(RS.checkedAt).toLocaleTimeString() : '';
+  return <>Measured runs from the server · <b>{RS.data ? RS.data.rows.length : 0}</b> finished runs
+    {at && <> · checked {at}, updates by itself when a run finishes</>}</>;
+}
 
 export async function enterResults(): Promise<void> {
   const RS = S.results;
@@ -218,7 +280,9 @@ export async function enterResults(): Promise<void> {
     try { RS.data = await getJSON<ResultsData>('api/results'); }
     catch (e) { RS.data = { rows: [], score: [], score_error: message(e) }; }
     RS.loading = false;
-    RS.status = <>Measured runs from the server · <b>{RS.data.rows.length}</b> finished runs</>;
+    RS.status = resultsStatus();
+    await refreshLatest(true);
+    if (S.view === 'results') startResultsPoll();
   } else {
     if (S.server) {
       S.resNotice = <>The server was started without <code>--results</code>, so these are simulated. Restart it

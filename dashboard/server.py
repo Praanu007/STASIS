@@ -434,7 +434,8 @@ class Handler(BaseHTTPRequestHandler):
             elif url.path == "/api/runs":
                 self.send_json({"runs": [
                     {"id": f"{label}/N{n}/run{k}", "label": label, "n": n, "run": k,
-                     "status": open(os.path.join(d, "status")).read().strip()}
+                     "status": open(os.path.join(d, "status")).read().strip(),
+                     "t": round(os.path.getmtime(os.path.join(d, "status")), 1)}   # when it finished
                     for label, n, k, d in app.results.runs()]})
             elif url.path == "/api/run":
                 run_id = parse_qs(url.query).get("id", [""])[0]

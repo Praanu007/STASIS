@@ -27,7 +27,7 @@ function RunSummary() {
   );
 }
 
-function describe(g: Group): { tag: [string, string]; title: string; text: string } {
+export function describe(g: Group): { tag: [string, string]; title: string; text: string } {
   switch (g.kind) {
     case 'halve': {
       const text = g.pff && g.pff.pff != null

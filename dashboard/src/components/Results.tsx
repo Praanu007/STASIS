@@ -7,6 +7,7 @@ import { clamp, fixed, fmtBytes, fmtNum, fmtUs, isNum, median, niceMax } from '.
 import { VERDICT_ICON } from '../lib/icons';
 import { CONFIG_NAMES, SHORT_NAMES } from '../view';
 import { Notice, useWidth } from './controls';
+import { LatestRun } from './LatestRun';
 import type { ResultRow, ScoreRow } from '../types';
 
 // Fixed hue order (--s1..--s6). Every pair inside each panel below passes the
@@ -320,6 +321,7 @@ export function Results() {
       <Notice id="res-notice">{S.resNotice}</Notice>
       {rows && (
         <div className="res-grid">
+          {measured && <LatestRun />}
           <CurveCard rows={rows} />
           <Hypotheses score={measured ? RS.data?.score ?? null : null} error={measured ? RS.data?.score_error ?? null : null} simulated={!measured} />
           <Runs rows={rows} />
