@@ -21,6 +21,14 @@
 # memcached or compile instead of wss. The default, wss, is unchanged and is
 # not recorded in the config line, so every other arm's config is as before.
 # HOT and JUMP apply to wss only.
+# $STASIS_BARRIER=1 (deviation 23; campaign.sh sets it for experiment A) is a
+# start barrier: the jobs are launched with nothing else running, every one
+# fills its memory, and only then is CONFIG's system started and the jobs
+# released together. Every configuration inherits the same overloaded start,
+# and the run's clock (t0) and its timeout start at the release. Without a
+# barrier, on fast hardware the first jobs to fill keep every page hot, the
+# kernel won't evict them, and the rest wait mid-fill: EEVDF runs the jobs in
+# waves and never thrashes (the deviation has the measurements). wss only.
 set -euo pipefail
 N=$1 SIZE=$2 PASSES=$3 OUT=$4 CONFIG=${5:-eevdf}
 HOME_DIR=${STASIS_HOME:-/opt/stasis}
@@ -34,11 +42,22 @@ MGLRU_TTL=/sys/kernel/mm/lru_gen/min_ttl_ms
 WORKLOAD=${STASIS_WORKLOAD:-wss}
 [[ $WORKLOAD =~ ^(wss|rocksdb|memcached|compile)$ ]] || { echo "unknown STASIS_WORKLOAD $WORKLOAD" >&2; exit 2; }
 WL_TAG=; [[ $WORKLOAD != wss ]] && WL_TAG=" WORKLOAD=$WORKLOAD"
+BARRIER=${STASIS_BARRIER:-}
+[[ -z $BARRIER || $BARRIER == 1 ]] || { echo "STASIS_BARRIER must be 1 or unset" >&2; exit 2; }
+[[ -n $BARRIER && $WORKLOAD != wss ]] && { echo "the start barrier is for wss only" >&2; exit 2; }
+(( N == 0 )) && BARRIER=                    # no jobs, nothing to hold
+FILL_TIMEOUT=${STASIS_FILL_TIMEOUT:-600}
+GO=/run/stasis/go-$$                        # the barrier: jobs start once it exists
 mkdir -p "$OUT" /run/stasis
 echo RUNNING > "$OUT/status"
 ln -sfn "$OUT" /run/stasis/current          # the dashboard follows this link
 systemctl reset-failed 'stasis-*' 2>/dev/null || true
-echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES HOT=$HOT${JUMP:+ JUMP=$JUMP}$WL_TAG STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
+echo "$CONFIG N=$N SIZE=$SIZE PASSES=$PASSES HOT=$HOT${JUMP:+ JUMP=$JUMP}$WL_TAG${BARRIER:+ BARRIER=1} STASISD_EXTRA=${STASISD_EXTRA:-} STASISD_ARGS=${STASISD_ARGS:-}" > "$OUT/config"
+
+# Checked up front: with the barrier, CONFIG's system starts only after the
+# fill, too late to discover a typo.
+[[ $CONFIG =~ ^(eevdf|stasis|ctrl|mglru|oomd|thrashprotect|scxonly|simple|earlyoom)$ ]] \
+  || { echo "unknown CONFIG $CONFIG" >&2; echo FAILED > "$OUT/status"; exit 2; }
 
 # A baseline this machine can't run is recorded as such, never as a result.
 unavailable() { echo "$CONFIG unavailable: $1" | tee "$OUT/unavailable.txt" >&2; echo UNAVAILABLE > "$OUT/status"; exit 3; }
@@ -84,6 +103,7 @@ cleanup() {
   [[ -n $SCHED_PID ]] && kill -INT "$SCHED_PID" 2>/dev/null && wait "$SCHED_PID" 2>/dev/null || true
   [[ $CONFIG == oomd ]] && systemctl set-property --runtime stasis.slice ManagedOOMMemoryPressure=auto || true
   [[ -n $TTL0 ]] && echo "$TTL0" > "$MGLRU_TTL" || true
+  rm -f "$GO"
 }
 trap cleanup EXIT
 
@@ -103,6 +123,9 @@ sleep 0.5
 PROBE_PID=$(systemctl show -p MainPID --value stasis-probe)
 chrt -a -p "$PROBE_PID" > "$OUT/probe_policy.txt" # every thread must say SCHED_OTHER (H4)
 
+# The system under test. Started before the jobs, or with the barrier after
+# every job has filled its memory (deviation 23).
+start_config() {
 case $CONFIG in
   eevdf) ;;
   stasis)
@@ -147,12 +170,9 @@ case $CONFIG in
     EO_PID=$! ;;
   *) echo "unknown CONFIG $CONFIG" >&2; exit 2 ;;
 esac
+}
 
-python3 "$HOME_DIR/sample.py" "$OUT/samples.jsonl" &
-SAMPLER=$!
-sleep 1
-
-T0=$(date +%s.%N); echo "$T0" > "$OUT/t0"
+launch_jobs() {
 for i in $(seq 1 "$N"); do
   jump=()
   [[ -n $JUMP ]] && (( i <= ${JUMP#*:} )) && jump=("${JUMP%:*}")
@@ -162,9 +182,44 @@ for i in $(seq 1 "$N"); do
     job=("$HOME_DIR/workload.sh" "$WORKLOAD" "$SIZE" "$PASSES")
   fi
   systemd-run --unit="stasis-job-$i" --slice=stasis.slice \
-    -p StandardOutput=file:"$OUT/job-$i.log" \
+    -p StandardOutput=file:"$OUT/job-$i.log" ${BARRIER:+-E STASIS_GO="$GO"} \
     "${job[@]}"
 done
+}
+
+if [[ -z $BARRIER ]]; then
+  start_config
+  python3 "$HOME_DIR/sample.py" "$OUT/samples.jsonl" &
+  SAMPLER=$!
+  sleep 1
+  T0=$(date +%s.%N); echo "$T0" > "$OUT/t0"
+  launch_jobs
+else
+  # Deviation 23: fill with nothing else running, then start CONFIG's system
+  # and release every job at once. The sampler records the fill too.
+  rm -f "$GO"
+  python3 "$HOME_DIR/sample.py" "$OUT/samples.jsonl" &
+  SAMPLER=$!
+  sleep 1
+  date +%s.%N > "$OUT/t_launch"
+  launch_jobs
+  filled=0
+  for _ in $(seq "$FILL_TIMEOUT"); do
+    # grep exits 1 while no job has filled yet; under set -e and pipefail that
+    # would end the run, so "none yet" must count as an answer.
+    filled=$({ grep -l '^0 ' "$OUT"/job-*.log 2>/dev/null || true; } | wc -l)
+    (( filled >= N )) && break
+    sleep 1
+  done
+  if (( filled < N )); then                  # not the intended start: not a result
+    echo "barrier: only $filled of $N jobs filled in ${FILL_TIMEOUT}s" | tee "$OUT/barrier.txt" >&2
+    echo FILL_TIMEOUT > "$OUT/status"; trap - EXIT; cleanup; exit 4
+  fi
+  start_config
+  T0=$(date +%s.%N); echo "$T0" > "$OUT/t0"
+  touch "$GO"
+  echo "barrier: all $N filled in $(awk -v a="$(cat "$OUT/t_launch")" -v b="$T0" 'BEGIN{printf "%.1f", b-a}') s, released at t0" > "$OUT/barrier.txt"
+fi
 
 # status stays RUNNING until the run really ends, so a run cut short by a
 # wedged or reset guest is never mistaken for a finished one.

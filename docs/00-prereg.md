@@ -340,6 +340,49 @@ small an effect the strict decision rule can resolve, and is reported as one.
     quiet (`docs/rehearsal/README.md`). Whether the warning pays for itself is
     open: H5d decides it. Experiment C, on the lab VM and after a pilot there
     (Phase 5), measures it.
+23. Experiment A starts every job together, after all have filled their
+    memory (a start barrier). **Unlike 1–22, this was decided after Phase 5
+    runs:** experiment A's 45 EEVDF runs on the lab VM (2026-10-24, PASSES =
+    5874) showed no thrashing curve. Median throughput was 196 passes/s at
+    N = 2 and still 167 at N = 8 (85 % of peak), against the guide's
+    expectation of a collapse past N ≈ 4 and its own check that N = 8 should
+    fall below 50 %. Those 45 runs are kept, unscored, in
+    `/srv/superseded/nobarrier/` on the lab VM, and are reported as a result
+    in their own right. Cause, from the job logs and diagnostic runs outside
+    the campaign (`labvm/`): each wss job fills its whole buffer when it
+    starts, and on the lab VM's fast CPU a running job touches every one of
+    its pages about every 10 ms. The first four or five jobs to fill keep
+    their pages so hot that reclaim won't evict them, and the rest stall
+    mid-fill until the early ones finish: at N = 8 only 4–5 jobs were ever
+    past their fill at once, and four of the five runs swapped only
+    10–62 MiB. EEVDF ran the jobs in waves; the kernel was in effect doing
+    load control. (The rehearsal VM, about a thousand times slower, let pages
+    go idle between touches, which is why it did thrash.) It was not MGLRU
+    (with MGLRU off: the same waves, 147 passes/s) and not the fast swap
+    device (with the jobs' I/O capped at the rehearsal's 3 MB/s: the same
+    waves, 53 and 147 passes/s, and almost no swapping). With a barrier
+    (every job fills, then all start together) N = 8 collapsed to 51 and
+    14 passes/s (26 % and 7 % of peak; one run timed out) with 4.4 GB
+    swapped and 26–31 % of the run fully stalled, while N = 4, which fits,
+    ran at 151 passes/s with no swapping. One of the five barrier-free N = 8
+    runs collapsed on its own (14.5 passes/s, 7.6 GB swapped): whether the
+    overload happens depended on start-up timing, which a comparison can't
+    rest on. So in experiment A, `run_mix.sh` launches the jobs with nothing
+    else running, waits until every job has written its start marker (all
+    memory filled; the overflow is in swap), then starts the configuration
+    under test and releases the jobs together (`wss` waits for the file named
+    by `$STASIS_GO`). Every configuration, STASIS and baselines alike,
+    inherits the same overloaded start. The run's clock (`t0`) and its 1200 s
+    timeout start at the release; a run whose jobs don't all fill within
+    600 s is recorded as `FILL_TIMEOUT`, not as a result. Experiments B and
+    C, and the real-workload arm (`docs/01-prereg-arms.md`), are unchanged.
+    PASSES is unchanged: it was calibrated with one job alone, where the
+    start doesn't matter. One consequence for H5: in experiment A the first
+    pressure is no longer the allocation transient of deviation 22, but
+    refaults of pages swapped out during the fill, which is the onset the PFF
+    early warning is built to see. H5 now measures that race in experiment A
+    as well as in C. EEVDF's 45 runs are repeated under the barrier, and
+    PFF_HI is calibrated from those.
 
 Deviations 2–7, 9–11, 13, 14, 18 and 19 change the control law or the
 scheduler. All were found before any Phase 5 measurement: 3 by a fake-cgroup
@@ -348,7 +391,9 @@ model of the lab VM, then confirmed and refined on the rehearsal VM; 6, 7 and
 9–11 on the rehearsal VM; 13–17 from an independent design review, using the
 rehearsal's logs as evidence; 18 by the simulator and the rehearsal VM; 19 on
 the rehearsal VM; 20 from the rehearsal's logs and the simulator; 21 from
-the guide; 22 from the rehearsal's logs and a pilot on the rehearsal VM. Each controller change is in `controller/stasisd.py` and the
+the guide; 22 from the rehearsal's logs and a pilot on the rehearsal VM;
+23 from experiment A's first 45 runs on the lab VM and diagnostic runs
+outside the campaign, and it is the one deviation made after Phase 5 runs. Each controller change is in `controller/stasisd.py` and the
 simulator, and `tests/test_controller.sh` checks it.
 
 ## Baselines
