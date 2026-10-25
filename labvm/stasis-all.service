@@ -1,0 +1,13 @@
+[Unit]
+Description=STASIS Phase 5 campaign, unattended and resumable
+After=network-online.target
+
+[Service]
+Type=simple
+Environment=HOME=/root
+ExecStart=/home/stasis/stasis-all.sh
+KillMode=process
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target

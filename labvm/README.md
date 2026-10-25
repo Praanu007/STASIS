@@ -51,9 +51,42 @@ why, all writing to `/srv/diag` on the VM, never to the campaign's
 | `diag-barrier.sh` | N=4 and N=8 with a copy of wss that waits after its fill: N=8 collapses (26 % and 7 % of peak). It self-tests the binary first, after a first version deadlocked by waiting before flushing its start marker. |
 | `diag-compare.py` | the comparison table quoted in deviation 23 |
 
+## After deviation 23
+
+| File | What it does |
+|---|---|
+| `update-and-e2e.sh` | moves the VM's repo to the `deviation/start-barrier` branch (from a git bundle), installs the barrier `wss`, and tests the barrier end to end at N=2 for `eevdf` and `ctrl` in `/srv/diag/e2e` |
+| `redo-eevdf.sh` | sets the 45 barrier-free EEVDF runs aside in `/srv/superseded/nobarrier` (kept, unscored) and redoes them under the barrier. Started 2026-10-25 08:04 UTC; stopped by a hard reset at 14:37 UTC after 10 runs, and its job taken over by `stasis-all.sh` |
+| `stasis-all.sh`, `stasis-all.service`, `install-all.sh` | the whole campaign, unattended, as a service that starts at every boot: A's EEVDF runs and `PFF_HI`'s calibration, then a wait for the frozen `PFF_HI` in `/etc/stasis-all.env`, a scheduler smoke test (`scxonly` and `stasis` in `/srv/gates`; a failure stops everything), the rest of A, a 2-run pilot of C, B and C. One run at a time, resumable, rebooting every 40 runs. A run with a sampler gap over 300 s gets `sampler_gap.txt`, and one with kernel soft lockups gets `host_stall.txt`; neither is discarded or rerun |
+| `restart-all.sh` | one-off, 2026-10-25 15:39 UTC: stops the service and the run in flight to install a fixed `stasis-all.sh` (see below) |
+| `live-test.sh` | not the VM: starts fake jobs in `stasis.slice` under WSL so the dashboard's Live view has something to show |
+
+`stasis-all.sh`'s first version moved any run with a sampler gap over 300 s
+aside and ran it again, taking the gap for host sleep. A 7-job EEVDF run
+starves the sampler that long by itself, so `eevdf/N7/run5` ran three
+times: once through a real host sleep (kept in
+`/srv/superseded/host-sleep/`), then a 1200 s TIMEOUT, then OK.
+`restart-all.sh` kept the TIMEOUT, the second attempt and the first without
+a sleep, and deleted the third, which only existed because of the bug.
+
 ## Conditions every run depends on
 
 `PASSES = 5874` holds only on this VM with the host on AC power, in Windows'
 *Best performance* power mode, with other applications closed. The power
 mode alone changed the per-pass time by about 40 %. The per-run MANIFEST does
 not record it, so it is stated here and in docs/00-prereg.md.
+
+Two more, found on 2026-10-25:
+
+- **The host must not sleep.** Windows' Modern Standby (events 506/507)
+  froze the VM from 08:52 to 13:45 UTC, in the middle of `eevdf/N7/run5`.
+  The guest's clock follows the host's through sleep, so the VM can't
+  detect it; check runs flagged `sampler_gap.txt` against the host's power
+  log. Sleep is now set to Never on AC.
+- **The host must have memory to spare.** With 0.6–1.6 GB free on the
+  15.5 GB host, Windows paged out up to 1.7 GB of the VM's 4 GB, and the
+  guest logged soft lockups, idle CPUs included (`swapper`), which only the
+  host can cause. Every overloaded EEVDF run since 2026-10-24 has some: 1 at
+  N=3 up to 21 at N=8; N=2 and the e2e runs none. Closing the browsers and
+  stopping WSL brought the VM's resident memory back to 3.8 of 4 GB. How
+  flagged runs are treated is for a deviation to decide, before scoring.
